@@ -7,5 +7,3 @@ __pycache__/
 *.aux
 *.log
 *.pdf
-# user's own photo: keep it out of the repo
-test/page2.jpg
