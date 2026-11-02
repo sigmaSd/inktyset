@@ -1,0 +1,12 @@
+\documentclass[12pt]{article}\usepackage{amsmath,amssymb,amsthm}\pagestyle{empty}
+\newtheorem{lemma}{Lemma}
+\begin{document}
+\section*{2. Compactness}
+\begin{lemma} Let $(x_n)$ be a sequence in a compact metric space $(X,d)$. Then $(x_n)$ admits a convergent subsequence. \end{lemma}
+\begin{proof} For every $\varepsilon>0$ there is a finite cover $X=\bigcup_{i=1}^{N} B(y_i,\varepsilon)$. Hence
+\begin{align*}
+d(x_{n_k},x_{n_{k+1}}) &\le 2^{-k}, \\
+\sum_{k\ge 1} d(x_{n_k},x_{n_{k+1}}) &\le \sum_{k\ge1} 2^{-k} = 1 < \infty .
+\end{align*}
+So $(x_{n_k})$ is Cauchy and $x_{n_k}\to x\in X$ since $X$ is complete. \end{proof}
+\end{document}
