@@ -31,6 +31,9 @@ button { cursor: pointer; border: 1px solid var(--line); background: var(--surfa
 button:hover:not(:disabled) { border-color: var(--accent); }
 button:disabled { opacity: .5; cursor: default; }
 button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+button:active:not(:disabled) { transform: scale(.96); }
+button { transition: transform .08s, background-color .15s, color .15s; }
+button.copied, button.primary.copied { background: var(--ok); border-color: var(--ok); color: #fff; }
 button.ghost { border-color: transparent; background: transparent; color: var(--muted); padding: 4px 8px; }
 button.ghost:hover:not(:disabled) { color: var(--ink); background: var(--surface-2); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -85,12 +88,13 @@ button.tile:hover:not(:disabled) { border-color: var(--accent); }
 .col + .col { border-left: 1px solid var(--line); }
 .col h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
 .scan img { width: 100%; border-radius: 6px; border: 1px solid var(--line); cursor: zoom-in; background: #fff; display: block; }
-.preview img { width: 100%; border-radius: 6px; border: 1px solid var(--line); background: #fff; display: block; margin-bottom: 8px; }
+.preview img { width: 100%; border-radius: 6px; border: 1px solid var(--line); background: #fff; display: block; margin-bottom: 8px; cursor: zoom-in; }
 textarea { width: 100%; min-height: 360px; resize: vertical; font: 13px/1.5 var(--mono); color: var(--ink);
   background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px; tab-size: 2; }
 textarea:focus { outline: none; border-color: var(--accent); }
 .editor-foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
 .editor-foot .grow { flex: 1; }
+.editor-foot button:not(.primary) { color: var(--ink); }  /* the footer's gray is for notes, not buttons */
 .err { background: var(--bad-soft); color: var(--bad); border-radius: 8px; padding: 10px 12px; font-size: 13px; }
 .err pre { white-space: pre-wrap; margin: 6px 0 0; font: 12px/1.4 var(--mono); }
 .waiting { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
@@ -109,8 +113,8 @@ ol.steps { padding-left: 20px; margin: 8px 0 12px; } ol.steps li { margin: 4px 0
 .devices { list-style: none; padding: 0; margin: 8px 0; }
 .devices li { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); }
 .dialog-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
-#zoom { max-width: 96vw; width: auto; padding: 8px; }
-#zoom img { max-width: 92vw; max-height: 88vh; display: block; }
+#zoom { max-width: 96vw; width: fit-content; padding: 8px; cursor: zoom-out; }
+#zoom img { max-width: 92vw; max-height: 88vh; display: block; background: #fff; border-radius: 6px; }
 
 .drop { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center;
   background: color-mix(in srgb, var(--accent) 18%, transparent); border: 4px dashed var(--accent);
@@ -120,7 +124,44 @@ body.dragging .drop { display: flex; }
   padding: 10px 18px; border-radius: 10px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 30; }
 .toast.show { opacity: 1; }
 
+/* ---------------- compare view */
+#compare { width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0; padding: 0;
+  border: 0; border-radius: 0; display: none; flex-direction: column; background: var(--bg); }
+#compare[open] { display: flex; }
+#compare:focus { outline: none; }
+/* while Compare or the zoom is open, the list behind must not scroll (it would steal the mouse wheel) */
+html:has(#compare[open]), html:has(#zoom[open]) { overflow: hidden; }
+#compare .pane, #compare textarea { overscroll-behavior: contain; }
+.cmp-head { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--line);
+  background: var(--surface); flex-wrap: wrap; }
+.cmp-head h2 { margin: 0 4px; font-size: 17px; white-space: nowrap; }
+.cmp-head .spacer { flex: 1; }
+.cmp-head .nav { font-size: 20px; line-height: 1; padding: 4px 10px; }
+.zoomctl { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--line); border-radius: 8px; padding: 0 2px; }
+.zoomctl span { min-width: 3.4em; text-align: center; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+button.on { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+button.checked { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); }
+.cmp-body { flex: 1; display: flex; min-height: 0; }
+.cmp-images { flex: 1; display: flex; min-width: 0; min-height: 0; gap: 1px; background: var(--line); }
+.cmp-images.stack { flex-direction: column; }
+.pane { flex: 1; overflow: auto; background: var(--bg); position: relative; min-width: 0; min-height: 0; }
+.pane-label { position: sticky; top: 0; left: 0; z-index: 1; display: inline-block; margin: 8px; padding: 2px 9px;
+  font-size: 12px; font-weight: 600; border-radius: 99px; background: var(--surface); color: var(--muted); border: 1px solid var(--line); }
+.pane-inner { padding: 0 16px 16px; }
+.pane-inner img { display: block; width: calc(var(--z, 1) * 100%); max-width: none; margin: 0 auto 10px;
+  background: #fff; border-radius: 6px; box-shadow: var(--shadow); }
+.pane-inner .err, .pane-inner .waiting { margin: 0 0 10px; }
+.cmp-editor { width: 36%; min-width: 320px; display: flex; flex-direction: column; border-left: 1px solid var(--line);
+  background: var(--surface); padding: 10px 12px; }
+.cmp-editor[hidden] { display: none; }
+.cmp-editor textarea { flex: 1; min-height: 0; resize: none; }
+.cmp-hint { padding: 5px 14px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); background: var(--surface); }
+.cmp-hint kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface-2); }
+.card-head .compare { color: var(--accent); font-weight: 600; }
+
 @media (max-width: 1000px) {
+  .cmp-body { flex-direction: column; }
+  .cmp-editor { width: auto; min-width: 0; height: 40%; border-left: 0; border-top: 1px solid var(--line); }
   .add { grid-template-columns: 1fr; }
   .card-body { grid-template-columns: 1fr; }
   .col + .col { border-left: 0; border-top: 1px solid var(--line); }
@@ -173,6 +214,42 @@ body.dragging .drop { display: flex; }
   <div id="phoneBody"></div>
   <div class="dialog-foot"><button id="phoneClose" class="primary">Done</button></div>
 </dialog>
+<dialog id="compare" tabindex="-1" aria-label="Compare a page with its LaTeX">
+  <div class="cmp-head">
+    <button class="ghost nav" data-cmp="prev" title="Previous page (←)">‹</button>
+    <h2 id="cmpTitle"></h2>
+    <button class="ghost nav" data-cmp="next" title="Next page (→)">›</button>
+    <span class="chip" id="cmpChip"></span>
+    <span class="note" id="cmpProgress"></span>
+    <span class="spacer"></span>
+    <span class="zoomctl">
+      <button class="ghost" data-cmp="out" title="Zoom out (−)">−</button><span id="cmpZoom">100%</span>
+      <button class="ghost" data-cmp="in" title="Zoom in (+)">+</button>
+      <button class="ghost" data-cmp="fit" title="Fit to width (0)">Fit</button>
+    </span>
+    <button class="ghost" data-cmp="layout" id="cmpLayout" title="Side by side, or one above the other (L)">Layout</button>
+    <button class="ghost" data-cmp="editor" id="cmpEditorBtn" title="Show or hide the LaTeX (E)">LaTeX</button>
+    <button class="primary" data-cmp="check" id="cmpCheck">Mark as checked</button>
+    <button class="ghost" data-cmp="close" title="Close (Esc)">✕</button>
+  </div>
+  <div class="cmp-body">
+    <div class="cmp-images" id="cmpImages">
+      <div class="pane" id="paneScan"><span class="pane-label">Handwritten</span><div class="pane-inner"><img alt="Scan of the page"></div></div>
+      <div class="pane" id="panePrev"><span class="pane-label">LaTeX preview</span><div class="pane-inner" id="prevInner"></div></div>
+    </div>
+    <div class="cmp-editor" id="cmpEditor">
+      <textarea spellcheck="false" aria-label="LaTeX of this page"></textarea>
+      <div class="editor-foot">
+        <span class="saved"></span><span class="grow"></span>
+        <button data-cmp="nextUnk" id="cmpUnk" title="Jump to the next [??] the model could not read">Next unclear spot</button>
+        <button class="primary" data-cmp="copy">Copy LaTeX</button>
+      </div>
+    </div>
+  </div>
+  <div class="cmp-hint"><kbd>←</kbd> <kbd>→</kbd> pages · <kbd>Enter</kbd> mark checked and go to the next one
+    (<kbd>Ctrl</kbd>+<kbd>Enter</kbd> while typing) · <kbd>+</kbd> <kbd>−</kbd> or <kbd>Ctrl</kbd>+scroll zoom ·
+    <kbd>L</kbd> layout · <kbd>E</kbd> LaTeX · <kbd>Esc</kbd> close</div>
+</dialog>
 <dialog id="zoom"><img alt=""></dialog>
 <div class="drop">Drop photos or PDFs to add them</div>
 <div class="toast" id="toast"></div>
@@ -195,9 +272,12 @@ async function api(path, body, raw) {
   refresh();  // show the result now, without waiting for the event stream
   return r.json();
 }
-function toast(msg) {
+function toast(msg, ms = 2200) {
   const t = $("#toast"); t.textContent = msg; t.classList.add("show");
-  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 2200);
+  // an open dialog (Compare, zoom, phone) covers everything else: show the message inside it
+  const host = document.querySelector("dialog[open]") || document.body;
+  if (t.parentNode !== host) host.append(t);
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), ms);
 }
 const mmss = (s) => { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
 const about = (s) => s < 60 ? "less than a minute" : s < 5400 ? `about ${Math.round(s / 60)} min` : `about ${(s / 3600).toFixed(1)} h`;
@@ -306,9 +386,10 @@ function statusOf(p) {
   if (p.status === "working") return ["busy", "Reading…"];
   if (p.status === "failed") return ["bad", "Failed"];
   if (p.ok === false) return ["bad", "LaTeX error"];
+  if (p.ok === null) return ["busy", "Building preview…"];
+  if (p.checked) return ["ok", "Checked ✓"];
   if (p.truncated) return ["warn", "May be cut off"];
   if (p.unk) return ["warn", `${p.unk} unclear spot${p.unk > 1 ? "s" : ""}`];
-  if (p.ok === null) return ["busy", "Checking…"];
   return ["ok", "Done"];
 }
 
@@ -319,6 +400,9 @@ function renderStatusLine() {
   const el = $("#statusLine");
   if (!pages.length && !S.intake) { el.innerHTML = ""; return; }
   let html = `<span><strong>${done}</strong> of ${pages.length} page${pages.length === 1 ? "" : "s"} done</span>`;
+  const checked = pages.filter((p) => p.status === "done" && p.checked).length;
+  if (done) html += `<span>· <strong>${checked}</strong> of ${done} checked</span>` +
+    (checked < done ? ` <button class="ghost compare" data-act="compareNext">Proofread the next one</button>` : "");
   if (working || queued || S.intake) {
     const elapsed = working ? (Date.now() / 1000 - working.started) : 0;
     const left = Math.max(0, S.avgSecs - elapsed) + queued * S.avgSecs;
@@ -331,13 +415,13 @@ function renderStatusLine() {
 
 function pageNumber(id) { return S.pages.findIndex((p) => p.id === id) + 1; }
 
-function cardKey(p) { return [p.status, p.rev, p.ok, p.unk, p.err, p.truncated, p.pngs.join()].join("|"); }
+function cardKey(p) { return [p.status, p.rev, p.ok, p.unk, p.err, p.truncated, p.checked, p.pngs.join()].join("|"); }
 
 function buildCard(p) {
   const [cls, label] = statusOf(p);
   const el = document.createElement("article");
   el.className = "card " + ({ queued: "queued", working: "working", failed: "failed" }[p.status] ||
-    (p.ok === false ? "broken" : (p.unk || p.truncated) ? "unclear" : "done"));
+    (p.ok === false ? "broken" : (!p.checked && (p.unk || p.truncated)) ? "unclear" : "done"));
   el.dataset.id = p.id;
   const scan = `<div class="col scan"><h3>Scan</h3><img loading="lazy" src="/files/scans/${p.id}.jpg?r=${p.id}" alt="Scan of the page"></div>`;
   let mid = "", right = "";
@@ -366,6 +450,7 @@ function buildCard(p) {
   el.innerHTML = `<div class="card-head">
       <h2>Page ${pageNumber(p.id)}</h2><span class="chip ${cls}">${esc(label)}</span>
       <span class="src" title="${esc(p.label)}">${esc(p.label)}</span><span class="spacer"></span>
+      ${p.status === "done" ? `<button class="ghost compare" data-act="compare" title="Scan and LaTeX side by side, to proofread">Compare</button>` : ""}
       <button class="ghost" data-act="up" title="Move up">↑</button>
       <button class="ghost" data-act="down" title="Move down">↓</button>
       ${p.status === "done" ? `<button class="ghost" data-act="redo" title="Read this page again">Read again</button>` : ""}
@@ -425,40 +510,89 @@ function tick() {
 }
 
 function render() {
-  renderHeader(); renderScanner(); renderPhone(); renderStatusLine(); renderPages(); tick();
+  renderHeader(); renderScanner(); renderPhone(); renderStatusLine(); renderPages(); renderCompare(); tick();
 }
 
 // ---------------------------------------------------------------- actions
-async function copyText(text, what) {
-  try { await navigator.clipboard.writeText(text); toast(`${what} copied`); }
+// the button itself says it worked, for a moment
+function flash(btn, label) {
+  if (!btn) return;
+  clearTimeout(btn.flashTimer);
+  if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+  btn.textContent = label; btn.classList.add("copied");
+  btn.flashTimer = setTimeout(() => { btn.textContent = btn.dataset.label; btn.classList.remove("copied"); }, 1600);
+}
+
+function copyOldWay(text) {  // for browsers that block the clipboard API
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.style.cssText = "position:fixed;opacity:0;top:0;left:0";
+  (document.querySelector("dialog[open]") || document.body).append(ta);
+  ta.select();
+  const ok = document.execCommand("copy");
+  ta.remove();
+  if (!ok) throw new Error("copy refused");
+}
+
+async function copyText(text, what, btn) {
+  try {
+    try { await navigator.clipboard.writeText(text); } catch { copyOldWay(text); }
+    toast(`${what} copied`);
+    flash(btn, "Copied ✓");
+  }
   catch { toast("Could not copy: select the text and press Ctrl+C"); }
 }
 
+const pendingTex = new Map();  // id -> text waiting to be saved (the editor may show another page by then)
 function save(id, ta) {
   clearTimeout(dirty.get(id));
-  const saved = $(".saved", ta.closest(".card"));
-  if (saved) saved.textContent = "Saving…";
+  pendingTex.set(id, ta.value);
+  const el = $(".saved", ta.closest(".card, #compare"));
+  // the compare editor may show another page by the time this save finishes
+  const label = (t) => { if (el && (!ta.closest("#compare") || ta.dataset.id === id)) el.textContent = t; };
+  label("Saving…");
   dirty.set(id, setTimeout(async () => {
     try {
-      await api(`/api/page/${id}/tex`, { tex: ta.value });
-      texCache.set(id, { rev: -1, tex: ta.value });
-      dirty.delete(id);
-      if (saved) saved.textContent = "Saved";
-    } catch (e) { if (saved) saved.textContent = "Not saved: " + e.message; }
+      const tex = pendingTex.get(id);
+      await api(`/api/page/${id}/tex`, { tex });
+      texCache.set(id, { rev: -1, tex });
+      dirty.delete(id); pendingTex.delete(id);
+      label("Saved");
+    } catch (e) { label("Not saved: " + e.message); }
   }, 900));
 }
 
 document.addEventListener("input", (e) => {
-  if (e.target.tagName === "TEXTAREA") save(e.target.closest(".card").dataset.id, e.target);
+  if (e.target.tagName !== "TEXTAREA") return;
+  const id = e.target.closest("#compare") ? cmp.id : e.target.closest(".card")?.dataset.id;
+  if (id) save(id, e.target);
 });
+
+// Big images shrink to fit the window; small ones (a single formula) are enlarged up to 2.5x.
+function zoom(src) {
+  const z = $("#zoom"), img = $("img", z);
+  img.style.width = "";
+  img.onload = () => {
+    const s = Math.min(innerWidth * 0.92 / img.naturalWidth, innerHeight * 0.88 / img.naturalHeight, 2.5);
+    img.style.width = Math.round(img.naturalWidth * s) + "px";
+  };
+  img.src = src;
+  if (img.complete && img.naturalWidth) img.onload();
+  z.showModal();
+}
 
 document.addEventListener("click", async (e) => {
   const b = e.target.closest("[data-act]");
-  if (e.target.matches(".scan img")) { const z = $("#zoom"); $("img", z).src = e.target.src; z.showModal(); return; }
+  if (e.target.matches(".card .scan img, .card .preview img")) {
+    const id = e.target.closest(".card").dataset.id;
+    if (p_done(id)) openCompare(id); else zoom(e.target.src);
+    return;
+  }
   if (!b) return;
   const act = b.dataset.act, card = b.closest(".card"), id = card?.dataset.id;
   try {
-    if (act === "copy") copyText($("textarea", card).value, `Page ${pageNumber(id)}`);
+    if (act === "compare") openCompare(id);
+    else if (act === "compareNext") { const n = nextUnchecked(null); if (n) openCompare(n); }
+    else if (act === "copy") copyText($("textarea", card).value, `Page ${pageNumber(id)}`, b);
     else if (act === "nextUnk") {
       const ta = $("textarea", card), from = ta.selectionEnd || 0;
       let i = ta.value.indexOf("[??]", from); if (i < 0) i = ta.value.indexOf("[??]");
@@ -476,6 +610,182 @@ document.addEventListener("click", async (e) => {
   } catch (err) { toast(err.message); }
 });
 const p_done = (id) => S.pages.find((p) => p.id === id)?.status === "done";
+
+// ---------------------------------------------------------------- compare view
+// One page at a time, full window: scan and preview (one above the other for wide strips,
+// side by side for full pages), linked zoom and scroll, the LaTeX editor beside them.
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("h2t." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("h2t." + k, JSON.stringify(v)); } catch { } },
+};
+const cmp = { id: null, rev: null, z: 1, layout: null, editor: store.get("cmpEditor", true), syncing: false };
+const donePages = () => S.pages.filter((p) => p.status === "done");
+
+function nextUnchecked(fromId) {
+  const done = donePages(), i = done.findIndex((p) => p.id === fromId);
+  for (let k = 1; k <= done.length; k++) {
+    const p = done[(i + k + done.length) % done.length];
+    if (!p.checked && p.id !== fromId) return p.id;
+  }
+  return null;
+}
+
+function openCompare(id) {
+  const d = $("#compare");
+  cmp.id = id; cmp.rev = null; cmp.z = 1;
+  if (!d.open) { cmp.layout = null; d.showModal(); }  // a layout picked by hand stays while paging
+  renderCompare();
+  $("#paneScan").scrollTo(0, 0); $("#panePrev").scrollTo(0, 0);
+  if (document.activeElement?.tagName !== "TEXTAREA") d.focus();  // so Enter means "checked", not a button
+}
+
+function applyLayout() {
+  const img = $("#paneScan img"), box = $("#cmpImages");
+  let layout = cmp.layout;
+  if (!layout) layout = img.naturalWidth && img.naturalWidth / img.naturalHeight > 1.4 ? "stack" : "side";
+  box.classList.toggle("stack", layout === "stack");
+  $("#cmpLayout").textContent = layout === "stack" ? "Side by side" : "One above the other";
+}
+
+function setZoom(z) {
+  const old = cmp.z;
+  cmp.z = Math.max(0.5, Math.min(5, z));
+  $("#cmpImages").style.setProperty("--z", cmp.z);
+  $("#cmpZoom").textContent = Math.round(cmp.z * 100) + "%";
+  // keep the middle of the view in place
+  for (const pane of [$("#paneScan"), $("#panePrev")]) {
+    const k = cmp.z / old;
+    pane.scrollLeft = (pane.scrollLeft + pane.clientWidth / 2) * k - pane.clientWidth / 2;
+    pane.scrollTop = (pane.scrollTop + pane.clientHeight / 2) * k - pane.clientHeight / 2;
+  }
+}
+
+function renderCompare() {
+  const d = $("#compare");
+  if (!d.open || !S) return;
+  const p = S.pages.find((x) => x.id === cmp.id);
+  if (!p || p.status !== "done") {  // removed or sent back to be read again
+    const n = nextUnchecked(cmp.id) || donePages()[0]?.id;
+    if (n && n !== cmp.id) openCompare(n); else d.close();
+    return;
+  }
+  const done = donePages(), i = done.findIndex((x) => x.id === p.id);
+  const checked = done.filter((x) => x.checked).length;
+  $("#cmpTitle").textContent = `Page ${pageNumber(p.id)}`;
+  $("#cmpTitle").title = p.label;
+  const [cls, label] = statusOf(p);
+  $("#cmpChip").className = "chip " + cls; $("#cmpChip").textContent = label;
+  $("#cmpProgress").textContent = `${checked} of ${done.length} checked`;
+  $("[data-cmp=prev]", d).disabled = i <= 0;
+  $("[data-cmp=next]", d).disabled = i >= done.length - 1;
+  const cb = $("#cmpCheck");
+  cb.textContent = p.checked ? "Checked ✓" : "Mark as checked";
+  cb.className = p.checked ? "checked" : "primary";
+  cb.title = p.checked ? "Click to mark as not checked" : "Mark this page as proofread and go to the next one (Enter)";
+  $("#cmpEditor").hidden = !cmp.editor;
+  $("#cmpEditorBtn").classList.toggle("on", cmp.editor);
+  $("#cmpUnk").hidden = !p.unk;
+
+  if (cmp.rev !== p.rev) {  // new page, or its preview was rebuilt: keep zoom and scroll
+    const first = cmp.rev === null;
+    cmp.rev = p.rev;
+    const img = $("#paneScan img"), src = `/files/scans/${p.id}.jpg`;
+    if (first) { img.onload = applyLayout; if (!img.src.endsWith(src)) img.src = src; else applyLayout(); }
+    let prev = "";
+    if (p.truncated) prev += `<div class="err">The page was very long and may be cut off at the end. Check the last lines.</div>`;
+    if (p.ok === false) prev += `<div class="err">This LaTeX does not compile yet. Fix the text, and the preview updates by itself.<pre>${esc(p.err)}</pre></div>`;
+    if (p.ok === null) prev += `<div class="waiting"><div class="spinner"></div>Building the preview…</div>`;
+    prev += p.pngs.map((s) => `<img src="/files/${esc(s)}?r=${p.rev}" alt="Rendered page">`).join("");
+    $("#prevInner").innerHTML = prev;
+    if (first) setZoom(1);
+  }
+  const ta = $("#cmpEditor textarea");
+  if (ta.dataset.id !== p.id) { ta.dataset.id = p.id; ta.value = ""; $(".saved", d).textContent = ""; }
+  // fill the editor unless you are typing in it (an empty editor, right after a page switch, is always filled)
+  const mayFill = () => ta.dataset.id === p.id && !dirty.has(p.id) && (document.activeElement !== ta || ta.value === "");
+  if (mayFill()) {
+    const c = texCache.get(p.id);
+    if (c && c.rev === p.rev) ta.value = c.tex;
+    else fetch(`/api/page/${p.id}`).then((r) => r.json()).then((r) => {
+      texCache.set(p.id, { rev: p.rev, tex: r.tex });
+      if (mayFill()) ta.value = r.tex;
+    });
+  }
+}
+
+async function cmpCheckAndNext() {
+  const p = S.pages.find((x) => x.id === cmp.id);
+  if (!p) return;
+  if (dirty.has(p.id)) await new Promise((r) => setTimeout(r, 950));  // let the last edit save first
+  if (!p.checked) await api(`/api/page/${p.id}/check`, { checked: true });
+  const n = nextUnchecked(p.id);
+  if (n) openCompare(n);
+  else toast("Every page is checked");
+}
+
+async function cmpAction(act) {
+  const p = S.pages.find((x) => x.id === cmp.id), done = donePages();
+  const i = done.findIndex((x) => x.id === cmp.id), ta = $("#cmpEditor textarea");
+  if (act === "prev" && i > 0) openCompare(done[i - 1].id);
+  else if (act === "next" && i < done.length - 1) openCompare(done[i + 1].id);
+  else if (act === "close") $("#compare").close();
+  else if (act === "in") setZoom(cmp.z * 1.25);
+  else if (act === "out") setZoom(cmp.z / 1.25);
+  else if (act === "fit") setZoom(1);
+  else if (act === "layout") {
+    cmp.layout = $("#cmpImages").classList.contains("stack") ? "side" : "stack";
+    applyLayout();
+  }
+  else if (act === "editor") { cmp.editor = !cmp.editor; store.set("cmpEditor", cmp.editor); renderCompare(); }
+  else if (act === "check") {
+    if (p.checked) await api(`/api/page/${p.id}/check`, { checked: false });
+    else await cmpCheckAndNext();
+  }
+  else if (act === "copy") copyText(ta.value, `Page ${pageNumber(cmp.id)}`, $("[data-cmp=copy]"));
+  else if (act === "nextUnk") {
+    const from = ta.selectionEnd || 0;
+    let k = ta.value.indexOf("[??]", from); if (k < 0) k = ta.value.indexOf("[??]");
+    if (k >= 0) { ta.focus(); ta.setSelectionRange(k, k + 4);
+      const line = ta.value.slice(0, k).split("\n").length; ta.scrollTop = Math.max(0, (line - 4) * 19.5); }
+  }
+}
+
+$("#compare").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-cmp]");
+  if (b && !b.disabled) cmpAction(b.dataset.cmp).catch((err) => toast(err.message));
+  // after a mouse click, give the keys back to the view (a keyboard press keeps focus on the button)
+  if (b && e.detail > 0 && b.dataset.cmp !== "nextUnk") $("#compare").focus();
+});
+$("#compare").addEventListener("keydown", (e) => {
+  const typing = e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT";
+  if (e.key === "Enter" && (e.ctrlKey || !typing) && !e.target.closest("button")) {
+    e.preventDefault(); cmpCheckAndNext().catch((err) => toast(err.message)); return;
+  }
+  if (typing || e.ctrlKey || e.altKey || e.metaKey) return;
+  const map = { ArrowLeft: "prev", ArrowRight: "next", "+": "in", "=": "in", "-": "out", "0": "fit",
+                l: "layout", L: "layout", e: "editor", E: "editor" };
+  if (map[e.key]) { e.preventDefault(); cmpAction(map[e.key]); }
+});
+// Ctrl + mouse wheel zooms both images
+$("#cmpImages").addEventListener("wheel", (e) => {
+  if (!e.ctrlKey) return;
+  e.preventDefault();
+  setZoom(cmp.z * (e.deltaY < 0 ? 1.1 : 1 / 1.1));
+}, { passive: false });
+// scrolling one image scrolls the other to the same relative place
+for (const [a, b] of [["#paneScan", "#panePrev"], ["#panePrev", "#paneScan"]]) {
+  $(a).addEventListener("scroll", () => {
+    if (cmp.syncing) return;
+    cmp.syncing = true;
+    const A = $(a), B = $(b);
+    const fy = A.scrollTop / Math.max(1, A.scrollHeight - A.clientHeight);
+    const fx = A.scrollLeft / Math.max(1, A.scrollWidth - A.clientWidth);
+    B.scrollTop = fy * (B.scrollHeight - B.clientHeight);
+    B.scrollLeft = fx * (B.scrollWidth - B.clientWidth);
+    requestAnimationFrame(() => { cmp.syncing = false; });
+  });
+}
+$("#compare").addEventListener("close", () => { cmp.id = null; });
 
 $("#pick").onclick = () => $("#files").click();
 $("#files").onchange = (e) => { upload([...e.target.files]); e.target.value = ""; };
@@ -519,8 +829,26 @@ $("#langOther").onchange = async (e) => {
   const v = e.target.value.trim(); if (!v) return;
   try { await api("/api/settings", { language: v }); toast(`Language changed to ${v}.`); } catch (err) { toast(err.message); }
 };
-$("#copyAll").onclick = async () => copyText(await fetch("/api/all.tex").then((r) => r.text()), "All pages");
-$("#saveTex").onclick = () => { location.href = "/api/document.tex"; };
+$("#copyAll").onclick = async (e) => copyText(await fetch("/api/all.tex").then((r) => r.text()), "All pages", e.currentTarget);
+// Save .tex: the system's Save dialog, so you choose (and see) where it goes.
+// Without one, it is written next to the pages and the path is shown.
+$("#saveTex").onclick = async (e) => {
+  const btn = e.currentTarget;
+  try {
+    const text = await fetch("/api/document.tex").then((r) => r.text());
+    if (window.showSaveFilePicker) {
+      try {
+        const h = await showSaveFilePicker({ suggestedName: "hand2tex.tex", startIn: "documents",
+          types: [{ description: "LaTeX file", accept: { "text/x-tex": [".tex"] } }] });
+        const w = await h.createWritable(); await w.write(text); await w.close();
+        flash(btn, "Saved ✓"); toast(`Saved as ${h.name}`, 4000);
+        return;
+      } catch (err) { if (err.name === "AbortError") return; }  // cancelled: nothing to do
+    }
+    const r = await api("/api/save-document");
+    flash(btn, "Saved ✓"); toast(`Saved to ${r.path}`, 6000);
+  } catch (err) { toast("Could not save: " + err.message, 5000); }
+};
 
 setInterval(tick, 1000);
 // safety net in case an event is ever missed: the state is small and local

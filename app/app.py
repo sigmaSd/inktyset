@@ -127,7 +127,8 @@ class Library:
         h.prepare_image(src, scan, MAX_SIDE)
         with self.lock:
             self.pages.append(dict(id=pid, label=label, origin=origin, status="queued", added=time.time(),
-                                   rev=1, ok=None, err="", unk=0, secs=None, truncated=False, pngs=[]))
+                                   rev=1, ok=None, err="", unk=0, secs=None, truncated=False, pngs=[],
+                                   checked=False))
             self.bump()
         return pid
 
@@ -660,6 +661,11 @@ def make_handler(app: App):
                     if changed:
                         threading.Thread(target=lib.recompile_all, daemon=True).start()
                     return self.send(200, {"ok": True})
+                if path == "/api/save-document":  # fallback when the browser has no Save dialog
+                    f = DATA / "hand2tex.tex"
+                    f.write_text(lib.full_document())
+                    shown = str(f).replace(str(Path.home()), "~", 1)
+                    return self.send(200, {"path": shown})
                 if path == "/api/open-window":
                     app.want_window.set()  # opened by the main thread, which outlives the window
                     return self.send(200, {"ok": True})
@@ -678,7 +684,7 @@ def make_handler(app: App):
                         return self.send(400, {"error": "unknown scanner"})
                     threading.Thread(target=app.scanner.scan, args=(dev,), daemon=True).start()
                     return self.send(200, {"ok": True})
-                m = re.fullmatch(r"/api/page/(page\d+)/(tex|redo|delete|move)", path)
+                m = re.fullmatch(r"/api/page/(page\d+)/(tex|redo|delete|move|check)", path)
                 if m:
                     pid, action = m.groups()
                     with lib.lock:
@@ -692,7 +698,9 @@ def make_handler(app: App):
                         elif action == "redo":
                             if p["status"] == "working":
                                 return self.send(409, {"error": "page is being read"})
-                            p.update(status="queued", err="", ok=None, pngs=[], rev=p["rev"] + 1)
+                            p.update(status="queued", err="", ok=None, pngs=[], rev=p["rev"] + 1, checked=False)
+                        elif action == "check":  # proofread mark, set from the Compare view
+                            p["checked"] = bool(self.json().get("checked", True))
                         elif action == "delete":
                             lib.pages.remove(p)
                         elif action == "move":
