@@ -264,7 +264,7 @@ function renderSetup() {
       ${su.missing.model ? `<button data-setup="folder" title="Use Qwen3.5-9B-Q4_K_M.gguf and mmproj-F16.gguf you already downloaded">I already have the model files…</button>` : ""}
     </div>`;
   }
-  html += `<p class="note">The model needs about 8 GB of free memory. With a graphics chip, a page takes a minute or two; on the processor alone it can take several minutes.</p></div>`;
+  html += `${hardwareHtml()}</div>`;
   if (el.dataset.html !== html) {
     el.innerHTML = html;
     el.dataset.html = html;
@@ -287,6 +287,23 @@ document.addEventListener("click", async (e) => {
     toast(err.message);
   }
 });
+
+/** This computer, as the engine sees it, and what that means for reading pages. */
+function hardwareHtml() {
+  const hw = S.hardware;
+  if (!hw) return "";
+  const gpu =
+    hw.devices === null
+      ? "checked once the engine is downloaded"
+      : hw.devices.length
+        ? hw.devices.map((d) => esc(d.name.replace(/^\S+: /, ""))).join(", ")
+        : "none the engine can use";
+  let html = `<p class="note">This computer: ${hw.memoryGB.toFixed(0)} GB of memory · graphics: ${gpu}.
+    With a graphics chip a page takes a minute or two; on the processor alone, several minutes.</p>`;
+  for (const a of hw.advice)
+    html += `<p class="${a.level === "bad" ? "err" : "warn-note"}">${esc(a.text)}</p>`;
+  return html;
+}
 
 // ---------------------------------------------------------------- settings
 function renderSettings() {
@@ -355,6 +372,7 @@ function renderSettings() {
     <label class="field">Your own llama-server (optional)
       <input type="text" id="setServer" placeholder="Leave empty to use the downloaded one" value="${esc(su.custom.serverPath)}"></label>
     <p class="note">${su.serverPath ? `Using ${esc(su.serverPath)}` : "No engine yet."}</p>
+    ${hardwareHtml()}
   </section>
   <section class="set">
     <h3>Your pages</h3>

@@ -929,3 +929,11 @@ button.icon svg {
   height: 380px;
   resize: vertical; /* drag the corner, as the old text box allowed */
 }
+
+.warn-note {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+}

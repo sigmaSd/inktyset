@@ -6,6 +6,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { type ComponentId, install, type Progress, sizeOf, supported, verifyModelDir } from "./components.ts";
+import { checkHardware, type Hardware } from "./hardware.ts";
 import { Library } from "./library.ts";
 import { Model } from "./model.ts";
 import { Phone } from "./phone.ts";
@@ -63,6 +64,8 @@ export class Core {
     verify: { status: "idle", progress: null, error: "" },
   };
   missing = { engine: true, model: true };
+  /** This computer's memory and graphics chips, and what to tell the user about them. */
+  hardware: Hardware | null = null;
   /** A downloaded, verified update waiting for a restart (its version), or null. */
   update: string | null = null;
   readonly #userData: string;
@@ -138,6 +141,12 @@ export class Core {
 
   async refreshMissing() {
     this.missing = await this.model.missing();
+    void this.refreshHardware();
+  }
+
+  async refreshHardware() {
+    this.hardware = await checkHardware(await this.model.serverPath());
+    this.changed();
   }
 
   /** Coalesced: many changes in a burst → one update for the windows. */
