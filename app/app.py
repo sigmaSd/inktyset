@@ -527,7 +527,11 @@ class App:
             if exe:
                 return [exe, f"--app={url}", f"--user-data-dir={STATE / 'window'}", "--class=hand2tex",
                         "--no-first-run", "--no-default-browser-check", "--disable-extensions",
-                        "--disable-sync", "--window-size=1400,950"]
+                        "--disable-sync", "--window-size=1400,950",
+                        # No "Can't update Chrome / Reinstall" bubble in this window: it only ever shows
+                        # the local page, and the user's normal Chrome still warns about updates.
+                        "--simulate-outdated-no-au=Tue, 31 Dec 2099 23:59:59 GMT",
+                        "--check-for-update-interval=31536000"]
         return None
 
     def window_open(self):
