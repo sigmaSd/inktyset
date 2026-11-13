@@ -51,7 +51,9 @@ const theme = EditorView.theme({
   ".cm-scroller": { fontFamily: "var(--mono)", lineHeight: "1.55" },
   ".cm-content": { caretColor: "var(--ink)", padding: "10px 0" },
   ".cm-line": { padding: "0 12px" },
-  ".cm-activeLine": { background: "color-mix(in srgb, var(--accent) 7%, transparent)" },
+  // the current line only while typing: unfocused, a long wrapped line would look like a grey block
+  ".cm-activeLine": { background: "transparent" },
+  "&.cm-focused .cm-activeLine": { background: "color-mix(in srgb, var(--accent) 7%, transparent)" },
   "&.cm-focused .cm-cursor": { borderLeftColor: "var(--ink)" },
   "&.cm-focused .cm-selectionBackground, .cm-selectionBackground": {
     background: "color-mix(in srgb, var(--accent) 28%, transparent) !important",

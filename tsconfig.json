@@ -14,5 +14,5 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true
   },
-  "include": ["src", "shell", "app/ui/*.ts", "tests", "vite.config.ts"]
+  "include": ["src", "shell", "app/ui/*.ts", "tests", "tools", "vite.config.ts"]
 }
