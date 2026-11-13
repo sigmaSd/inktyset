@@ -210,3 +210,29 @@ footer {
   text-align: center;
   padding: 24px 16px 40px;
 }
+/* the language menu (filled by tools/site.ts) */
+.langs {
+  display: flex;
+  gap: 12px;
+  margin-inline-start: auto;
+  font-size: 15px;
+}
+.langs a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.langs a:hover {
+  color: var(--ink);
+}
+.langs [aria-current] {
+  color: var(--ink);
+  font-weight: 600;
+}
+/* Arabic: fonts made for the script; code and commands stay left to right */
+:root:lang(ar) body {
+  font-family: system-ui, "Noto Sans Arabic", "Noto Naskh Arabic", "Segoe UI", Tahoma, sans-serif;
+}
+code {
+  direction: ltr;
+  unicode-bidi: isolate;
+}

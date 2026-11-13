@@ -12,6 +12,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Core } from "../../src/core.ts";
+import { msg } from "../../src/i18n.ts";
 import { migrateDir } from "../../src/migrate.ts";
 import { cookieName } from "../../src/guard.ts";
 import { type Served, serve } from "../../src/server.ts";
@@ -40,11 +41,11 @@ function createWindow(served: Served, core: Core) {
     e.preventDefault();
     win.hide();
     const n = core.lib.pages.filter((p) => p.status === "queued" || p.status === "working").length;
-    notify(`Finishing ${n} page${n === 1 ? "" : "s"} in the background. Open Inktyset to watch.`);
+    notify(msg("finishing", { n }));
     const off = core.lib.onChange(() => {
       if (core.lib.busy() || win.isVisible()) return;
       off();
-      notify("All pages are done.");
+      notify(msg("allDone"));
       app.quit();
     });
   });
@@ -146,6 +147,8 @@ async function main() {
     installUpdate: installNow,
   };
   core.appVersion = app.getVersion();
+  core.systemLocales = app.getPreferredSystemLanguages();
+  core.localesDir = join(app.getAppPath(), "locales", "app");
   await core.init();
   watchUpdates((version) => {
     core.update = version; // offered in the window: "Restart to update"
@@ -177,7 +180,7 @@ else {
     .then(main)
     .catch((e: Error) => {
       console.error(e);
-      dialog.showErrorBox("Inktyset", `Inktyset could not start: ${e.message}`);
+      dialog.showErrorBox("Inktyset", msg("couldNotStart", { error: e.message }));
       app.quit();
     });
 }

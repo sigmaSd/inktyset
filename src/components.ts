@@ -4,6 +4,7 @@
 // and are checked (SHA-256) before use.
 
 import { createHash } from "node:crypto";
+import { msg } from "./i18n.ts";
 import { createReadStream, createWriteStream, existsSync } from "node:fs";
 import { chmod, mkdir, readdir, rename, rm, stat } from "node:fs/promises";
 import { join } from "node:path";
@@ -215,7 +216,7 @@ export async function install(
     onProgress({ phase: "verify", done: before + f.size, total });
     if ((await sha256Of(part)) !== f.sha256) {
       await rm(part, { force: true });
-      throw new Error(`The download of ${f.file} was damaged. Try again.`);
+      throw new Error(msg("damaged", { file: f.file }));
     }
     await mkdir(dir, { recursive: true });
     await rename(part, final);
@@ -226,7 +227,7 @@ export async function install(
       await mkdir(dir, { recursive: true });
       // tar unpacks .tar.gz everywhere, and .zip too on Windows and macOS (bsdtar)
       const r = await run("tar", ["-xf", final, "-C", dir]);
-      if (r.code !== 0) throw new Error(`Could not unpack ${f.file}: ${r.stderr.trim()}`);
+      if (r.code !== 0) throw new Error(msg("unpackFailed", { file: f.file, error: r.stderr.trim() }));
       await rm(final, { force: true });
       if (process.platform !== "win32") {
         for (const name of ["llama-server", "tectonic", "typst"]) {
@@ -261,9 +262,9 @@ async function fetchResuming(f: Download, part: string, onBytes: (n: number) => 
       if (got === f.size) return;
       throw new Error("the connection closed early");
     } catch (e) {
-      if (signal.aborted) throw new Error("Download stopped.", { cause: e });
+      if (signal.aborted) throw new Error(msg("downloadStopped"), { cause: e });
       if (attempt >= 5)
-        throw new Error(`Download of ${f.file} failed: ${(e as Error).message}`, { cause: e });
+        throw new Error(msg("downloadFailed", { file: f.file, error: (e as Error).message }), { cause: e });
       await new Promise((r) => setTimeout(r, 2000 * (attempt + 1))); // then resume where it stopped
     }
   }

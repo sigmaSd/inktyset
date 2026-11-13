@@ -12,3 +12,4 @@ test/in/
 test/src/*.aux
 test/src/*.log
 test/src/*.pdf
+_site/

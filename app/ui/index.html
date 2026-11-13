@@ -12,26 +12,33 @@
       <div class="brand">
         <img src="./icon.svg" alt="" />Inktyset<span class="version" id="version"></span>
       </div>
-      <span class="pill" id="engine"><span class="dot"></span><span>Starting…</span></span>
+      <span class="pill" id="engine"
+        ><span class="dot"></span><span data-i18n="starting">Starting…</span></span
+      >
       <div class="spacer"></div>
       <label class="lang"
-        >Writing language
+        ><span data-i18n="writingLanguage">Writing language</span>
         <select id="lang"></select>
-        <input id="langOther" placeholder="e.g. Dutch" hidden />
+        <input id="langOther" placeholder="e.g. Dutch" data-i18n-ph="langOtherPh" hidden />
       </label>
-      <label class="lang" title="What new pages are written in"
-        >Output
+      <label class="lang" title="What the pages are written in" data-i18n-title="outputTitle"
+        ><span data-i18n="output">Output</span>
         <select id="format">
           <option value="latex">LaTeX</option>
           <option value="typst">Typst</option>
         </select>
       </label>
-      <button id="updateBtn" class="primary" hidden title="A new version of Inktyset is downloaded">
-        Restart to update
-      </button>
+      <button id="updateBtn" class="primary" hidden data-i18n="restartToUpdate">Restart to update</button>
       <button id="copyAll" title="Copy the LaTeX of every finished page">Copy all LaTeX</button>
       <button id="saveTex" title="Save one .tex file with every finished page">Save .tex file</button>
-      <button id="settingsBtn" class="ghost icon" title="Settings" aria-label="Settings">
+      <button
+        id="settingsBtn"
+        class="ghost icon"
+        title="Settings"
+        aria-label="Settings"
+        data-i18n-title="settings"
+        data-i18n-aria="settings"
+      >
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -63,7 +70,10 @@
             <path d="M12 16V4m0 0L7 9m5-5 5 5" />
             <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
           </svg>
-          <span><b>Add photos or PDF</b><small>Or drag files anywhere onto this window</small></span>
+          <span
+            ><b data-i18n="addTitle">Add photos or PDF</b
+            ><small data-i18n="addHint">Or drag files anywhere onto this window</small></span
+          >
         </button>
         <div class="tile" id="scanTile" hidden>
           <svg
@@ -78,7 +88,7 @@
             <path d="M6 11V5h12v6M7 15h2" />
           </svg>
           <span style="flex: 1; min-width: 0"
-            ><b>Scanner</b><small id="scanInfo">Looking for scanners…</small>
+            ><b data-i18n="scanner">Scanner</b><small id="scanInfo">Looking for scanners…</small>
             <span class="tile-row" id="scanRow"></span
           ></span>
         </div>
@@ -95,7 +105,7 @@
             <circle cx="12" cy="11" r="3" />
             <path d="M11 18.5h2" />
           </svg>
-          <span><b>Phone</b><small id="phoneInfo">Starting…</small></span>
+          <span><b data-i18n="phone">Phone</b><small id="phoneInfo">Starting…</small></span>
         </button>
       </section>
       <input type="file" id="files" multiple accept="image/*,.pdf,application/pdf" hidden />
@@ -103,56 +113,75 @@
       <div class="status-line" id="statusLine"></div>
       <div id="pages"></div>
       <div class="empty" id="empty" hidden>
-        <b>No pages yet</b>
-        Add photos or a PDF: drag them here, or use the button above.<br />
-        Each page is read on this computer and turned into LaTeX you can copy.
+        <b data-i18n="noPages">No pages yet</b>
+        <span data-i18n="emptyText1">Add photos or a PDF: drag them here, or use the button above.</span
+        ><br />
+        <span data-i18n="emptyText2"
+          >Each page is read on this computer and turned into LaTeX you can copy.</span
+        >
       </div>
     </main>
 
-    <dialog id="settingsDialog" aria-label="Settings">
-      <h2>Settings</h2>
+    <dialog id="settingsDialog" aria-label="Settings" data-i18n-aria="settings">
+      <h2 data-i18n="settings">Settings</h2>
       <div id="settingsBody"></div>
-      <div class="dialog-foot"><button id="settingsClose" class="primary">Done</button></div>
+      <div class="dialog-foot"><button id="settingsClose" class="primary" data-i18n="done">Done</button></div>
     </dialog>
 
     <dialog id="phoneDialog">
-      <h2>Send photos from your phone</h2>
-      <div class="note">The phone and this computer need to be on the same Wi-Fi.</div>
+      <h2 data-i18n="phoneDialogTitle">Send photos from your phone</h2>
+      <div class="note" data-i18n="sameWifi">The phone and this computer need to be on the same Wi-Fi.</div>
       <div id="phoneBody"></div>
-      <div class="dialog-foot"><button id="phoneClose" class="primary">Done</button></div>
+      <div class="dialog-foot"><button id="phoneClose" class="primary" data-i18n="done">Done</button></div>
     </dialog>
-    <dialog id="compare" tabindex="-1" aria-label="Compare a page with its LaTeX">
+    <dialog id="compare" tabindex="-1" aria-label="Compare a page with its text" data-i18n-aria="compareAria">
       <div class="cmp-head">
-        <button class="ghost nav" data-cmp="prev" title="Previous page (←)">‹</button>
+        <button class="ghost nav" data-cmp="prev" title="Previous page" data-i18n-title="prevTitle">‹</button>
         <h2 id="cmpTitle"></h2>
-        <button class="ghost nav" data-cmp="next" title="Next page (→)">›</button>
+        <button class="ghost nav" data-cmp="next" title="Next page" data-i18n-title="nextTitle">›</button>
         <span class="chip" id="cmpChip"></span>
         <span class="note" id="cmpProgress"></span>
         <span class="spacer"></span>
         <span class="zoomctl">
-          <button class="ghost" data-cmp="out" title="Zoom out (−)">−</button><span id="cmpZoom">100%</span>
-          <button class="ghost" data-cmp="in" title="Zoom in (+)">+</button>
-          <button class="ghost" data-cmp="fit" title="Fit to width (0)">Fit</button>
+          <button class="ghost" data-cmp="out" title="Zoom out (−)" data-i18n-title="zoomOut">−</button
+          ><span id="cmpZoom">100%</span>
+          <button class="ghost" data-cmp="in" title="Zoom in (+)" data-i18n-title="zoomIn">+</button>
+          <button
+            class="ghost"
+            data-cmp="fit"
+            title="Fit to width (0)"
+            data-i18n-title="fitTitle"
+            data-i18n="fit"
+          >
+            Fit
+          </button>
         </span>
         <button
           class="ghost"
           data-cmp="layout"
           id="cmpLayout"
           title="Side by side, or one above the other (L)"
+          data-i18n-title="layoutTitle"
         >
           Layout
         </button>
-        <button class="ghost" data-cmp="editor" id="cmpEditorBtn" title="Show or hide the LaTeX (E)">
+        <button
+          class="ghost"
+          data-cmp="editor"
+          id="cmpEditorBtn"
+          title="Show or hide the text (E)"
+          data-i18n-title="editorTitle"
+        >
           LaTeX
         </button>
         <button class="primary" data-cmp="check" id="cmpCheck">Mark as checked</button>
-        <button class="ghost" data-cmp="close" title="Close (Esc)">✕</button>
+        <button class="ghost" data-cmp="close" title="Close (Esc)" data-i18n-title="closeTitle">✕</button>
       </div>
       <div class="cmp-body">
         <div class="cmp-images" id="cmpImages">
           <div class="pane" id="paneScan">
-            <span class="pane-label">Handwritten</span>
-            <div class="pane-inner"><img alt="Scan of the page" /></div>
+            <span class="pane-label" data-i18n="handwritten">Handwritten</span>
+            <div class="pane-inner"><img alt="Scan of the page" data-i18n-alt="scanAlt" /></div>
           </div>
           <div class="pane" id="panePrev">
             <span class="pane-label">LaTeX preview</span>
@@ -163,21 +192,23 @@
           <div class="code" id="cmpCode"></div>
           <div class="editor-foot">
             <span class="saved"></span><span class="grow"></span>
-            <button data-cmp="nextUnk" id="cmpUnk" title="Jump to the next [??] the model could not read">
+            <button
+              data-cmp="nextUnk"
+              id="cmpUnk"
+              title="Jump to the next [??] the model could not read"
+              data-i18n-title="nextUnclearTitle"
+              data-i18n="nextUnclear"
+            >
               Next unclear spot
             </button>
             <button class="primary" data-cmp="copy">Copy LaTeX</button>
           </div>
         </div>
       </div>
-      <div class="cmp-hint">
-        <kbd>←</kbd> <kbd>→</kbd> pages · <kbd>Enter</kbd> mark checked and go to the next one
-        (<kbd>Ctrl</kbd>+<kbd>Enter</kbd> while typing) · <kbd>+</kbd> <kbd>−</kbd> or <kbd>Ctrl</kbd>+scroll
-        zoom · <kbd>L</kbd> layout · <kbd>E</kbd> editor · <kbd>Esc</kbd> close
-      </div>
+      <div class="cmp-hint"></div>
     </dialog>
     <dialog id="zoom"><img alt="" /></dialog>
-    <div class="drop">Drop photos or PDFs to add them</div>
+    <div class="drop" data-i18n="dropHere">Drop photos or PDFs to add them</div>
     <div class="toast" id="toast"></div>
 
     <script type="module" src="./main.js"></script>

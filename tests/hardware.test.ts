@@ -16,8 +16,8 @@ test("hardware: warns about little memory, and about reading without a graphics 
   expect(advise(10, null)[0].level).toBe("warn");
   expect(
     advise(30, [])
-      .map((a) => a.text)
+      .map((a) => a.id)
       .join(),
-  ).toContain("processor");
+  ).toBe("noGpu");
   expect(advise(30, [{ name: "CUDA0: small", totalMiB: 4096, freeMiB: 4000 }]).length).toBe(1);
 });

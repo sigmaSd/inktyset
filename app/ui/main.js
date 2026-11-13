@@ -1,6 +1,7 @@
 // The Inktyset window. It talks to src/server.ts: /api/state for everything shown, /api/events for change
 // notices, POSTs (with the X-Inktyset header) for every action.
 import { createLatexEditor } from "./editor.ts";
+import { bytes, isRtl, languageName, ltr, num, setUiLang, t, uiLang, websiteUrl } from "./i18n.ts";
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) =>
@@ -52,10 +53,10 @@ const mmss = (s) => {
 };
 const about = (s) =>
   s < 60
-    ? "less than a minute"
+    ? t("lessMinute")
     : s < 5400
-      ? `about ${Math.round(s / 60)} min`
-      : `about ${(s / 3600).toFixed(1)} h`;
+      ? t("aboutMin", { n: num(Math.round(s / 60)) })
+      : t("aboutH", { n: num(s / 3600, 1) });
 
 // ---------------------------------------------------------------- live updates
 let refreshing = false,
@@ -84,35 +85,71 @@ function connect() {
   es.onmessage = refresh;
   es.onerror = () => {
     es.close();
-    $("#engine").innerHTML = '<span class="dot bad"></span><span>App closed — reopen Inktyset</span>';
+    $("#engine").innerHTML = `<span class="dot bad"></span><span>${esc(t("appClosed"))}</span>`;
     setTimeout(connect, 3000);
   };
 }
 
 // ---------------------------------------------------------------- header + tiles
+// The window's language (the setting, or the computer's): its catalog comes from the core, once per change.
+let loadingLang = null;
+async function followLanguage() {
+  const want = S.ui?.lang;
+  if (!want || want === uiLang() || want === loadingLang) return;
+  loadingLang = want;
+  try {
+    const r = await fetch("/api/i18n").then((r) => r.json());
+    setUiLang(r.lang, r.catalog);
+    fillHint();
+    render();
+  } catch {
+    /* the app closing: the next state tries again */
+  }
+  loadingLang = null;
+}
+
+/** The keys of the Compare view, under it. */
+function fillHint() {
+  const k = (s) => `<kbd>${esc(s)}</kbd>`;
+  const enter = t("keyEnter");
+  $(".cmp-hint").innerHTML = [
+    `${k("←")} ${k("→")} ${esc(t("hintPages"))}`,
+    `${k(enter)} ${esc(t("hintCheck"))} (${k("Ctrl")}+${k(enter)} ${esc(t("hintWhileTyping"))})`,
+    `${k("+")} ${k("−")} ${esc(t("hintOr"))} ${k("Ctrl")}+${esc(t("hintScroll"))} ${esc(t("hintZoom"))}`,
+    `${k("L")} ${esc(t("hintLayout"))}`,
+    `${k("E")} ${esc(t("hintEditor"))}`,
+    `${k(t("keyEsc"))} ${esc(t("hintClose"))}`,
+  ].join(" · ");
+}
+fillHint();
+
 function renderHeader() {
+  void followLanguage();
   const m = S.model;
   const setUp = !S.setup.missing.engine && !S.setup.missing.model;
   // the engine starts on demand: "stopped" once set up is as good as ready
   const map = {
-    ready: ["ok", "Ready"],
-    starting: ["warn", "Loading the model…"],
-    stopped: setUp ? ["ok", "Ready"] : ["warn", "Setup needed"],
-    missing: ["warn", "Setup needed"],
-    error: ["bad", "Model stopped"],
+    ready: ["ok", t("ready")],
+    starting: ["warn", t("loadingModel")],
+    stopped: setUp ? ["ok", t("ready")] : ["warn", t("setupNeeded")],
+    missing: ["warn", t("setupNeeded")],
+    error: ["bad", t("modelStopped")],
   };
   let [cls, text] = map[m.status] || ["", m.status];
   const reading = S.pages.find((p) => p.status === "working");
   if (reading && m.status !== "starting" && m.status !== "error") {
-    [cls, text] = ["busy", `Reading page ${pageNumber(reading.id)}…`];
+    [cls, text] = ["busy", t("readingPage", { n: pageNumber(reading.id) })];
   }
   $("#engine").innerHTML = `<span class="dot ${cls}"></span><span>${esc(text)}</span>`;
   $("#engine").title = m.detail || "";
 
   const sel = $("#lang");
-  if (!sel.options.length) {
-    for (const l of S.languages) sel.add(new Option(l.name, l.id));
-    sel.add(new Option("Other…", "__other"));
+  if (sel.dataset.lang !== uiLang()) {
+    // the writing languages, named in the window's language
+    sel.length = 0;
+    for (const l of S.languages) sel.add(new Option(languageName(l.id, l.name), l.id));
+    sel.add(new Option(t("otherLanguage"), "__other"));
+    sel.dataset.lang = uiLang();
   }
   const cur = S.settings.language;
   if (document.activeElement !== sel && document.activeElement !== $("#langOther")) {
@@ -124,12 +161,13 @@ function renderHeader() {
   $("#version").textContent = S.appVersion ? S.appVersion : "";
   $("#version").title = S.appVersion ? `Inktyset ${S.appVersion}` : "";
   $("#updateBtn").hidden = !S.update;
-  if (S.update) $("#updateBtn").title = `Inktyset ${S.update} is downloaded: restart to use it`;
+  if (S.update) $("#updateBtn").title = t("updateTitle", { v: S.update });
   const fmt = S.settings.format ?? "latex";
   if (document.activeElement !== $("#format")) $("#format").value = fmt;
-  $("#copyAll").textContent = `Copy all ${FORMAT_NAME[fmt]}`;
-  $("#copyAll").title = `Copy the ${FORMAT_NAME[fmt]} of every finished ${FORMAT_NAME[fmt]} page`;
-  $("#saveTex").textContent = fmt === "typst" ? "Save .typ file" : "Save .tex file";
+  $("#copyAll").textContent = t("copyAll", { f: FORMAT_NAME[fmt] });
+  $("#copyAll").title = t("copyAllTitle", { f: FORMAT_NAME[fmt] });
+  $("#saveTex").textContent = t("saveFile", { ext: ltr(fmt === "typst" ? ".typ" : ".tex") });
+  $("#saveTex").title = t("saveFileTitle");
   const inFormat = S.pages.filter((p) => p.status === "done" && fmtOf(p) === fmt).length;
   $("#copyAll").disabled = $("#saveTex").disabled = !inFormat;
 }
@@ -142,17 +180,17 @@ function renderScanner() {
   if ($("#scanTile").hidden) return;
   let html = "";
   if (sc.scanning) {
-    info.textContent = "Scanning… keep the lid closed.";
+    info.textContent = t("scanning");
   } else if (sc.looking) {
-    info.textContent = "Looking for scanners…";
+    info.textContent = t("lookingScanners");
   } else if (!sc.devices.length) {
-    info.textContent = "No scanner found. Plug it in and turn it on.";
-    html = `<button data-act="find">Look again</button>`;
+    info.textContent = t("noScanner");
+    html = `<button data-act="find">${t("lookAgain")}</button>`;
   } else {
-    info.textContent = sc.error || (sc.devices.length === 1 ? sc.devices[0].name : "Choose a scanner:");
+    info.textContent = sc.error || (sc.devices.length === 1 ? sc.devices[0].name : t("chooseScanner"));
     if (sc.devices.length > 1)
       html += `<select id="scanDev">${sc.devices.map((d) => `<option value="${esc(d.id)}">${esc(d.name)}</option>`).join("")}</select>`;
-    html += `<button class="primary" data-act="scan">Scan a page</button><button class="ghost" data-act="find">Refresh</button>`;
+    html += `<button class="primary" data-act="scan">${t("scanPage")}</button><button class="ghost" data-act="find">${t("refresh")}</button>`;
   }
   const key = html + sc.devices.map((d) => d.id).join();
   if (row.dataset.key !== key) {
@@ -170,12 +208,12 @@ function renderPhone() {
   $("#phoneTile").hidden = !ph.enabled;
   $("#phoneInfo").textContent =
     ph.status === "unavailable" || ph.status === "error"
-      ? ph.error || "Phone sending is not available."
+      ? ph.error || t("phoneUnavailable")
       : ph.status !== "ready"
-        ? "Starting…"
+        ? t("starting")
         : n
-          ? `${n} phone${n > 1 ? "s" : ""} connected · photos appear here by themselves`
-          : "Connect your phone to send photos";
+          ? t("phonesConnected", { n })
+          : t("connectPhone");
   if ($("#phoneDialog").open) renderPhoneDialog();
 }
 
@@ -185,28 +223,32 @@ function renderPhoneDialog() {
   const devs = ph.devices || [];
   let html = "";
   if (ph.status !== "ready") {
-    html = `<p class="err">${esc(ph.error || "The phone receiver is still starting. Try again in a moment.")}</p>`;
+    html = `<p class="err">${esc(ph.error || t("phoneStarting"))}</p>`;
   } else {
     const left = ph.pairingExpiresAt ? (ph.pairingExpiresAt - Date.now()) / 1000 : 0;
+    const b = (s) => `<b>${esc(s)}</b>`; // Folder Camera's own (English) names, in bold
     html += `<ol class="steps">
-      <li>Install <b>Folder Camera</b> on the phone (free on F-Droid).</li>
-      <li>In Folder Camera, open <b>Settings</b> and tap <b>Scan PC pairing QR</b>.</li>
-      <li>Point the phone at this code.</li>
-      <li>Take photos of your pages. They appear here by themselves.</li></ol>`;
+      <li>${esc(t("phoneStep1")).replace("{app}", b("Folder Camera"))}</li>
+      <li>${esc(t("phoneStep2"))
+        .replace("{app}", "Folder Camera")
+        .replace("{settings}", b("Settings"))
+        .replace("{button}", b("Scan PC pairing QR"))}</li>
+      <li>${esc(t("phoneStep3"))}</li>
+      <li>${esc(t("phoneStep4"))}</li></ol>`;
     if (ph.qr && left > 0) {
       html += `<div class="qr">${ph.qr}</div>
-        <div class="note" style="text-align:center">This code works once and expires in ${mmss(left)}.
-        <button class="ghost" data-act="pair">New code</button></div>`;
+        <div class="note" style="text-align:center">${t("codeExpires", { t: mmss(left) })}
+        <button class="ghost" data-act="pair">${t("newCode")}</button></div>`;
     } else {
-      html += `<div style="text-align:center;margin:16px"><button class="primary" data-act="pair">Show a pairing code</button></div>`;
+      html += `<div style="text-align:center;margin:16px"><button class="primary" data-act="pair">${t("showCode")}</button></div>`;
     }
     if (devs.length) {
       html +=
-        `<h3 style="margin:14px 0 0;font-size:14px">Connected phones</h3><ul class="devices">` +
+        `<h3 style="margin:14px 0 0;font-size:14px">${t("connectedPhones")}</h3><ul class="devices">` +
         devs
           .map(
             (d) =>
-              `<li><span>${esc(d.name)}</span><button class="ghost" data-act="revoke" data-id="${esc(d.id)}">Remove</button></li>`,
+              `<li><span>${esc(d.name)}</span><button class="ghost" data-act="revoke" data-id="${esc(d.id)}">${t("remove")}</button></li>`,
           )
           .join("") +
         "</ul>";
@@ -219,7 +261,6 @@ function renderPhoneDialog() {
 }
 
 // ---------------------------------------------------------------- first start: downloads
-const bytes = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(1)} GB` : `${Math.max(1, Math.round(n / 1e6))} MB`);
 
 function jobHtml(job) {
   if (job.status === "running" && job.progress) {
@@ -227,11 +268,11 @@ function jobHtml(job) {
       pct = total ? (100 * done) / total : 0;
     const label =
       phase === "verify"
-        ? "Checking"
+        ? t("checking")
         : phase === "unpack"
-          ? "Unpacking"
-          : `${bytes(done)} of ${bytes(total)}`;
-    return `<span class="bar"><i style="width:${pct.toFixed(1)}%"></i></span><span class="note">${label} · ${pct.toFixed(0)}%</span>`;
+          ? t("unpacking")
+          : t("ofTotal", { a: bytes(done), b: bytes(total) });
+    return `<span class="bar"><i style="width:${pct.toFixed(1)}%"></i></span><span class="note">${label} · ${num(pct)} %</span>`;
   }
   if (job.status === "error") return `<span class="err-inline">${esc(job.error)}</span>`;
   return "";
@@ -253,24 +294,23 @@ function renderSetup() {
     running = (k) => j[k].status === "running";
   const row = (k, name, missing) => `<div class="setup-row">
       <span class="setup-name">${missing ? "" : "✓ "}${name}</span>
-      ${missing ? jobHtml(running("verify") && k === "model" ? j.verify : j[k]) || `<span class="note">${bytes(su.sizes[k])}</span>` : `<span class="note ok-text">Ready</span>`}
-      ${running(k) ? `<button class="ghost" data-setup="cancel" data-id="${k}">Stop</button>` : ""}
+      ${missing ? jobHtml(running("verify") && k === "model" ? j.verify : j[k]) || `<span class="note">${bytes(su.sizes[k])}</span>` : `<span class="note ok-text">${t("ready")}</span>`}
+      ${running(k) ? `<button class="ghost" data-setup="cancel" data-id="${k}">${t("stop")}</button>` : ""}
     </div>`;
   const anyRunning = running("engine") || running("model") || running("verify");
   const total = (su.missing.engine ? su.sizes.engine : 0) + (su.missing.model ? su.sizes.model : 0);
   let html = `<div class="setup-card">
-    <h2>Set up Inktyset</h2>
-    <p>Inktyset reads your pages on this computer, so it needs two downloads, once. Nothing you add ever leaves this computer.
-    Pages you add now wait until it's ready.</p>
-    ${row("engine", "Engine (llama.cpp)", su.missing.engine)}
-    ${row("model", "Model (Qwen3.5 9B vision)", su.missing.model)}`;
+    <h2>${t("setupTitle")}</h2>
+    <p>${t("setupText")}</p>
+    ${row("engine", t("engineName"), su.missing.engine)}
+    ${row("model", t("modelName"), su.missing.model)}`;
   if (!su.supported.engine && su.missing.engine) {
-    html += `<p class="err">There is no ready-made engine for this system yet. If you have your own llama.cpp build, set its llama-server in Settings.</p>`;
+    html += `<p class="err">${t("noEngine")}</p>`;
   }
   if (!anyRunning) {
     html += `<div class="setup-actions">
-      ${su.supported.engine || !su.missing.engine ? `<button class="primary" data-setup="download">Download (${bytes(total)})</button>` : ""}
-      ${su.missing.model ? `<button data-setup="folder" title="Use Qwen3.5-9B-Q4_K_M.gguf and mmproj-F16.gguf you already downloaded">I already have the model files…</button>` : ""}
+      ${su.supported.engine || !su.missing.engine ? `<button class="primary" data-setup="download">${t("download", { size: bytes(total) })}</button>` : ""}
+      ${su.missing.model ? `<button data-setup="folder" title="${t("haveModelTitle")}">${t("haveModel")}</button>` : ""}
     </div>`;
   }
   html += `${hardwareHtml()}</div>`;
@@ -303,14 +343,14 @@ function hardwareHtml() {
   if (!hw) return "";
   const gpu =
     hw.devices === null
-      ? "checked once the engine is downloaded"
+      ? t("gpuLater")
       : hw.devices.length
         ? hw.devices.map((d) => esc(d.name.replace(/^\S+: /, ""))).join(", ")
-        : "none the engine can use";
-  let html = `<p class="note">This computer: ${hw.memoryGB.toFixed(0)} GB of memory · graphics: ${gpu}.
-    With a graphics chip a page takes a minute or two; on the processor alone, several minutes.</p>`;
+        : t("gpuNone");
+  const gb = (n) => t("gb", { n: num(n) });
+  let html = `<p class="note">${t("thisComputer", { mem: gb(hw.memoryGB), gpu })}</p>`;
   for (const a of hw.advice)
-    html += `<p class="${a.level === "bad" ? "err" : "warn-note"}">${esc(a.text)}</p>`;
+    html += `<p class="${a.level === "bad" ? "err" : "warn-note"}">${esc(t(a.id, { need: gb(a.need), have: gb(a.have) }))}</p>`;
   return html;
 }
 
@@ -325,18 +365,18 @@ function renderSettings() {
     document.activeElement.type === "text"
   )
     return;
-  const t = S.tex,
-    m = S.machine,
+  const m = S.machine,
     ph = S.phone,
     sc = S.scanner,
     su = S.setup;
+  const tx = S.tex;
   const usingText =
-    t.using === "system"
-      ? `Using the installed LaTeX: ${esc(t.detail)}`
-      : t.using === "tectonic"
-        ? `Using ${esc(t.detail)}`
-        : "Not used yet: the first preview decides.";
-  const found = [t.system.pdflatex, t.system.xelatex].filter(Boolean);
+    tx.using === "system"
+      ? t("usingInstalledLatex", { d: esc(tx.detail) })
+      : tx.using === "tectonic"
+        ? t("using", { d: esc(tx.detail) })
+        : t("notUsedYet");
+  const found = [tx.system.pdflatex, tx.system.xelatex].filter(Boolean);
   const radio = (
     v,
     label,
@@ -344,63 +384,72 @@ function renderSettings() {
   ) => `<label class="choice"><input type="radio" name="tex" value="${v}" ${m.tex === v ? "checked" : ""}>
     <span><b>${label}</b><small>${help}</small></span></label>`;
   const tecJob = su.jobs.tectonic;
+  const uiOptions = [["auto", t("appLanguageAuto")], ...(S.ui?.available ?? []).map((l) => [l.code, l.name])]
+    .map(([v, n]) => `<option value="${esc(v)}" ${S.ui?.setting === v ? "selected" : ""}>${esc(n)}</option>`)
+    .join("");
   let html = `
   <section class="set">
-    <h3>LaTeX for the previews</h3>
-    ${radio("auto", "Automatic", "The LaTeX installed on this computer if it works for your language, otherwise the built-in one.")}
-    ${radio("system", "Installed LaTeX", found.length ? `Found: ${found.map(esc).join(", ")}` : "None found on this computer.")}
-    ${radio("builtin", "Built-in (Tectonic)", t.tectonic ? "Downloaded." : `Downloaded when first needed (${bytes(su.sizes.tectonic)}); then it fetches the LaTeX packages a page uses, once.`)}
+    <h3>${t("appLanguage")}</h3>
+    <select id="setUi">${uiOptions}</select>
+    <p class="note">${t("appLanguageNote")}
+      <a href="https://github.com/sigmaSd/inktyset/blob/main/docs/translating.md" target="_blank">${t("helpTranslate")}</a></p>
+  </section>
+  <section class="set">
+    <h3>${t("latexForPreviews")}</h3>
+    ${radio("auto", t("auto"), t("autoHelp"))}
+    ${radio("system", t("installedLatex"), found.length ? t("found", { list: found.map(esc).join(", ") }) : t("noneFound"))}
+    ${radio("builtin", t("builtin"), tx.tectonic ? t("downloaded") : t("tectonicHelp", { size: bytes(su.sizes.tectonic) }))}
     <p class="note">${usingText}</p>
     ${tecJob.status === "running" || tecJob.status === "error" ? `<div class="setup-row"><span class="setup-name">Tectonic</span>${jobHtml(tecJob)}</div>` : ""}
   </section>
   <section class="set">
     <h3>Typst</h3>
-    <p class="note">${S.typst.system ? `Using the installed Typst: ${esc(S.typst.system)}` : S.typst.downloaded ? "Downloaded." : `For Typst output; downloaded when first needed (${bytes(su.sizes.typst)}).`}</p>
+    <p class="note">${S.typst.system ? t("usingInstalledTypst", { d: esc(S.typst.system) }) : S.typst.downloaded ? t("downloaded") : t("typstHelp", { size: bytes(su.sizes.typst) })}</p>
     ${su.jobs.typst.status === "running" || su.jobs.typst.status === "error" ? `<div class="setup-row"><span class="setup-name">Typst</span>${jobHtml(su.jobs.typst)}</div>` : ""}
   </section>
   <section class="set">
-    <h3>Phone</h3>
+    <h3>${t("phone")}</h3>
     <label class="choice"><input type="checkbox" id="setPhone" ${m.phone ? "checked" : ""}>
-      <span><b>Receive photos from a phone (Folder Camera)</b>
-      <small>Off by default. When on, Inktyset listens on your Wi-Fi for photos from phones you pair with a QR code.
-      ${navigator.userAgent.includes("Windows") ? "Windows will ask once to allow it through the firewall." : ""}</small></span></label>
+      <span><b>${t("phoneSetting")}</b>
+      <small>${t("phoneSettingHelp")}
+      ${navigator.userAgent.includes("Windows") ? t("firewall") : ""}</small></span></label>
     ${m.phone && ph.status === "error" ? `<p class="err">${esc(ph.error)}</p>` : ""}
   </section>
   <section class="set">
-    <h3>Scanner</h3>
+    <h3>${t("scanner")}</h3>
     ${
       sc.available
-        ? `<p class="note">${sc.looking ? "Looking for scanners…" : sc.devices.length ? `Found: ${sc.devices.map((x) => esc(x.name)).join(", ")}` : "No scanner found."}</p>
-      <button data-act="find" ${sc.looking ? "disabled" : ""}>Look for scanners</button>`
-        : `<p class="note">Scanning needs SANE (scanimage), available on Linux and macOS. You can always add scanned files as photos or PDFs.</p>`
+        ? `<p class="note">${sc.looking ? t("lookingScanners") : sc.devices.length ? t("found", { list: sc.devices.map((x) => esc(x.name)).join(", ") }) : t("noScannerShort")}</p>
+      <button data-act="find" ${sc.looking ? "disabled" : ""}>${t("lookForScanners")}</button>`
+        : `<p class="note">${t("saneNote")}</p>`
     }
   </section>
   <section class="set">
-    <h3>Model and engine</h3>
-    <p class="note">Model files: ${esc(su.modelDir)}</p>
+    <h3>${t("modelEngine")}</h3>
+    <p class="note">${t("modelFiles", { p: `<bdi>${esc(su.modelDir)}</bdi>` })}</p>
     <div class="setup-actions">
-      <button data-setup="folder">Use model files from another folder…</button>
-      ${su.custom.modelDir ? `<button class="ghost" data-setup="default-model">Use Inktyset's own copy</button>` : ""}
+      <button data-setup="folder">${t("otherFolder")}</button>
+      ${su.custom.modelDir ? `<button class="ghost" data-setup="default-model">${t("ownCopy")}</button>` : ""}
     </div>
-    ${su.jobs.verify.status === "running" || su.jobs.verify.status === "error" ? `<div class="setup-row"><span class="setup-name">Checking files</span>${jobHtml(su.jobs.verify)}</div>` : ""}
-    <label class="field">Your own llama-server (optional)
-      <input type="text" id="setServer" placeholder="Leave empty to use the downloaded one" value="${esc(su.custom.serverPath)}"></label>
-    <p class="note">${su.serverPath ? `Using ${esc(su.serverPath)}` : "No engine yet."}</p>
+    ${su.jobs.verify.status === "running" || su.jobs.verify.status === "error" ? `<div class="setup-row"><span class="setup-name">${t("checkingFiles")}</span>${jobHtml(su.jobs.verify)}</div>` : ""}
+    <label class="field">${t("ownServer")}
+      <input type="text" id="setServer" dir="ltr" placeholder="${t("ownServerPh")}" value="${esc(su.custom.serverPath)}"></label>
+    <p class="note">${su.serverPath ? t("using", { d: `<bdi>${esc(su.serverPath)}</bdi>` }) : t("noEngineYet")}</p>
     ${hardwareHtml()}
   </section>
   <section class="set">
-    <h3>Your pages</h3>
-    <p class="note">Saved in ${esc(S.folder)}</p>
+    <h3>${t("yourPages")}</h3>
+    <p class="note">${t("savedIn", { p: `<bdi>${esc(S.folder)}</bdi>` })}</p>
   </section>
   <section class="set">
-    <h3>About</h3>
-    <p class="note">Inktyset ${esc(S.appVersion)}${S.update ? ` · version ${esc(S.update)} is downloaded, restart to use it` : ""}.
-      Free software under the GPL-3.0.</p>
-    <p class="note"><a href="https://sigmasd.github.io/inktyset/" target="_blank">Website</a> ·
-      <a href="https://github.com/sigmaSd/inktyset" target="_blank">Source</a> ·
-      <a href="https://github.com/sigmaSd/inktyset/releases" target="_blank">What's new</a> ·
-      <a href="https://github.com/sigmaSd/inktyset/blob/main/THIRD_PARTY_NOTICES.md" target="_blank">Licenses</a> ·
-      <a href="https://github.com/sigmaSd/inktyset/issues" target="_blank">Report a problem</a></p>
+    <h3>${t("about")}</h3>
+    <p class="note">Inktyset <bdi>${esc(S.appVersion)}</bdi>. ${S.update ? t("aboutUpdate", { v: esc(S.update) }) : ""}
+      ${t("freeSoftware")}</p>
+    <p class="note"><a href="${websiteUrl()}" target="_blank">${t("website")}</a> ·
+      <a href="https://github.com/sigmaSd/inktyset" target="_blank">${t("source")}</a> ·
+      <a href="https://github.com/sigmaSd/inktyset/releases" target="_blank">${t("whatsNew")}</a> ·
+      <a href="https://github.com/sigmaSd/inktyset/blob/main/THIRD_PARTY_NOTICES.md" target="_blank">${t("licenses")}</a> ·
+      <a href="https://github.com/sigmaSd/inktyset/issues" target="_blank">${t("report")}</a></p>
   </section>`;
   if (body.dataset.html !== html) {
     body.innerHTML = html;
@@ -409,10 +458,7 @@ function renderSettings() {
 }
 
 $("#updateBtn").onclick = async () => {
-  if (
-    S.pages.some((p) => p.status === "working" || p.status === "queued") &&
-    !confirm("Pages are still being read. Restart now? They continue after the restart.")
-  )
+  if (S.pages.some((p) => p.status === "working" || p.status === "queued") && !confirm(t("restartConfirm")))
     return;
   try {
     await api("/api/install-update");
@@ -429,9 +475,10 @@ $("#settingsDialog").addEventListener("change", async (e) => {
   try {
     if (e.target.name === "tex") await api("/api/settings", { tex: e.target.value });
     else if (e.target.id === "setPhone") await api("/api/settings", { phone: e.target.checked });
+    else if (e.target.id === "setUi") await api("/api/settings", { ui: e.target.value });
     else if (e.target.id === "setServer") {
       await api("/api/settings", { serverPath: e.target.value });
-      toast("Saved");
+      toast(t("saved"));
     }
   } catch (err) {
     toast(err.message);
@@ -440,15 +487,15 @@ $("#settingsDialog").addEventListener("change", async (e) => {
 
 // ---------------------------------------------------------------- pages
 function statusOf(p) {
-  if (p.status === "queued") return ["", "Waiting"];
-  if (p.status === "working") return ["busy", "Reading…"];
-  if (p.status === "failed") return ["bad", "Failed"];
-  if (p.ok === false) return ["bad", `${FORMAT_NAME[fmtOf(p)]} error`];
-  if (p.ok === null) return ["busy", "Building preview…"];
-  if (p.checked) return ["ok", "Checked ✓"];
-  if (p.truncated) return ["warn", "May be cut off"];
-  if (p.unk) return ["warn", `${p.unk} unclear spot${p.unk > 1 ? "s" : ""}`];
-  return ["ok", "Done"];
+  if (p.status === "queued") return ["", t("waiting")];
+  if (p.status === "working") return ["busy", t("reading")];
+  if (p.status === "failed") return ["bad", t("failed")];
+  if (p.ok === false) return ["bad", t("formatError", { f: FORMAT_NAME[fmtOf(p)] })];
+  if (p.ok === null) return ["busy", t("buildingPreview")];
+  if (p.checked) return ["ok", t("checked")];
+  if (p.truncated) return ["warn", t("mayBeCut")];
+  if (p.unk) return ["warn", t("unclear", { n: p.unk })];
+  return ["ok", t("statusDone")];
 }
 
 function renderStatusLine() {
@@ -461,20 +508,20 @@ function renderStatusLine() {
     el.innerHTML = "";
     return;
   }
-  let html = `<span><strong>${done}</strong> of ${pages.length} page${pages.length === 1 ? "" : "s"} done</span>`;
+  let html = `<span>${t("pagesDone", { done: `<strong>${done}</strong>`, n: pages.length })}</span>`;
   const checked = pages.filter((p) => p.status === "done" && p.checked).length;
   if (done)
     html +=
-      `<span>· <strong>${checked}</strong> of ${done} checked</span>` +
+      `<span>· ${t("checkedOf", { c: `<strong>${checked}</strong>`, d: done })}</span>` +
       (checked < done
-        ? ` <button class="ghost compare" data-act="compareNext">Proofread the next one</button>`
+        ? ` <button class="ghost compare" data-act="compareNext">${t("proofreadNext")}</button>`
         : "");
   if (working || queued || S.intake) {
     const elapsed = working ? Date.now() / 1000 - working.started : 0;
     const left = Math.max(0, S.avgSecs - elapsed) + queued * S.avgSecs;
     html += `<span class="bar"><i style="width:${((100 * done) / Math.max(1, pages.length)).toFixed(1)}%"></i></span>`;
-    html += `<span>${S.intake ? "Adding files… · " : ""}${working || queued ? about(left) + " left" : ""}</span>`;
-    html += `<span class="note">You can close this window: waiting pages are still finished.</span>`;
+    html += `<span>${S.intake ? t("addingFiles") + " · " : ""}${working || queued ? t("timeLeft", { t: about(left) }) : ""}</span>`;
+    html += `<span class="note">${t("canClose")}</span>`;
   }
   el.innerHTML = html;
 }
@@ -495,41 +542,43 @@ function buildCard(p) {
     ({ queued: "queued", working: "working", failed: "failed" }[p.status] ||
       (p.ok === false ? "broken" : !p.checked && (p.unk || p.truncated) ? "unclear" : "done"));
   el.dataset.id = p.id;
-  const scan = `<div class="col scan"><h3>Scan</h3><img loading="lazy" src="/files/scans/${p.id}.jpg?r=${p.id}" alt="Scan of the page"></div>`;
+  const scan = `<div class="col scan"><h3>${t("scan")}</h3><img loading="lazy" src="/files/scans/${p.id}.jpg?r=${p.id}" alt="${t("scanAlt")}"></div>`;
   let mid = "",
     right = "";
   if (p.status === "queued") {
-    mid = `<div class="col" style="grid-column: span 2"><div class="waiting">Waiting its turn…</div></div>`;
+    mid = `<div class="col" style="grid-column: span 2"><div class="waiting">${t("waitingTurn")}</div></div>`;
   } else if (p.status === "working") {
     mid = `<div class="col" style="grid-column: span 2"><div class="waiting"><div class="spinner"></div>
-      <div>Reading the handwriting… <b class="elapsed"></b></div><div class="note">A page usually takes ${about(S.avgSecs)}.</div></div></div>`;
+      <div>${t("readingHandwriting")} <b class="elapsed"></b></div><div class="note">${t("usuallyTakes", { t: about(S.avgSecs) })}</div></div></div>`;
   } else if (p.status === "failed") {
-    mid = `<div class="col" style="grid-column: span 2"><div class="err">${esc(p.err || "Something went wrong.")}</div>
-      <p><button class="primary" data-act="redo">Try again</button></p></div>`;
+    mid = `<div class="col" style="grid-column: span 2"><div class="err">${esc(p.err || t("wentWrong"))}</div>
+      <p><button class="primary" data-act="redo">${t("tryAgain")}</button></p></div>`;
   } else {
     mid = `<div class="col"><h3>${FORMAT_NAME[fmtOf(p)]}</h3><div class="code card-code"></div>
       <div class="editor-foot">
         <span class="saved"></span><span class="grow"></span>
-        ${p.unk ? `<button data-act="nextUnk" title="Jump to the next [??] the model could not read">Next unclear spot</button>` : ""}
-        <button class="primary" data-act="copy">Copy ${FORMAT_NAME[fmtOf(p)]}</button>
+        ${p.unk ? `<button data-act="nextUnk" title="${t("nextUnclearTitle")}">${t("nextUnclear")}</button>` : ""}
+        <button class="primary" data-act="copy">${t("copyFmt", { f: FORMAT_NAME[fmtOf(p)] })}</button>
       </div></div>`;
     let prev = "";
-    if (p.truncated)
-      prev += `<div class="err" style="margin-bottom:8px">The page was very long and may be cut off at the end. Check the last lines.</div>`;
+    if (p.truncated) prev += `<div class="err" style="margin-bottom:8px">${t("cutOff")}</div>`;
     if (p.ok === false)
-      prev += `<div class="err">This ${FORMAT_NAME[fmtOf(p)]} does not compile yet. Fix the text, and the preview updates by itself.<pre>${esc(p.err)}</pre></div>`;
-    if (p.ok === null) prev += `<div class="waiting"><div class="spinner"></div>Building the preview…</div>`;
-    prev += p.pngs.map((src) => `<img src="/files/${esc(src)}?r=${p.rev}" alt="Rendered page">`).join("");
-    right = `<div class="col preview"><h3>Preview</h3>${prev}</div>`;
+      prev += `<div class="err">${t("noCompile", { f: FORMAT_NAME[fmtOf(p)] })}<pre>${esc(p.err)}</pre></div>`;
+    if (p.ok === null)
+      prev += `<div class="waiting"><div class="spinner"></div>${t("buildingPreview")}</div>`;
+    prev += p.pngs
+      .map((src) => `<img src="/files/${esc(src)}?r=${p.rev}" alt="${t("renderedAlt")}">`)
+      .join("");
+    right = `<div class="col preview"><h3>${t("preview")}</h3>${prev}</div>`;
   }
   el.innerHTML = `<div class="card-head">
-      <h2>Page ${pageNumber(p.id)}</h2><span class="chip ${cls}">${esc(label)}</span>
-      <span class="src" title="${esc(p.label)}">${esc(p.label)}</span><span class="spacer"></span>
-      ${p.status === "done" ? `<button class="ghost compare" data-act="compare" title="Scan and LaTeX side by side, to proofread">Compare</button>` : ""}
-      <button class="ghost" data-act="up" title="Move up">↑</button>
-      <button class="ghost" data-act="down" title="Move down">↓</button>
-      ${p.status === "done" ? `<button class="ghost" data-act="redo" title="Read this page again">Read again</button>` : ""}
-      <button class="ghost" data-act="delete" title="Remove this page">Remove</button>
+      <h2>${t("pageN", { n: pageNumber(p.id) })}</h2><span class="chip ${cls}">${esc(label)}</span>
+      <span class="src" title="${esc(p.label)}"><bdi>${esc(p.label)}</bdi></span><span class="spacer"></span>
+      ${p.status === "done" ? `<button class="ghost compare" data-act="compare" title="${t("compareTitle")}">${t("compare")}</button>` : ""}
+      <button class="ghost" data-act="up" title="${t("moveUp")}">↑</button>
+      <button class="ghost" data-act="down" title="${t("moveDown")}">↓</button>
+      ${p.status === "done" ? `<button class="ghost" data-act="redo" title="${t("readAgainTitle")}">${t("readAgain")}</button>` : ""}
+      <button class="ghost" data-act="delete" title="${t("removeTitle")}">${t("remove")}</button>
     </div><div class="card-body">${scan}${mid}${right}</div>`;
   return el;
 }
@@ -607,7 +656,7 @@ function renderPages() {
   let prev = null;
   for (const p of S.pages) {
     let c = cards.get(p.id);
-    const key = cardKey(p) + "|" + pageNumber(p.id);
+    const key = cardKey(p) + "|" + pageNumber(p.id) + "|" + uiLang(); // a new language rebuilds the cards
     const editing = c && !!cardEds.get(p.id)?.ed.hasFocus();
     if (!c || (c.key !== key && !editing)) {
       const el = buildCard(p);
@@ -697,10 +746,10 @@ async function copyText(text, what, btn) {
     } catch {
       copyOldWay(text);
     }
-    toast(`${what} copied`);
-    flash(btn, "Copied ✓");
+    toast(t("copiedWhat", { what }));
+    flash(btn, t("copiedBtn"));
   } catch {
-    toast("Could not copy: select the text and press Ctrl+C");
+    toast(t("copyFailed"));
   }
 }
 
@@ -713,7 +762,7 @@ function save(id, text, el, shown = () => true) {
   const label = (t) => {
     if (el && shown()) el.textContent = t;
   };
-  label("Saving…");
+  label(t("saving"));
   dirty.set(
     id,
     setTimeout(async () => {
@@ -723,9 +772,9 @@ function save(id, text, el, shown = () => true) {
         texCache.set(id, { rev: -1, tex });
         dirty.delete(id);
         pendingTex.delete(id);
-        label("Saved");
+        label(t("saved"));
       } catch (e) {
-        label("Not saved: " + e.message);
+        label(t("notSaved", { e: e.message }));
       }
     }, 900),
   );
@@ -764,14 +813,13 @@ document.addEventListener("click", async (e) => {
       if (n) openCompare(n);
     } else if (act === "copy") {
       const text = cardEds.get(id)?.ed.text ?? (await fetch(`/api/page/${id}`).then((r) => r.json())).tex;
-      copyText(text, `Page ${pageNumber(id)}`, b);
+      copyText(text, t("pageN", { n: pageNumber(id) }), b);
     } else if (act === "nextUnk") cardEds.get(id)?.ed.nextUnclear();
     else if (act === "redo") {
-      if (p_done(id) && !confirm("Read this page again? Your corrections on this page will be replaced."))
-        return;
+      if (p_done(id) && !confirm(t("confirmRedo"))) return;
       await api(`/api/page/${id}/redo`);
     } else if (act === "delete") {
-      if (confirm(`Remove page ${pageNumber(id)} from the list?`)) await api(`/api/page/${id}/delete`);
+      if (confirm(t("confirmRemove", { n: pageNumber(id) }))) await api(`/api/page/${id}/delete`);
     } else if (act === "up" || act === "down")
       await api(`/api/page/${id}/move`, { by: act === "up" ? -1 : 1 });
     else if (act === "find") await api("/api/scanner/find");
@@ -779,8 +827,7 @@ document.addEventListener("click", async (e) => {
       await api("/api/scanner/scan", { device: $("#scanDev")?.value || S.scanner.devices[0].id });
     else if (act === "pair") await api("/api/phone/pair");
     else if (act === "revoke") {
-      if (confirm("Remove this phone? It will need a new code to send photos again."))
-        await api("/api/phone/revoke", { id: b.dataset.id });
+      if (confirm(t("confirmRevoke"))) await api("/api/phone/revoke", { id: b.dataset.id });
     }
   } catch (err) {
     toast(err.message);
@@ -840,7 +887,7 @@ function applyLayout() {
   let layout = cmp.layout;
   if (!layout) layout = img.naturalWidth && img.naturalWidth / img.naturalHeight > 1.4 ? "stack" : "side";
   box.classList.toggle("stack", layout === "stack");
-  $("#cmpLayout").textContent = layout === "stack" ? "Side by side" : "One above the other";
+  $("#cmpLayout").textContent = layout === "stack" ? t("sideBySide") : t("stacked");
 }
 
 function setZoom(z) {
@@ -870,31 +917,38 @@ function renderCompare() {
   const done = donePages(),
     i = done.findIndex((x) => x.id === p.id);
   const checked = done.filter((x) => x.checked).length;
-  $("#cmpTitle").textContent = `Page ${pageNumber(p.id)}`;
+  $("#cmpTitle").textContent = t("pageN", { n: pageNumber(p.id) });
   const fname = FORMAT_NAME[fmtOf(p)];
-  $("#panePrev .pane-label").textContent = `${fname} preview`;
+  $("#panePrev .pane-label").textContent = t("previewOf", { f: fname });
+  // previous/next: in Arabic the previous page is to the right
+  $("[data-cmp=prev]", d).textContent = isRtl() ? "›" : "‹";
+  $("[data-cmp=next]", d).textContent = isRtl() ? "‹" : "›";
+  if (cmp.layoutLang !== uiLang()) {
+    cmp.layoutLang = uiLang();
+    applyLayout(); // its button's words
+  }
   $("#cmpEditorBtn").textContent = fname;
   const copyBtn = $("[data-cmp=copy]");
-  if (!copyBtn.classList.contains("copied")) copyBtn.textContent = copyBtn.dataset.label = `Copy ${fname}`;
+  if (!copyBtn.classList.contains("copied"))
+    copyBtn.textContent = copyBtn.dataset.label = t("copyFmt", { f: fname });
   $("#cmpTitle").title = p.label;
   const [cls, label] = statusOf(p);
   $("#cmpChip").className = "chip " + cls;
   $("#cmpChip").textContent = label;
-  $("#cmpProgress").textContent = `${checked} of ${done.length} checked`;
+  $("#cmpProgress").textContent = t("checkedOf", { c: checked, d: done.length });
   $("[data-cmp=prev]", d).disabled = i <= 0;
   $("[data-cmp=next]", d).disabled = i >= done.length - 1;
   const cb = $("#cmpCheck");
-  cb.textContent = p.checked ? "Checked ✓" : "Mark as checked";
+  cb.textContent = p.checked ? t("checked") : t("markChecked");
   cb.className = p.checked ? "checked" : "primary";
-  cb.title = p.checked
-    ? "Click to mark as not checked"
-    : "Mark this page as proofread and go to the next one (Enter)";
+  cb.title = p.checked ? t("unmarkTitle") : t("markTitle");
   $("#cmpEditor").hidden = !cmp.editor;
   $("#cmpEditorBtn").classList.toggle("on", cmp.editor);
   $("#cmpUnk").hidden = !p.unk;
 
-  if (cmp.rev !== p.rev) {
-    // new page, or its preview was rebuilt: keep zoom and scroll
+  if (cmp.rev !== p.rev || cmp.revLang !== uiLang()) {
+    // new page, or its preview was rebuilt (or the language changed): keep zoom and scroll
+    cmp.revLang = uiLang();
     const first = cmp.rev === null;
     cmp.rev = p.rev;
     const img = $("#paneScan img"),
@@ -905,12 +959,12 @@ function renderCompare() {
       else applyLayout();
     }
     let prev = "";
-    if (p.truncated)
-      prev += `<div class="err">The page was very long and may be cut off at the end. Check the last lines.</div>`;
+    if (p.truncated) prev += `<div class="err">${t("cutOff")}</div>`;
     if (p.ok === false)
-      prev += `<div class="err">This ${FORMAT_NAME[fmtOf(p)]} does not compile yet. Fix the text, and the preview updates by itself.<pre>${esc(p.err)}</pre></div>`;
-    if (p.ok === null) prev += `<div class="waiting"><div class="spinner"></div>Building the preview…</div>`;
-    prev += p.pngs.map((s) => `<img src="/files/${esc(s)}?r=${p.rev}" alt="Rendered page">`).join("");
+      prev += `<div class="err">${t("noCompile", { f: FORMAT_NAME[fmtOf(p)] })}<pre>${esc(p.err)}</pre></div>`;
+    if (p.ok === null)
+      prev += `<div class="waiting"><div class="spinner"></div>${t("buildingPreview")}</div>`;
+    prev += p.pngs.map((s) => `<img src="/files/${esc(s)}?r=${p.rev}" alt="${t("renderedAlt")}">`).join("");
     $("#prevInner").innerHTML = prev;
     if (first) setZoom(1);
   }
@@ -945,7 +999,7 @@ async function cmpCheckAndNext() {
   if (!p.checked) await api(`/api/page/${p.id}/check`, { checked: true });
   const n = nextUnchecked(p.id);
   if (n) openCompare(n);
-  else toast("Every page is checked");
+  else toast(t("allChecked"));
 }
 
 async function cmpAction(act) {
@@ -968,7 +1022,8 @@ async function cmpAction(act) {
   } else if (act === "check") {
     if (p.checked) await api(`/api/page/${p.id}/check`, { checked: false });
     else await cmpCheckAndNext();
-  } else if (act === "copy") copyText(cmpEd.text, `Page ${pageNumber(cmp.id)}`, $("[data-cmp=copy]"));
+  } else if (act === "copy")
+    copyText(cmpEd.text, t("pageN", { n: pageNumber(cmp.id) }), $("[data-cmp=copy]"));
   else if (act === "nextUnk") cmpEd.nextUnclear();
 }
 
@@ -989,8 +1044,9 @@ $("#compare").addEventListener("keydown", (e) => {
   }
   if (typing || e.ctrlKey || e.altKey || e.metaKey) return;
   const map = {
-    ArrowLeft: "prev",
-    ArrowRight: "next",
+    // in Arabic the pages run right to left: → goes back
+    ArrowLeft: isRtl() ? "next" : "prev",
+    ArrowRight: isRtl() ? "prev" : "next",
     "+": "in",
     "=": "in",
     "-": "out",
@@ -1048,10 +1104,10 @@ async function upload(files) {
     (f) => f.type.startsWith("image/") || /\.pdf$/i.test(f.name) || f.type === "application/pdf",
   );
   if (!files.length) {
-    toast("Only photos and PDFs can be added");
+    toast(t("onlyPhotos"));
     return;
   }
-  toast(`Adding ${files.length} file${files.length > 1 ? "s" : ""}…`);
+  toast(t("addingN", { n: files.length }));
   for (const f of files) {
     try {
       await api("/api/upload", { "X-Filename": encodeURIComponent(f.name) }, f);
@@ -1104,12 +1160,7 @@ $("#zoom").onclick = () => $("#zoom").close();
 $("#format").onchange = async (e) => {
   try {
     await api("/api/settings", { format: e.target.value });
-    toast(
-      e.target.value === "typst"
-        ? "Every page is now in Typst (converted from its LaTeX)."
-        : "Every page is back in LaTeX (corrections made in Typst don't carry back).",
-      5000,
-    );
+    toast(e.target.value === "typst" ? t("nowTypst") : t("backLatex"), 5000);
   } catch (err) {
     toast(err.message);
   }
@@ -1124,7 +1175,7 @@ $("#lang").onchange = async (e) => {
   $("#langOther").hidden = true;
   try {
     await api("/api/settings", { language: v });
-    toast("Language changed. New pages are read in " + e.target.selectedOptions[0].text + ".");
+    toast(t("langChanged", { l: e.target.selectedOptions[0].text }));
   } catch (err) {
     toast(err.message);
   }
@@ -1134,23 +1185,23 @@ $("#langOther").onchange = async (e) => {
   if (!v) return;
   try {
     await api("/api/settings", { language: v });
-    toast(`Language changed to ${v}.`);
+    toast(t("langChanged", { l: v }));
   } catch (err) {
     toast(err.message);
   }
 };
 $("#copyAll").onclick = async (e) =>
-  copyText(await fetch("/api/all.tex").then((r) => r.text()), "All pages", e.currentTarget);
+  copyText(await fetch("/api/all.tex").then((r) => r.text()), t("allPages"), e.currentTarget);
 // Save .tex: the system's Save dialog (opened by the app), then where it went.
 $("#saveTex").onclick = async (e) => {
   const btn = e.currentTarget;
   try {
     const r = await api("/api/save-document");
     if (!r.path) return; // cancelled
-    flash(btn, "Saved ✓");
-    toast(`Saved to ${r.path}`, 6000);
+    flash(btn, t("savedBtn"));
+    toast(t("savedTo", { p: r.path }), 6000);
   } catch (err) {
-    toast("Could not save: " + err.message, 5000);
+    toast(t("saveFailed", { e: err.message }), 5000);
   }
 };
 

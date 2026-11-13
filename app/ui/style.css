@@ -264,7 +264,7 @@ main::-webkit-scrollbar {
   display: flex;
   gap: 14px;
   align-items: center;
-  text-align: left;
+  text-align: start;
   width: 100%;
 }
 button.tile:hover:not(:disabled) {
@@ -342,20 +342,20 @@ button.tile:hover:not(:disabled) {
   box-shadow: var(--shadow);
   margin-bottom: 16px;
   overflow: hidden;
-  border-left: 5px solid var(--line);
+  border-inline-start: 5px solid var(--line);
 }
 .card.done {
-  border-left-color: var(--ok);
+  border-inline-start-color: var(--ok);
 }
 .card.unclear {
-  border-left-color: var(--warn);
+  border-inline-start-color: var(--warn);
 }
 .card.failed,
 .card.broken {
-  border-left-color: var(--bad);
+  border-inline-start-color: var(--bad);
 }
 .card.working {
-  border-left-color: var(--accent);
+  border-inline-start-color: var(--accent);
 }
 .card-head {
   display: flex;
@@ -410,7 +410,7 @@ button.tile:hover:not(:disabled) {
   min-width: 0;
 }
 .col + .col {
-  border-left: 1px solid var(--line);
+  border-inline-start: 1px solid var(--line);
 }
 .col h3 {
   margin: 0 0 8px;
@@ -538,7 +538,7 @@ dialog h2 {
   display: block;
 }
 ol.steps {
-  padding-left: 20px;
+  padding-inline-start: 20px;
   margin: 8px 0 12px;
 }
 ol.steps li {
@@ -751,7 +751,7 @@ button.checked {
   min-width: 320px;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid var(--line);
+  border-inline-start: 1px solid var(--line);
   background: var(--surface);
   padding: 10px 12px;
 }
@@ -790,7 +790,7 @@ button.checked {
     width: auto;
     min-width: 0;
     height: 40%;
-    border-left: 0;
+    border-inline-start: 0;
     border-top: 1px solid var(--line);
   }
   .add {
@@ -800,7 +800,7 @@ button.checked {
     grid-template-columns: 1fr;
   }
   .col + .col {
-    border-left: 0;
+    border-inline-start: 0;
     border-top: 1px solid var(--line);
   }
 }
@@ -946,4 +946,13 @@ button.icon svg {
 }
 .set a {
   color: var(--accent);
+}
+/* Right to left (Arabic): the layout mirrors through start/end rules above; LaTeX and Typst stay left to
+   right, and the Arabic script gets fonts made for it */
+.code,
+.cm-editor {
+  direction: ltr;
+}
+:root:lang(ar) body {
+  font-family: system-ui, "Noto Sans Arabic", "Noto Naskh Arabic", "Segoe UI", Tahoma, sans-serif;
 }

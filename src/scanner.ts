@@ -3,6 +3,7 @@
 
 import { stat } from "node:fs/promises";
 import { run, which } from "./run.ts";
+import { msg } from "./i18n.ts";
 
 export class Scanner {
   devices: { id: string; name: string }[] = [];
@@ -47,7 +48,7 @@ export class Scanner {
         if (r.code === 0 && (await stat(out).catch(() => null))?.size) return;
         last = r.stderr.trim().split("\n").at(-1) ?? "";
       }
-      throw new Error(`The scanner did not respond: ${last || "scan failed"}`);
+      throw new Error(msg("scannerNoAnswer", { error: last || msg("scanFailed") }));
     } catch (e) {
       this.error = (e as Error).message;
       throw e;

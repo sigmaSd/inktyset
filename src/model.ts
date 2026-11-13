@@ -3,6 +3,7 @@
 // the settings (someone with their own llama.cpp build); the model files likewise (components/model, or a
 // folder chosen in the settings).
 
+import { msg } from "./i18n.ts";
 import { type ChildProcess, spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { createWriteStream, existsSync } from "node:fs";
@@ -89,7 +90,7 @@ export class Model {
   async #start() {
     const bin = await this.serverPath();
     if (!bin || !(await this.modelReady())) {
-      this.#set("missing", "The engine or the model is not downloaded yet.");
+      this.#set("missing", msg("notDownloaded"));
       throw new Error(this.detail);
     }
     await this.#killStale();
@@ -131,7 +132,7 @@ export class Model {
       exited = true;
       if (this.#proc === proc) {
         this.#proc = null;
-        this.#set("error", `The model stopped (code ${code}). See engine.log.`);
+        this.#set("error", msg("modelStoppedCode", { code }));
       }
     });
     // loading takes a while (seconds on a graphics chip, longer from a slow disk)
@@ -148,7 +149,7 @@ export class Model {
       await new Promise((r) => setTimeout(r, 1000));
     }
     if (!exited) proc.kill();
-    throw new Error(this.detail || "The model did not load in time.");
+    throw new Error(this.detail || msg("modelTimeout"));
   }
 
   #pidFile() {
@@ -202,7 +203,8 @@ export class Model {
       body: JSON.stringify(body),
       signal,
     });
-    if (!r.ok) throw new Error(`The engine answered ${r.status}: ${(await r.text()).slice(0, 200)}`);
+    if (!r.ok)
+      throw new Error(msg("engineAnswered", { status: r.status, text: (await r.text()).slice(0, 200) }));
     const resp = (await r.json()) as {
       choices: { message: { content?: string }; finish_reason?: string }[];
     };

@@ -10,6 +10,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { extname, join, normalize, resolve, sep } from "node:path";
 import type { ComponentId } from "./components.ts";
 import { sizeOf, supported } from "./components.ts";
+import { currentLang, msg, nativeName } from "./i18n.ts";
 import type { Core } from "./core.ts";
 import { CSP, guard, newSecret } from "./guard.ts";
 import { allBodies, fullDocument, LANGS } from "./pipeline.ts";
@@ -113,6 +114,11 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       machine: core.settings,
       update: core.update,
       appVersion: core.appVersion,
+      ui: {
+        lang: currentLang(),
+        setting: core.settings.ui ?? "auto",
+        available: ["en", ...Object.keys(core.locales)].map((code) => ({ code, name: nativeName(code) })),
+      },
       hardware: core.hardware,
       tex: {
         mode: core.tex.mode,
@@ -194,6 +200,11 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         if (!["auto", "system", "builtin"].includes(String(body.tex))) throw new Error("unknown LaTeX mode");
         machine.tex = String(body.tex);
       }
+      if (body.ui !== undefined) {
+        if (!["auto", "en", ...Object.keys(core.locales)].includes(String(body.ui)))
+          throw new Error("unknown app language");
+        machine.ui = String(body.ui);
+      }
       if (body.serverPath !== undefined) machine.serverPath = String(body.serverPath).trim() || undefined;
       if (Object.keys(machine).length) await core.setSettings(machine);
       return { ok: true };
@@ -239,7 +250,9 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       const out = join(lib.dir, "originals", `scan-${new Date().toISOString().replace(/[:.]/g, "-")}.png`);
       void core.scanner
         .scan(device, out)
-        .then(() => core.addFile(out, `Scan ${new Date().toTimeString().slice(0, 5)}`, "scan"))
+        .then(() =>
+          core.addFile(out, msg("scanLabel", { time: new Date().toTimeString().slice(0, 5) }), "scan"),
+        )
         .catch(() => {});
       return { ok: true };
     }
@@ -295,6 +308,9 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
 
       if (path === "/api/state") return send(res, 200, await state());
       if (path === "/api/version") return send(res, 200, { version: core.lib.version });
+      // the window's words in the app's language (its English is in the window itself)
+      if (path === "/api/i18n")
+        return send(res, 200, { lang: currentLang(), catalog: core.locales[currentLang()] ?? null });
       if (path === "/api/events") return events(req, res);
       if (path === "/api/all.tex") {
         const bodies = await core.lib.doneBodies();

@@ -10,6 +10,7 @@ import { dirOf, findFile, install, supported } from "./components.ts";
 import { type Family, familyFor, pageDocument } from "./pipeline.ts";
 import { run, which } from "./run.ts";
 import { arabicInLatin } from "./scripts.ts";
+import { msg } from "./i18n.ts";
 
 export type TexMode = "auto" | "system" | "builtin";
 
@@ -111,7 +112,7 @@ export class Tex {
     const ok = r.code === 0 && existsSync(pdf);
     return {
       ok,
-      err: ok ? "" : firstError(log + "\n" + r.stderr, "The preview could not be built."),
+      err: ok ? "" : firstError(log + "\n" + r.stderr, msg("previewFailed")),
       pdf: existsSync(pdf) ? pdf : null,
     };
   }
@@ -149,8 +150,7 @@ export class Tex {
   async #ensureTectonic(): Promise<string> {
     const have = await this.tectonic();
     if (have) return have;
-    if (!supported("tectonic"))
-      throw new Error("No working LaTeX was found, and Tectonic is not available for this system.");
+    if (!supported("tectonic")) throw new Error(msg("noLatexAtAll"));
     if (!this.installing) {
       this.installing = install(this.#base, "tectonic", () => {}, new AbortController().signal).finally(
         () => {
@@ -161,7 +161,7 @@ export class Tex {
     }
     await this.installing;
     const bin = await this.tectonic();
-    if (!bin) throw new Error("Tectonic was downloaded but could not be found.");
+    if (!bin) throw new Error(msg("tectonicMissing"));
     return bin;
   }
 
@@ -183,17 +183,17 @@ export class Tex {
     }
     if (this.mode === "system") {
       this.using = null;
-      this.detail = "No installed LaTeX was found.";
+      this.detail = msg("noInstalledLatex");
       return {
         ok: false,
-        err: "No installed LaTeX was found. Choose Automatic or Built-in in Settings.",
+        err: msg("noInstalledLatexHelp"),
         pdf: null,
       };
     }
     const tectonic = await this.#ensureTectonic();
     await writeFile(join(dir, "doc.tex"), pageDocument(body, lang, "xetex"));
     this.using = "tectonic";
-    this.detail = sys ? `Tectonic (the installed LaTeX failed a test for ${lang})` : "Tectonic";
+    this.detail = sys ? msg("tectonicFallback", { lang }) : "Tectonic";
     return await this.#runTex(tectonic, true, dir);
   }
 }

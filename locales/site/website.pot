@@ -1,0 +1,254 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Inktyset website\n"
+"Report-Msgid-Bugs-To: https://github.com/sigmaSd/inktyset/issues\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgctxt "title"
+msgid "Inktyset: handwritten math to LaTeX, on your computer"
+msgstr ""
+
+msgctxt "navWhy"
+msgid "Why"
+msgstr ""
+
+msgctxt "navFeatures"
+msgid "Features"
+msgstr ""
+
+msgctxt "navDownload"
+msgid "Download"
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "heroTitle"
+msgid "Handwritten pages in,<br />a typeset document you can trust out."
+msgstr ""
+
+msgctxt "heroLead"
+msgid "Inktyset reads photos, scans and PDFs of your handwritten math, turns each page into LaTeX, compiles it, and puts the scan next to the result so you can proofread page by page. Everything runs on your own computer."
+msgstr ""
+
+msgctxt "download"
+msgid "Download"
+msgstr ""
+
+msgctxt "freeOpen"
+msgid "Free and open source · Linux, Windows, macOS"
+msgstr ""
+
+msgctxt "whyTitle"
+msgid "Why not just paste a photo into a chat?"
+msgstr ""
+
+msgctxt "whyLead"
+msgid "A chat model reads one photo. Inktyset is built for the whole stack of pages, and for trusting the result."
+msgstr ""
+
+msgctxt "batchTitle"
+msgid "Batch and private"
+msgstr ""
+
+msgctxt "batchText"
+msgid "Hundreds of pages read in order, overnight if needed. Nothing you add leaves your computer."
+msgstr ""
+
+msgctxt "compileTitle"
+msgid "Proven to compile"
+msgstr ""
+
+msgctxt "compileText"
+msgid "Every page is compiled and shown rendered, not just text that looks right."
+msgstr ""
+
+msgctxt "proofTitle"
+msgid "Proofreading built in"
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "proofText"
+msgid "Scan and rendered page side by side with linked zoom, <code>[??]</code> where the model couldn't read, a “checked” mark per page."
+msgstr ""
+
+msgctxt "faithfulTitle"
+msgid "Faithful"
+msgstr ""
+
+msgctxt "faithfulText"
+msgid "The model is told never to fix your math or complete steps. Chat models happily “correct” it."
+msgstr ""
+
+msgctxt "featuresTitle"
+msgid "Features"
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featPages"
+msgid "<b>Pages in:</b> drag in photos or PDFs, scan with a scanner (Linux, macOS), or send photos from your phone with <a href=\"https://github.com/sigmaSd/folder-camera\">Folder Camera</a> (optional)."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featEditor"
+msgid "<b>A real LaTeX editor:</b> highlighting, matching brackets, search, completion of commands and environments."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featCompare"
+msgid "<b>Compare view:</b> one above the other for a formula, side by side for a full page; Enter marks a page checked and moves on."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featLanguages"
+msgid "<b>Languages:</b> English by default; French, Arabic (right to left), German, Spanish, Italian, Portuguese, Turkish or any other for the prose. Pages mixing French or English with Arabic work too, each word in its own direction. Nothing is translated."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featAppLanguages"
+msgid "<b>In your language:</b> the app speaks English, French and Arabic, and anyone can <a href=\"https://github.com/sigmaSd/inktyset/blob/main/docs/translating.md\">add a language</a>."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featTex"
+msgid "<b>Your LaTeX or ours:</b> the preview uses the TeX installed on your computer when it works, otherwise a built-in one (Tectonic), downloaded once."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featTypst"
+msgid "<b>LaTeX or Typst:</b> pick the output in the header; pages convert to Typst from LaTeX instantly, and back."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featMath"
+msgid "<b>Math first, not only math:</b> prose, lecture notes, lists and tables come out clean too."
+msgstr ""
+
+msgctxt "downloadTitle"
+msgid "Download"
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "latestOn"
+msgid "Latest release on <a href=\"https://github.com/sigmaSd/inktyset/releases/latest\">GitHub</a>."
+msgstr ""
+
+msgctxt "releasesPage"
+msgid "Releases page"
+msgstr ""
+
+msgctxt "reqTitle"
+msgid "Requirements"
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "reqMemory"
+msgid "About <b>8 GB of free memory</b> for the model."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "reqGpu"
+msgid "A <b>graphics chip</b> with Vulkan (Linux, Windows) or Apple Silicon for speed: a page then takes a minute or two. Without one, the processor reads it, much more slowly. Inktyset checks your computer and tells you what to expect."
+msgstr ""
+
+msgctxt "reqDownloads"
+msgid "On first start Inktyset downloads the engine (llama.cpp, 36 MB) and the model (Qwen3.5 9B, 6.6 GB), checked before use. Already have the model files? Point Inktyset to them."
+msgstr ""
+
+msgctxt "firstTitle"
+msgid "Opening it the first time"
+msgstr ""
+
+msgctxt "firstLead"
+msgid "The installers aren't signed with a paid certificate, so your system asks once:"
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "firstWindows"
+msgid "<b>Windows:</b> if SmartScreen says “Windows protected your PC”, click <i>More info</i>, then <i>Run anyway</i>."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "firstMac"
+msgid "<b>macOS:</b> open the .dmg and drag Inktyset to Applications. The first time, right-click it and choose <i>Open</i> (or System Settings → Privacy &amp; Security → <i>Open Anyway</i>). If macOS says the app “is damaged”, run <code>xattr -dr com.apple.quarantine /Applications/Inktyset.app</code> in Terminal."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "firstLinux"
+msgid "<b>Linux:</b> AppImage: make it executable (<code>chmod +x Inktyset-*.AppImage</code>) and run it; it updates itself. Or install the .deb / .rpm with your package manager."
+msgstr ""
+
+msgctxt "privacyTitle"
+msgid "Privacy"
+msgstr ""
+
+msgctxt "privacyText"
+msgid "Your pages are read on your computer and stay there. Inktyset only goes online to download its engine and model (from GitHub and Hugging Face), Tectonic and the LaTeX packages it needs if you have no LaTeX, and to check for updates (GitHub). No accounts, no tracking. Phone sending is off unless you turn it on, and then works only on your own Wi-Fi."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "footer"
+msgid "Inktyset is free software under the <a href=\"https://github.com/sigmaSd/inktyset/blob/main/LICENSE\">GPL-3.0</a>. Built on llama.cpp, Qwen, Tectonic, PDF.js, CodeMirror and Electron (<a href=\"https://github.com/sigmaSd/inktyset/blob/main/THIRD_PARTY_NOTICES.md\">notices</a>). · <a href=\"https://github.com/sigmaSd/inktyset\">Source</a> · <a href=\"https://github.com/sigmaSd/inktyset/issues\">Report a problem</a> · <a href=\"https://github.com/sigmaSd/inktyset/blob/main/docs/translating.md\">Translate</a>"
+msgstr ""
+
+msgctxt "description"
+msgid "Turn handwritten pages into a typeset LaTeX document you can trust. Math first. Runs on your own computer: Linux, Windows, macOS. Free and open source."
+msgstr ""
+
+msgctxt "ogDescription"
+msgid "Handwritten pages in, a typeset document you can trust out. Math first, on your own computer."
+msgstr ""
+
+msgctxt "shotCompare"
+msgid "The Compare view: a handwritten formula above its compiled LaTeX, the LaTeX editor on the right"
+msgstr ""
+
+msgctxt "shotList"
+msgid "The page list: scans, their LaTeX in a highlighting editor, and compiled previews"
+msgstr ""
+
+msgctxt "js.downloadFor"
+msgid "Download for {os}"
+msgstr ""
+
+msgctxt "js.appImage"
+msgid "AppImage (any distribution, updates itself)"
+msgstr ""
+
+msgctxt "js.deb"
+msgid ".deb (Debian, Ubuntu)"
+msgstr ""
+
+msgctxt "js.rpm"
+msgid ".rpm (Fedora, openSUSE)"
+msgstr ""
+
+msgctxt "js.exe"
+msgid "Installer (.exe)"
+msgstr ""
+
+msgctxt "js.appleSilicon"
+msgid "Apple Silicon (M1 and later)"
+msgstr ""
+
+msgctxt "js.intel"
+msgid "Intel"
+msgstr ""
+
+msgctxt "js.mb"
+msgid "{n} MB"
+msgstr ""
+
+msgctxt "js.version"
+msgid "Version {v}, released {date}"
+msgstr ""
+
+msgctxt "js.notes"
+msgid "release notes"
+msgstr ""
+
+msgctxt "js.otherSystems"
+msgid "other systems"
+msgstr ""

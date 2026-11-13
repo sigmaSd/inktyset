@@ -11,13 +11,21 @@ export interface Device {
   freeMiB: number;
 }
 
+export interface Advice {
+  level: "ok" | "warn" | "bad";
+  id: "memLow" | "memTight" | "noGpu" | "smallGpu";
+  /** GB the model needs, and this computer's. */
+  need: number;
+  have: number;
+}
+
 export interface Hardware {
   memoryGB: number;
   freeMemoryGB: number;
   /** null until the engine is there to ask. */
   devices: Device[] | null;
-  /** What to tell the user: nothing when all is well. */
-  advice: { level: "ok" | "warn" | "bad"; text: string }[];
+  /** What to tell the user, worded by the window in its language (app/ui/i18n.ts): nothing when all is well. */
+  advice: Advice[];
 }
 
 /** About what the 9B model takes while reading: weights, image encoder and context. */
@@ -35,26 +43,31 @@ export function parseDevices(out: string): Device[] {
 
 export function advise(memoryGB: number, devices: Device[] | null): Hardware["advice"] {
   const advice: Hardware["advice"] = [];
+  const gb = { need: NEEDS_GB, have: Math.round(memoryGB) };
   if (memoryGB < NEEDS_GB) {
     advice.push({
       level: "bad",
-      text: `The model needs about ${NEEDS_GB} GB of memory; this computer has ${memoryGB.toFixed(0)} GB. Reading will probably fail.`,
+      id: "memLow",
+      ...gb,
     });
   } else if (memoryGB < NEEDS_GB + 4) {
     advice.push({
       level: "warn",
-      text: `This computer has ${memoryGB.toFixed(0)} GB of memory: close other programs while pages are read.`,
+      id: "memTight",
+      ...gb,
     });
   }
   if (devices && !devices.length) {
     advice.push({
       level: "warn",
-      text: "No graphics chip the engine can use was found: pages are read by the processor, several minutes each.",
+      id: "noGpu",
+      ...gb,
     });
   } else if (devices && devices.every((d) => d.totalMiB < NEEDS_GB * 1024 * 0.75)) {
     advice.push({
       level: "warn",
-      text: "The graphics chip has little memory for this model: reading may fall back to the processor and be slow.",
+      id: "smallGpu",
+      ...gb,
     });
   }
   return advice;

@@ -15,6 +15,9 @@ import { Scanner } from "./scanner.ts";
 import { Tex, type TexMode } from "./tex.ts";
 import { latexToTypst } from "./convert.ts";
 import { Typst } from "./typst.ts";
+import { msg, resolveLang, setCoreLanguage } from "./i18n.ts";
+import { loadLocales } from "./locales.ts";
+import type { Translations } from "./po.ts";
 
 const MAX_SIDE = 1600; // the long side of what the model sees
 
@@ -43,6 +46,8 @@ export interface Settings {
   tex: TexMode;
   serverPath?: string;
   modelDir?: string;
+  /** The app's own language: "auto" (the computer's), "en", "fr" or "ar" (src/i18n.ts). */
+  ui?: string;
 }
 
 interface Job {
@@ -74,6 +79,11 @@ export class Core {
   update: string | null = null;
   /** This copy's version (Electron's, from package.json), shown in the window. */
   appVersion = "";
+  /** The computer's preferred languages (from the shell), for the app language "auto". */
+  systemLocales: readonly string[] = [];
+  /** Where the translations are (locales/app), set by the shell; and what was read there. */
+  localesDir = "";
+  locales: Record<string, Translations> = {};
   readonly #userData: string;
   renderer!: Renderer;
   shell!: Shell;
@@ -96,7 +106,7 @@ export class Core {
       seen: (rel) => this.lib.seenPhone.has(rel),
       arrived: (path, rel) => {
         this.lib.seenPhone.add(rel);
-        void this.addFile(path, `Phone photo ${rel.split(/[\\/]/).at(-1)}`, "phone");
+        void this.addFile(path, msg("phoneLabel", { name: rel.split(/[\\/]/).at(-1) }), "phone");
       },
     });
   }
@@ -104,6 +114,7 @@ export class Core {
   async init() {
     await mkdir(this.#userData, { recursive: true });
     await this.lib.init();
+    if (this.localesDir) this.locales = await loadLocales(this.localesDir);
     try {
       this.settings = { ...this.settings, ...JSON.parse(await readFile(this.#settingsFile(), "utf8")) };
     } catch {
@@ -121,6 +132,8 @@ export class Core {
   }
 
   #applySettings() {
+    const lang = resolveLang(this.settings.ui, this.systemLocales, ["en", ...Object.keys(this.locales)]);
+    setCoreLanguage(lang, this.locales[lang] ?? null);
     this.tex.mode = this.settings.tex;
     this.model.config = { serverPath: this.settings.serverPath, modelDir: this.settings.modelDir };
   }
@@ -244,7 +257,7 @@ export class Core {
 
   /** Use model files the user already has: choose their folder, check them, remember it. */
   async useModelFolder() {
-    const dir = await this.shell.chooseFolder("Folder with Qwen3.5-9B-Q4_K_M.gguf and mmproj-F16.gguf");
+    const dir = await this.shell.chooseFolder(msg("modelFolderTitle"));
     if (!dir) return;
     const job = this.jobs.verify;
     job.status = "running";
@@ -294,11 +307,7 @@ export class Core {
         this.lib.add(id, label, origin);
       }
     } catch (e) {
-      this.lib.addFailed(
-        label,
-        origin,
-        `This file could not be opened as a picture or PDF (${(e as Error).message}).`,
-      );
+      this.lib.addFailed(label, origin, msg("notPicture", { error: (e as Error).message }));
     } finally {
       this.lib.intake--;
       this.changed();

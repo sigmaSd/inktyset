@@ -16,6 +16,7 @@ files:
   - package.json
   - LICENSE
   - THIRD_PARTY_NOTICES.md
+  - locales/app/*.po # the translations (src/locales.ts reads them at start)
   - "!**/node_modules/**"
 asar: true
 

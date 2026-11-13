@@ -1,0 +1,985 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Inktyset\n"
+"Report-Msgid-Bugs-To: https://github.com/sigmaSd/inktyset/issues\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5);\n"
+
+msgctxt "scanLabel"
+msgid "Scan {time}"
+msgstr "مسح {time}"
+
+msgctxt "phoneLabel"
+msgid "Phone photo {name}"
+msgstr "صورة من الهاتف {name}"
+
+msgctxt "modelFolderTitle"
+msgid "Folder with Qwen3.5-9B-Q4_K_M.gguf and mmproj-F16.gguf"
+msgstr "المجلد الذي يحتوي Qwen3.5-9B-Q4_K_M.gguf وmmproj-F16.gguf"
+
+msgctxt "notPicture"
+msgid "This file could not be opened as a picture or PDF ({error})."
+msgstr "تعذّر فتح هذا الملف كصورة أو PDF ({error})."
+
+msgctxt "previewFailed"
+msgid "The preview could not be built."
+msgstr "تعذّر إنشاء المعاينة."
+
+msgctxt "noLatexAtAll"
+msgid "No working LaTeX was found, and Tectonic is not available for this system."
+msgstr "لم يُعثر على LaTeX يعمل، وTectonic غير متوفر لهذا النظام."
+
+msgctxt "tectonicMissing"
+msgid "Tectonic was downloaded but could not be found."
+msgstr "تم تنزيل Tectonic لكن تعذّر العثور عليه."
+
+msgctxt "noInstalledLatex"
+msgid "No installed LaTeX was found."
+msgstr "لم يُعثر على LaTeX مثبّت."
+
+msgctxt "noInstalledLatexHelp"
+msgid "No installed LaTeX was found. Choose Automatic or Built-in in Settings."
+msgstr "لم يُعثر على LaTeX مثبّت. اختر «تلقائي» أو «المدمج» في الإعدادات."
+
+msgctxt "tectonicFallback"
+msgid "Tectonic (the installed LaTeX failed a test for {lang})"
+msgstr "Tectonic (فشل LaTeX المثبّت في اختبار للغة {lang})"
+
+msgctxt "noTypst"
+msgid "Typst is not installed, and no Typst download exists for this system."
+msgstr "Typst غير مثبّت، ولا يوجد تنزيل له لهذا النظام."
+
+msgctxt "typstMissing"
+msgid "Typst was downloaded but could not be found."
+msgstr "تم تنزيل Typst لكن تعذّر العثور عليه."
+
+msgctxt "damaged"
+msgid "The download of {file} was damaged. Try again."
+msgstr "تلف تنزيل {file}. حاول مجددًا."
+
+msgctxt "unpackFailed"
+msgid "Could not unpack {file}: {error}"
+msgstr "تعذّر فك ضغط {file}: {error}"
+
+msgctxt "downloadStopped"
+msgid "Download stopped."
+msgstr "توقف التنزيل."
+
+msgctxt "downloadFailed"
+msgid "Download of {file} failed: {error}"
+msgstr "فشل تنزيل {file}: {error}"
+
+msgctxt "scannerNoAnswer"
+msgid "The scanner did not respond: {error}"
+msgstr "لم يستجب الماسح الضوئي: {error}"
+
+msgctxt "scanFailed"
+msgid "scan failed"
+msgstr "فشل المسح"
+
+msgctxt "notDownloaded"
+msgid "The engine or the model is not downloaded yet."
+msgstr "لم يُنزَّل المحرّك أو النموذج بعد."
+
+msgctxt "modelStoppedCode"
+msgid "The model stopped (code {code}). See engine.log."
+msgstr "توقف النموذج (الرمز {code}). راجع engine.log."
+
+msgctxt "modelTimeout"
+msgid "The model did not load in time."
+msgstr "لم يُحمَّل النموذج في الوقت المحدد."
+
+msgctxt "engineAnswered"
+msgid "The engine answered {status}: {text}"
+msgstr "ردّ المحرّك بـ{status}: {text}"
+
+msgctxt "finishing"
+msgid "Finishing {n} page in the background. Open Inktyset to watch."
+msgid_plural "Finishing {n} pages in the background. Open Inktyset to watch."
+msgstr[0] "لا صفحات يُكملها Inktyset في الخلفية."
+msgstr[1] "يُكمل Inktyset صفحة واحدة في الخلفية. افتحه للمتابعة."
+msgstr[2] "يُكمل Inktyset صفحتين في الخلفية. افتحه للمتابعة."
+msgstr[3] "يُكمل Inktyset {n} صفحات في الخلفية. افتحه للمتابعة."
+msgstr[4] "يُكمل Inktyset {n} صفحةً في الخلفية. افتحه للمتابعة."
+msgstr[5] "يُكمل Inktyset {n} صفحة في الخلفية. افتحه للمتابعة."
+
+msgctxt "allDone"
+msgid "All pages are done."
+msgstr "اكتملت كل الصفحات."
+
+msgctxt "couldNotStart"
+msgid "Inktyset could not start: {error}"
+msgstr "تعذّر تشغيل Inktyset: {error}"
+
+msgctxt "cut"
+msgid "Cut"
+msgstr "قص"
+
+msgctxt "copy"
+msgid "Copy"
+msgstr "نسخ"
+
+msgctxt "paste"
+msgid "Paste"
+msgstr "لصق"
+
+msgctxt "selectAll"
+msgid "Select all"
+msgstr "تحديد الكل"
+
+msgctxt "starting"
+msgid "Starting…"
+msgstr "جارٍ التشغيل…"
+
+msgctxt "appClosed"
+msgid "App closed — reopen Inktyset"
+msgstr "أُغلق التطبيق — أعد فتح Inktyset"
+
+msgctxt "ready"
+msgid "Ready"
+msgstr "جاهز"
+
+msgctxt "loadingModel"
+msgid "Loading the model…"
+msgstr "جارٍ تحميل النموذج…"
+
+msgctxt "setupNeeded"
+msgid "Setup needed"
+msgstr "يلزم الإعداد"
+
+msgctxt "modelStopped"
+msgid "Model stopped"
+msgstr "توقف النموذج"
+
+msgctxt "readingPage"
+msgid "Reading page {n}…"
+msgstr "جارٍ قراءة الصفحة {n}…"
+
+msgctxt "otherLanguage"
+msgid "Other…"
+msgstr "لغة أخرى…"
+
+msgctxt "writingLanguage"
+msgid "Writing language"
+msgstr "لغة الكتابة"
+
+#. An example of a language name, typed by the user
+msgctxt "langOtherPh"
+msgid "e.g. Dutch"
+msgstr "مثلًا: الهولندية"
+
+msgctxt "output"
+msgid "Output"
+msgstr "الصيغة"
+
+msgctxt "outputTitle"
+msgid "What the pages are written in"
+msgstr "الصيغة التي تُكتب بها الصفحات"
+
+msgctxt "restartToUpdate"
+msgid "Restart to update"
+msgstr "أعد التشغيل للتحديث"
+
+msgctxt "updateTitle"
+msgid "Inktyset {v} is downloaded: restart to use it"
+msgstr "تم تنزيل Inktyset {v}: أعد التشغيل لاستخدامه"
+
+#. {f} is LaTeX or Typst
+msgctxt "copyAll"
+msgid "Copy all {f}"
+msgstr "نسخ كل {f}"
+
+#. {f} is LaTeX or Typst
+msgctxt "copyAllTitle"
+msgid "Copy the {f} of every finished page"
+msgstr "نسخ {f} لكل الصفحات المنتهية"
+
+#. {ext} is .tex or .typ
+msgctxt "saveFile"
+msgid "Save {ext} file"
+msgstr "حفظ ملف {ext}"
+
+msgctxt "saveFileTitle"
+msgid "Save one file with every finished page"
+msgstr "حفظ ملف واحد يضم كل الصفحات المنتهية"
+
+msgctxt "settings"
+msgid "Settings"
+msgstr "الإعدادات"
+
+msgctxt "addTitle"
+msgid "Add photos or PDF"
+msgstr "إضافة صور أو ملف PDF"
+
+msgctxt "addHint"
+msgid "Or drag files anywhere onto this window"
+msgstr "أو اسحب الملفات إلى أي مكان في هذه النافذة"
+
+msgctxt "scanner"
+msgid "Scanner"
+msgstr "الماسح الضوئي"
+
+msgctxt "scanning"
+msgid "Scanning… keep the lid closed."
+msgstr "جارٍ المسح… أبقِ الغطاء مغلقًا."
+
+msgctxt "lookingScanners"
+msgid "Looking for scanners…"
+msgstr "جارٍ البحث عن ماسحات ضوئية…"
+
+msgctxt "noScanner"
+msgid "No scanner found. Plug it in and turn it on."
+msgstr "لم يُعثر على ماسح ضوئي. وصّله وشغّله."
+
+msgctxt "lookAgain"
+msgid "Look again"
+msgstr "ابحث مجددًا"
+
+msgctxt "chooseScanner"
+msgid "Choose a scanner:"
+msgstr "اختر ماسحًا ضوئيًا:"
+
+msgctxt "scanPage"
+msgid "Scan a page"
+msgstr "مسح صفحة"
+
+msgctxt "refresh"
+msgid "Refresh"
+msgstr "تحديث"
+
+msgctxt "phone"
+msgid "Phone"
+msgstr "الهاتف"
+
+msgctxt "phoneUnavailable"
+msgid "Phone sending is not available."
+msgstr "الإرسال من الهاتف غير متاح."
+
+msgctxt "phonesConnected"
+msgid "{n} phone connected · photos appear here by themselves"
+msgid_plural "{n} phones connected · photos appear here by themselves"
+msgstr[0] "لا هواتف متصلة · تظهر الصور هنا تلقائيًا"
+msgstr[1] "هاتف واحد متصل · تظهر الصور هنا تلقائيًا"
+msgstr[2] "هاتفان متصلان · تظهر الصور هنا تلقائيًا"
+msgstr[3] "{n} هواتف متصلة · تظهر الصور هنا تلقائيًا"
+msgstr[4] "{n} هاتفًا متصلًا · تظهر الصور هنا تلقائيًا"
+msgstr[5] "{n} هاتف متصل · تظهر الصور هنا تلقائيًا"
+
+msgctxt "connectPhone"
+msgid "Connect your phone to send photos"
+msgstr "اربط هاتفك لإرسال الصور"
+
+msgctxt "phoneStarting"
+msgid "The phone receiver is still starting. Try again in a moment."
+msgstr "لا يزال مستقبِل الهاتف قيد التشغيل. حاول مجددًا بعد لحظة."
+
+#. {app} is Folder Camera, an Android app
+msgctxt "phoneStep1"
+msgid "Install {app} on the phone (free on F-Droid)."
+msgstr "ثبّت تطبيق {app} على الهاتف (مجاني على F-Droid)."
+
+#. {app} is Folder Camera; {settings} and {button} are its English buttons: Settings, Scan PC pairing QR
+msgctxt "phoneStep2"
+msgid "In {app}, open {settings} and tap {button}."
+msgstr "في {app} افتح {settings} واضغط {button}."
+
+msgctxt "phoneStep3"
+msgid "Point the phone at this code."
+msgstr "وجّه الهاتف نحو هذا الرمز."
+
+msgctxt "phoneStep4"
+msgid "Take photos of your pages. They appear here by themselves."
+msgstr "صوّر صفحاتك، وستظهر هنا تلقائيًا."
+
+msgctxt "codeExpires"
+msgid "This code works once and expires in {t}."
+msgstr "يعمل هذا الرمز مرة واحدة وتنتهي صلاحيته خلال {t}."
+
+msgctxt "newCode"
+msgid "New code"
+msgstr "رمز جديد"
+
+msgctxt "showCode"
+msgid "Show a pairing code"
+msgstr "عرض رمز الاقتران"
+
+msgctxt "connectedPhones"
+msgid "Connected phones"
+msgstr "الهواتف المتصلة"
+
+msgctxt "remove"
+msgid "Remove"
+msgstr "إزالة"
+
+msgctxt "phoneDialogTitle"
+msgid "Send photos from your phone"
+msgstr "إرسال الصور من هاتفك"
+
+msgctxt "sameWifi"
+msgid "The phone and this computer need to be on the same Wi-Fi."
+msgstr "يجب أن يكون الهاتف وهذا الحاسوب على شبكة Wi-Fi نفسها."
+
+msgctxt "done"
+msgid "Done"
+msgstr "تم"
+
+#. gigabytes; {n} is a number
+msgctxt "gb"
+msgid "{n} GB"
+msgstr "{n} غيغابايت"
+
+#. megabytes; {n} is a number
+msgctxt "mb"
+msgid "{n} MB"
+msgstr "{n} ميغابايت"
+
+msgctxt "checking"
+msgid "Checking"
+msgstr "جارٍ التحقق"
+
+msgctxt "unpacking"
+msgid "Unpacking"
+msgstr "جارٍ فك الضغط"
+
+msgctxt "ofTotal"
+msgid "{a} of {b}"
+msgstr "{a} من {b}"
+
+msgctxt "stop"
+msgid "Stop"
+msgstr "إيقاف"
+
+msgctxt "setupTitle"
+msgid "Set up Inktyset"
+msgstr "إعداد Inktyset"
+
+msgctxt "setupText"
+msgid "Inktyset reads your pages on this computer, so it needs two downloads, once. Nothing you add ever leaves this computer. Pages you add now wait until it's ready."
+msgstr "يقرأ Inktyset صفحاتك على هذا الحاسوب، لذا يحتاج إلى تنزيلين، مرة واحدة فقط. لا يغادر أي شيء تضيفه هذا الحاسوب. الصفحات التي تضيفها الآن تنتظر حتى يصبح جاهزًا."
+
+msgctxt "engineName"
+msgid "Engine (llama.cpp)"
+msgstr "المحرّك (llama.cpp)"
+
+msgctxt "modelName"
+msgid "Model (Qwen3.5 9B vision)"
+msgstr "النموذج (Qwen3.5 9B للرؤية)"
+
+msgctxt "noEngine"
+msgid "There is no ready-made engine for this system yet. If you have your own llama.cpp build, set its llama-server in Settings."
+msgstr "لا يوجد بعد محرّك جاهز لهذا النظام. إن كانت لديك نسختك الخاصة من llama.cpp فحدّد llama-server الخاص بها في الإعدادات."
+
+msgctxt "download"
+msgid "Download ({size})"
+msgstr "تنزيل ({size})"
+
+msgctxt "haveModel"
+msgid "I already have the model files…"
+msgstr "لديّ ملفات النموذج بالفعل…"
+
+msgctxt "haveModelTitle"
+msgid "Use Qwen3.5-9B-Q4_K_M.gguf and mmproj-F16.gguf you already downloaded"
+msgstr "استخدام الملفين Qwen3.5-9B-Q4_K_M.gguf وmmproj-F16.gguf اللذين نزّلتهما سابقًا"
+
+msgctxt "gpuLater"
+msgid "checked once the engine is downloaded"
+msgstr "تُفحص بعد تنزيل المحرّك"
+
+msgctxt "gpuNone"
+msgid "none the engine can use"
+msgstr "لا شيء يمكن للمحرّك استخدامه"
+
+#. {mem} is a size like 16 GB; {gpu} names graphics chips
+msgctxt "thisComputer"
+msgid "This computer: {mem} of memory · graphics: {gpu}. With a graphics chip a page takes a minute or two; on the processor alone, several minutes."
+msgstr "هذا الحاسوب: ذاكرة {mem} · الرسوميات: {gpu}. مع شريحة رسوميات تستغرق الصفحة دقيقة أو دقيقتين، وبالمعالج وحده عدة دقائق."
+
+msgctxt "memLow"
+msgid "The model needs about {need} of memory; this computer has {have}. Reading will probably fail."
+msgstr "يحتاج النموذج إلى نحو {need} من الذاكرة، ولدى هذا الحاسوب {have}. ستفشل القراءة على الأرجح."
+
+msgctxt "memTight"
+msgid "This computer has {have} of memory: close other programs while pages are read."
+msgstr "لدى هذا الحاسوب {have} من الذاكرة: أغلق البرامج الأخرى أثناء قراءة الصفحات."
+
+msgctxt "noGpu"
+msgid "No graphics chip the engine can use was found: pages are read by the processor, several minutes each."
+msgstr "لم يُعثر على شريحة رسوميات يمكن للمحرّك استخدامها: ستُقرأ الصفحات بالمعالج، عدة دقائق لكل صفحة."
+
+msgctxt "smallGpu"
+msgid "The graphics chip has little memory for this model: reading may fall back to the processor and be slow."
+msgstr "ذاكرة شريحة الرسوميات قليلة لهذا النموذج: قد تنتقل القراءة إلى المعالج فتكون بطيئة."
+
+msgctxt "appLanguage"
+msgid "Language of the app"
+msgstr "لغة التطبيق"
+
+msgctxt "appLanguageAuto"
+msgid "Automatic (the computer's language)"
+msgstr "تلقائي (لغة الحاسوب)"
+
+msgctxt "appLanguageNote"
+msgid "The language your pages are written in is chosen at the top (Writing language)."
+msgstr "تُختار اللغة التي كُتبت بها صفحاتك في الأعلى (لغة الكتابة)."
+
+msgctxt "helpTranslate"
+msgid "Help translate Inktyset"
+msgstr "ساعد في ترجمة Inktyset"
+
+msgctxt "usingInstalledLatex"
+msgid "Using the installed LaTeX: {d}"
+msgstr "يُستخدم LaTeX المثبّت: {d}"
+
+msgctxt "using"
+msgid "Using {d}"
+msgstr "يُستخدم: {d}"
+
+msgctxt "notUsedYet"
+msgid "Not used yet: the first preview decides."
+msgstr "لم يُستخدم بعد: أول معاينة ستحدد ذلك."
+
+msgctxt "latexForPreviews"
+msgid "LaTeX for the previews"
+msgstr "LaTeX للمعاينات"
+
+msgctxt "auto"
+msgid "Automatic"
+msgstr "تلقائي"
+
+msgctxt "autoHelp"
+msgid "The LaTeX installed on this computer if it works for your language, otherwise the built-in one."
+msgstr "LaTeX المثبّت على هذا الحاسوب إن كان يعمل مع لغتك، وإلا فالمدمج."
+
+msgctxt "installedLatex"
+msgid "Installed LaTeX"
+msgstr "LaTeX المثبّت"
+
+msgctxt "found"
+msgid "Found: {list}"
+msgstr "عُثر على: {list}"
+
+msgctxt "noneFound"
+msgid "None found on this computer."
+msgstr "لم يُعثر على أي منها على هذا الحاسوب."
+
+msgctxt "builtin"
+msgid "Built-in (Tectonic)"
+msgstr "المدمج (Tectonic)"
+
+msgctxt "downloaded"
+msgid "Downloaded."
+msgstr "تم تنزيله."
+
+msgctxt "tectonicHelp"
+msgid "Downloaded when first needed ({size}); then it fetches the LaTeX packages a page uses, once."
+msgstr "يُنزَّل عند أول حاجة إليه ({size})، ثم يجلب مرة واحدة حزم LaTeX التي تستخدمها الصفحة."
+
+msgctxt "usingInstalledTypst"
+msgid "Using the installed Typst: {d}"
+msgstr "يُستخدم Typst المثبّت: {d}"
+
+msgctxt "typstHelp"
+msgid "For Typst output; downloaded when first needed ({size})."
+msgstr "لإخراج Typst؛ يُنزَّل عند أول حاجة إليه ({size})."
+
+msgctxt "phoneSetting"
+msgid "Receive photos from a phone (Folder Camera)"
+msgstr "استقبال الصور من هاتف (Folder Camera)"
+
+msgctxt "phoneSettingHelp"
+msgid "Off by default. When on, Inktyset listens on your Wi-Fi for photos from phones you pair with a QR code."
+msgstr "معطّل افتراضيًا. عند تفعيله يستقبل Inktyset عبر شبكة Wi-Fi لديك الصور من الهواتف التي تقرنها برمز QR."
+
+msgctxt "firewall"
+msgid "Windows will ask once to allow it through the firewall."
+msgstr "سيطلب Windows مرة واحدة السماح له عبر جدار الحماية."
+
+msgctxt "noScannerShort"
+msgid "No scanner found."
+msgstr "لم يُعثر على ماسح ضوئي."
+
+msgctxt "lookForScanners"
+msgid "Look for scanners"
+msgstr "البحث عن ماسحات ضوئية"
+
+msgctxt "saneNote"
+msgid "Scanning needs SANE (scanimage), available on Linux and macOS. You can always add scanned files as photos or PDFs."
+msgstr "يتطلب المسح SANE (scanimage)، المتوفر على Linux وmacOS. يمكنك دائمًا إضافة الملفات الممسوحة كصور أو ملفات PDF."
+
+msgctxt "modelEngine"
+msgid "Model and engine"
+msgstr "النموذج والمحرّك"
+
+msgctxt "modelFiles"
+msgid "Model files: {p}"
+msgstr "ملفات النموذج: {p}"
+
+msgctxt "otherFolder"
+msgid "Use model files from another folder…"
+msgstr "استخدام ملفات النموذج من مجلد آخر…"
+
+msgctxt "ownCopy"
+msgid "Use Inktyset's own copy"
+msgstr "استخدام نسخة Inktyset الخاصة"
+
+msgctxt "checkingFiles"
+msgid "Checking files"
+msgstr "جارٍ فحص الملفات"
+
+msgctxt "ownServer"
+msgid "Your own llama-server (optional)"
+msgstr "llama-server الخاص بك (اختياري)"
+
+msgctxt "ownServerPh"
+msgid "Leave empty to use the downloaded one"
+msgstr "اتركه فارغًا لاستخدام المُنزَّل"
+
+msgctxt "noEngineYet"
+msgid "No engine yet."
+msgstr "لا يوجد محرّك بعد."
+
+msgctxt "yourPages"
+msgid "Your pages"
+msgstr "صفحاتك"
+
+msgctxt "savedIn"
+msgid "Saved in {p}"
+msgstr "محفوظة في {p}"
+
+msgctxt "about"
+msgid "About"
+msgstr "حول"
+
+msgctxt "aboutUpdate"
+msgid "Version {v} is downloaded: restart to use it."
+msgstr "تم تنزيل الإصدار {v}: أعد التشغيل لاستخدامه."
+
+msgctxt "freeSoftware"
+msgid "Free software under the GPL-3.0."
+msgstr "برنامج حر بموجب رخصة GPL-3.0."
+
+msgctxt "website"
+msgid "Website"
+msgstr "الموقع"
+
+msgctxt "source"
+msgid "Source"
+msgstr "الشيفرة المصدرية"
+
+msgctxt "whatsNew"
+msgid "What's new"
+msgstr "الجديد"
+
+msgctxt "licenses"
+msgid "Licenses"
+msgstr "التراخيص"
+
+msgctxt "report"
+msgid "Report a problem"
+msgstr "الإبلاغ عن مشكلة"
+
+msgctxt "restartConfirm"
+msgid "Pages are still being read. Restart now? They continue after the restart."
+msgstr "لا تزال هناك صفحات قيد القراءة. إعادة التشغيل الآن؟ ستُستأنف القراءة بعد إعادة التشغيل."
+
+msgctxt "saved"
+msgid "Saved"
+msgstr "تم الحفظ"
+
+msgctxt "waiting"
+msgid "Waiting"
+msgstr "في الانتظار"
+
+msgctxt "reading"
+msgid "Reading…"
+msgstr "جارٍ القراءة…"
+
+msgctxt "failed"
+msgid "Failed"
+msgstr "فشل"
+
+#. {f} is LaTeX or Typst
+msgctxt "formatError"
+msgid "{f} error"
+msgstr "خطأ في {f}"
+
+msgctxt "buildingPreview"
+msgid "Building the preview…"
+msgstr "جارٍ إنشاء المعاينة…"
+
+msgctxt "checked"
+msgid "Checked ✓"
+msgstr "تمت المراجعة ✓"
+
+msgctxt "mayBeCut"
+msgid "May be cut off"
+msgstr "قد تكون مقطوعة"
+
+msgctxt "unclear"
+msgid "{n} unclear spot"
+msgid_plural "{n} unclear spots"
+msgstr[0] "لا مواضع غير واضحة"
+msgstr[1] "موضع واحد غير واضح"
+msgstr[2] "موضعان غير واضحين"
+msgstr[3] "{n} مواضع غير واضحة"
+msgstr[4] "{n} موضعًا غير واضح"
+msgstr[5] "{n} موضع غير واضح"
+
+msgctxt "statusDone"
+msgid "Done"
+msgstr "منتهية"
+
+#. {done} pages finished out of {n}
+msgctxt "pagesDone"
+msgid "{done} of {n} page done"
+msgid_plural "{done} of {n} pages done"
+msgstr[0] "الصفحات المنتهية: {done} من {n}"
+msgstr[1] "الصفحات المنتهية: {done} من {n}"
+msgstr[2] "الصفحات المنتهية: {done} من {n}"
+msgstr[3] "الصفحات المنتهية: {done} من {n}"
+msgstr[4] "الصفحات المنتهية: {done} من {n}"
+msgstr[5] "الصفحات المنتهية: {done} من {n}"
+
+msgctxt "checkedOf"
+msgid "{c} of {d} checked"
+msgstr "المُراجَعة: {c} من {d}"
+
+msgctxt "proofreadNext"
+msgid "Proofread the next one"
+msgstr "مراجعة الصفحة التالية"
+
+msgctxt "addingFiles"
+msgid "Adding files…"
+msgstr "جارٍ إضافة الملفات…"
+
+#. {t} is a duration: less than a minute, about 5 min…
+msgctxt "timeLeft"
+msgid "{t} left"
+msgstr "يتبقى {t}"
+
+msgctxt "lessMinute"
+msgid "less than a minute"
+msgstr "أقل من دقيقة"
+
+msgctxt "aboutMin"
+msgid "about {n} min"
+msgstr "نحو {n} دقيقة"
+
+msgctxt "aboutH"
+msgid "about {n} h"
+msgstr "نحو {n} ساعة"
+
+msgctxt "canClose"
+msgid "You can close this window: waiting pages are still finished."
+msgstr "يمكنك إغلاق هذه النافذة: ستُكمَل الصفحات المنتظرة على أي حال."
+
+#. Column title: the photo or scan of the handwritten page
+msgctxt "scan"
+msgid "Scan"
+msgstr "الأصل"
+
+msgctxt "scanAlt"
+msgid "Scan of the page"
+msgstr "صورة الصفحة"
+
+msgctxt "waitingTurn"
+msgid "Waiting its turn…"
+msgstr "في انتظار دورها…"
+
+msgctxt "readingHandwriting"
+msgid "Reading the handwriting…"
+msgstr "جارٍ قراءة الخط اليدوي…"
+
+#. {t} is a duration: less than a minute, about 5 min…
+msgctxt "usuallyTakes"
+msgid "A page usually takes {t}."
+msgstr "تستغرق الصفحة عادةً {t}."
+
+msgctxt "wentWrong"
+msgid "Something went wrong."
+msgstr "حدث خطأ ما."
+
+msgctxt "tryAgain"
+msgid "Try again"
+msgstr "إعادة المحاولة"
+
+msgctxt "nextUnclear"
+msgid "Next unclear spot"
+msgstr "الموضع غير الواضح التالي"
+
+msgctxt "nextUnclearTitle"
+msgid "Jump to the next [??] the model could not read"
+msgstr "الانتقال إلى [??] التالي الذي تعذّر على النموذج قراءته"
+
+#. {f} is LaTeX or Typst
+msgctxt "copyFmt"
+msgid "Copy {f}"
+msgstr "نسخ {f}"
+
+msgctxt "cutOff"
+msgid "The page was very long and may be cut off at the end. Check the last lines."
+msgstr "كانت الصفحة طويلة جدًا وقد تكون مقطوعة في نهايتها. تحقق من الأسطر الأخيرة."
+
+#. {f} is LaTeX or Typst
+msgctxt "noCompile"
+msgid "This {f} does not compile yet. Fix the text, and the preview updates by itself."
+msgstr "يحتوي هذا النص على خطأ في {f}. صحّح النص وستتحدّث المعاينة تلقائيًا."
+
+msgctxt "renderedAlt"
+msgid "Rendered page"
+msgstr "الصفحة المنضَّدة"
+
+msgctxt "preview"
+msgid "Preview"
+msgstr "المعاينة"
+
+msgctxt "pageN"
+msgid "Page {n}"
+msgstr "الصفحة {n}"
+
+msgctxt "compare"
+msgid "Compare"
+msgstr "مقارنة"
+
+msgctxt "compareTitle"
+msgid "Scan and text side by side, to proofread"
+msgstr "الصورة والنص جنبًا إلى جنب للمراجعة"
+
+msgctxt "moveUp"
+msgid "Move up"
+msgstr "تحريك لأعلى"
+
+msgctxt "moveDown"
+msgid "Move down"
+msgstr "تحريك لأسفل"
+
+msgctxt "readAgain"
+msgid "Read again"
+msgstr "إعادة القراءة"
+
+msgctxt "readAgainTitle"
+msgid "Read this page again"
+msgstr "قراءة هذه الصفحة مجددًا"
+
+msgctxt "removeTitle"
+msgid "Remove this page"
+msgstr "إزالة هذه الصفحة"
+
+msgctxt "copiedWhat"
+msgid "{what} copied"
+msgstr "تم نسخ {what}"
+
+msgctxt "copiedBtn"
+msgid "Copied ✓"
+msgstr "تم النسخ ✓"
+
+msgctxt "copyFailed"
+msgid "Could not copy: select the text and press Ctrl+C"
+msgstr "تعذّر النسخ: حدّد النص واضغط Ctrl+C"
+
+msgctxt "saving"
+msgid "Saving…"
+msgstr "جارٍ الحفظ…"
+
+msgctxt "notSaved"
+msgid "Not saved: {e}"
+msgstr "لم يُحفظ: {e}"
+
+msgctxt "confirmRedo"
+msgid "Read this page again? Your corrections on this page will be replaced."
+msgstr "قراءة هذه الصفحة مجددًا؟ ستُستبدل تصحيحاتك على هذه الصفحة."
+
+msgctxt "confirmRemove"
+msgid "Remove page {n} from the list?"
+msgstr "إزالة الصفحة {n} من القائمة؟"
+
+msgctxt "confirmRevoke"
+msgid "Remove this phone? It will need a new code to send photos again."
+msgstr "إزالة هذا الهاتف؟ سيحتاج إلى رمز جديد لإرسال الصور مجددًا."
+
+msgctxt "allPages"
+msgid "All pages"
+msgstr "كل الصفحات"
+
+msgctxt "sideBySide"
+msgid "Side by side"
+msgstr "جنبًا إلى جنب"
+
+msgctxt "stacked"
+msgid "One above the other"
+msgstr "واحدة فوق الأخرى"
+
+#. {f} is LaTeX or Typst
+msgctxt "previewOf"
+msgid "{f} preview"
+msgstr "معاينة {f}"
+
+msgctxt "markChecked"
+msgid "Mark as checked"
+msgstr "تعليم كمُراجَعة"
+
+msgctxt "unmarkTitle"
+msgid "Click to mark as not checked"
+msgstr "انقر لإلغاء تعليمها كمُراجَعة"
+
+msgctxt "markTitle"
+msgid "Mark this page as proofread and go to the next one (Enter)"
+msgstr "تعليم هذه الصفحة كمُراجَعة والانتقال إلى التالية (Enter)"
+
+msgctxt "allChecked"
+msgid "Every page is checked"
+msgstr "تمت مراجعة كل الصفحات"
+
+msgctxt "compareAria"
+msgid "Compare a page with its text"
+msgstr "مقارنة صفحة بنصها"
+
+msgctxt "prevTitle"
+msgid "Previous page"
+msgstr "الصفحة السابقة"
+
+msgctxt "nextTitle"
+msgid "Next page"
+msgstr "الصفحة التالية"
+
+msgctxt "zoomOut"
+msgid "Zoom out (−)"
+msgstr "تصغير (−)"
+
+msgctxt "zoomIn"
+msgid "Zoom in (+)"
+msgstr "تكبير (+)"
+
+msgctxt "fit"
+msgid "Fit"
+msgstr "ملاءمة"
+
+msgctxt "fitTitle"
+msgid "Fit to width (0)"
+msgstr "ملاءمة العرض (0)"
+
+msgctxt "layout"
+msgid "Layout"
+msgstr "التخطيط"
+
+msgctxt "layoutTitle"
+msgid "Side by side, or one above the other (L)"
+msgstr "جنبًا إلى جنب أو واحدة فوق الأخرى (L)"
+
+msgctxt "editorTitle"
+msgid "Show or hide the text (E)"
+msgstr "إظهار النص أو إخفاؤه (E)"
+
+msgctxt "closeTitle"
+msgid "Close (Esc)"
+msgstr "إغلاق (Esc)"
+
+msgctxt "handwritten"
+msgid "Handwritten"
+msgstr "بخط اليد"
+
+#. Keyboard help in the Compare view: ← → pages
+msgctxt "hintPages"
+msgid "pages"
+msgstr "الصفحات"
+
+#. Keyboard help: Enter marks the page checked and goes to the next one
+msgctxt "hintCheck"
+msgid "mark checked and go to the next one"
+msgstr "تعليم كمُراجَعة والانتقال إلى التالية"
+
+msgctxt "hintWhileTyping"
+msgid "while typing"
+msgstr "أثناء الكتابة"
+
+msgctxt "hintOr"
+msgid "or"
+msgstr "أو"
+
+#. Keyboard help: Ctrl+scroll zooms (the mouse wheel)
+msgctxt "hintScroll"
+msgid "scroll"
+msgstr "عجلة الفأرة"
+
+msgctxt "hintZoom"
+msgid "zoom"
+msgstr "للتكبير"
+
+msgctxt "hintLayout"
+msgid "layout"
+msgstr "التخطيط"
+
+msgctxt "hintEditor"
+msgid "editor"
+msgstr "المحرّر"
+
+msgctxt "hintClose"
+msgid "close"
+msgstr "إغلاق"
+
+#. The Enter key, as printed on keyboards
+msgctxt "keyEnter"
+msgid "Enter"
+msgstr "Enter"
+
+#. The Esc key, as printed on keyboards
+msgctxt "keyEsc"
+msgid "Esc"
+msgstr "Esc"
+
+msgctxt "onlyPhotos"
+msgid "Only photos and PDFs can be added"
+msgstr "يمكن إضافة الصور وملفات PDF فقط"
+
+msgctxt "addingN"
+msgid "Adding {n} file…"
+msgid_plural "Adding {n} files…"
+msgstr[0] "جارٍ إضافة {n} ملف…"
+msgstr[1] "جارٍ إضافة ملف واحد…"
+msgstr[2] "جارٍ إضافة ملفين…"
+msgstr[3] "جارٍ إضافة {n} ملفات…"
+msgstr[4] "جارٍ إضافة {n} ملفًا…"
+msgstr[5] "جارٍ إضافة {n} ملف…"
+
+msgctxt "dropHere"
+msgid "Drop photos or PDFs to add them"
+msgstr "أفلت الصور أو ملفات PDF لإضافتها"
+
+msgctxt "noPages"
+msgid "No pages yet"
+msgstr "لا توجد صفحات بعد"
+
+msgctxt "emptyText1"
+msgid "Add photos or a PDF: drag them here, or use the button above."
+msgstr "أضف صورًا أو ملف PDF: اسحبها إلى هنا أو استخدم الزر أعلاه."
+
+msgctxt "emptyText2"
+msgid "Each page is read on this computer and turned into LaTeX you can copy."
+msgstr "تُقرأ كل صفحة على هذا الحاسوب وتتحول إلى LaTeX يمكنك نسخه."
+
+msgctxt "nowTypst"
+msgid "Every page is now in Typst (converted from its LaTeX)."
+msgstr "كل الصفحات الآن بصيغة Typst (محوّلة من LaTeX الخاص بها)."
+
+msgctxt "backLatex"
+msgid "Every page is back in LaTeX (corrections made in Typst don't carry back)."
+msgstr "عادت كل الصفحات إلى LaTeX (التصحيحات المُجراة في Typst لا تُنقل إليها)."
+
+msgctxt "langChanged"
+msgid "Writing language: {l}. New pages are read in it."
+msgstr "لغة الكتابة: {l}. ستُقرأ الصفحات الجديدة بهذه اللغة."
+
+msgctxt "savedBtn"
+msgid "Saved ✓"
+msgstr "تم الحفظ ✓"
+
+msgctxt "savedTo"
+msgid "Saved to {p}"
+msgstr "حُفظ في {p}"
+
+msgctxt "saveFailed"
+msgid "Could not save: {e}"
+msgstr "تعذّر الحفظ: {e}"

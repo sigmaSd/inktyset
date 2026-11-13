@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { dirOf, findFile, install, supported } from "./components.ts";
 import { theoremNames } from "./pipeline.ts";
 import { run, which } from "./run.ts";
+import { msg } from "./i18n.ts";
 
 /** Typst's language codes, for hyphenation, quotes and text direction (Arabic is right to left). */
 const CODES: Record<string, string> = {
@@ -121,8 +122,7 @@ export class Typst {
     if (this.#system && (await this.#works(this.#system))) return this.#system;
     const have = await this.downloaded();
     if (have) return have;
-    if (!supported("typst"))
-      throw new Error("Typst is not installed, and no Typst download exists for this system.");
+    if (!supported("typst")) throw new Error(msg("noTypst"));
     if (!this.installing) {
       this.installing = install(this.#base, "typst", () => {}, new AbortController().signal).finally(() => {
         this.installing = null;
@@ -131,7 +131,7 @@ export class Typst {
     }
     await this.installing;
     const bin = await this.downloaded();
-    if (!bin) throw new Error("Typst was downloaded but could not be found.");
+    if (!bin) throw new Error(msg("typstMissing"));
     return bin;
   }
 

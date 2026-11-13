@@ -36,6 +36,8 @@ A chat model reads one photo. Inktyset is built for the whole stack of pages:
   Turkish, or any other language for the prose. The math is unaffected and nothing is translated.
   Pages that mix scripts work too, French or English with Arabic words or the other way round: each word
   stays in its own language and direction.
+- **The app in your language:** English, French or Arabic (right to left), following your computer's language
+  or chosen in Settings. Other languages are welcome ([translating](docs/translating.md)).
 - **LaTeX or Typst:** choose the output in the header. Pages are converted to [Typst](https://typst.app)
   from the model's LaTeX, instantly, and switch back just as fast. The preview uses the LaTeX or Typst
   installed on your computer when it works, otherwise a built-in one
@@ -78,6 +80,11 @@ vp run dist         # installers for this system, into dist/packages/
 
 `INKTYSET_DATA` and `INKTYSET_USERDATA` move the pages folder and the app's own files, for testing;
 `--no-window` starts without opening the window. Releases are built by CI for every `v*` tag.
+
+## Translating
+
+The app and the website speak English, French and Arabic. Adding a language needs no programming: translate
+a `.po` file with [Poedit](https://poedit.net) and send it. See [docs/translating.md](docs/translating.md).
 
 ## License
 

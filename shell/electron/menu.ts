@@ -3,20 +3,21 @@
 // As in MedStation's shell/electron/menu.ts.
 
 import { Menu, type MenuItemConstructorOptions, type WebContents } from "electron";
+import { msg } from "../../src/i18n.ts";
 
 export function contextMenu(_wc: WebContents, params: Electron.ContextMenuParams): Menu | null {
   const items: MenuItemConstructorOptions[] = [];
   const f = params.editFlags;
   if (params.isEditable) {
     items.push(
-      { label: "Cut", role: "cut", enabled: f.canCut },
-      { label: "Copy", role: "copy", enabled: f.canCopy },
-      { label: "Paste", role: "paste", enabled: f.canPaste },
+      { label: msg("cut"), role: "cut", enabled: f.canCut },
+      { label: msg("copy"), role: "copy", enabled: f.canCopy },
+      { label: msg("paste"), role: "paste", enabled: f.canPaste },
       { type: "separator" },
-      { label: "Select all", role: "selectAll", enabled: f.canSelectAll },
+      { label: msg("selectAll"), role: "selectAll", enabled: f.canSelectAll },
     );
   } else if (params.selectionText.trim()) {
-    items.push({ label: "Copy", role: "copy" });
+    items.push({ label: msg("copy"), role: "copy" });
   }
   return items.length ? Menu.buildFromTemplate(items) : null;
 }
