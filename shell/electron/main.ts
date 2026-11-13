@@ -5,6 +5,7 @@
 //   --dev        print a link that opens the window's page in a normal browser (for testing)
 //   --no-window  start without opening the window (testing; stop it with Ctrl+C)
 //   --folder=<path>  keep the pages in this folder, for this run only (src/folders.ts)
+//   --class=<name>   the launcher (desktop entry <name>.desktop) the window belongs to: its icon in the dock
 // INKTYSET_DATA and INKTYSET_USERDATA move the pages folder and the app's own files (testing). The pages folder
 // chosen in Settings (src/folders.ts) wins over INKTYSET_DATA only when INKTYSET_USERDATA is set too: a test
 // with its own pages folder never opens the folder chosen in the real settings.
@@ -16,7 +17,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Core } from "../../src/core.ts";
 import { msg } from "../../src/i18n.ts";
-import { folderArg } from "../../src/folders.ts";
+import { launchArgs } from "../../src/folders.ts";
 import { migrateDir } from "../../src/migrate.ts";
 import { cookieName } from "../../src/guard.ts";
 import { type Served, serve } from "../../src/server.ts";
@@ -30,8 +31,20 @@ const APP_DIR = fileURLToPath(new URL("../../", import.meta.url));
 const DEV = process.argv.includes("--dev");
 const NO_WINDOW = process.argv.includes("--no-window");
 const ICON = join(APP_DIR, "app", "icon.png");
-/** The arguments after the program (and, unpackaged, the app's folder), and a --folder among them. */
-const ARGS = folderArg(process.argv.slice(app.isPackaged ? 1 : 2), process.cwd());
+/** The arguments after the program (and, unpackaged, the app's folder), and a --folder or --class among them. */
+const ARGS = launchArgs(process.argv.slice(app.isPackaged ? 1 : 2), process.cwd());
+/**
+ * The window's app id on Wayland comes from CHROME_DESKTOP, which Electron sets from package.json's desktopName
+ * as it starts (whatever the launcher set). --class changes it before any window: a second launcher (GhInk)
+ * then gets its own icon in the dock instead of Inktyset's.
+ */
+const USUAL_DESKTOP = process.env.CHROME_DESKTOP;
+if (ARGS.cls) process.env.CHROME_DESKTOP = `${ARGS.cls}.desktop`;
+/** The arguments a launcher asked for, to start again with them. */
+const launchedWith = (a: { folder?: string; cls?: string }) => [
+  ...(a.folder ? [`--folder=${a.folder}`] : []),
+  ...(a.cls ? [`--class=${a.cls}`] : []),
+];
 
 if (process.env.INKTYSET_USERDATA) app.setPath("userData", process.env.INKTYSET_USERDATA);
 if (app.isPackaged) app.commandLine.appendSwitch("log-level", "3");
@@ -197,8 +210,8 @@ async function main() {
     notify,
     installUpdate: installNow,
     relaunch() {
-      // the folder in the settings now: without the --folder this run was started with
-      restart(ARGS.rest);
+      // the folder in the settings now: without the --folder this run was started with (the same launcher's)
+      restart([...ARGS.rest, ...launchedWith({ cls: ARGS.cls })]);
     },
   };
   core.appVersion = app.getVersion();
@@ -218,12 +231,14 @@ async function main() {
     served.close();
   });
   app.on("second-instance", (_e, argv, cwd) => {
-    // started again for another folder (the other launcher): this one restarts there
+    // started again from another launcher (another folder, or another icon): this one restarts as asked
     // (all of argv: Chromium may put its own switches before the app's folder)
-    const again = folderArg(argv.slice(1), cwd);
+    const again = launchArgs(argv.slice(1), cwd);
     const wanted = again.folder ?? pagesFolder(defaultDir)[0];
-    if (wanted !== core.lib.dir)
-      return restart(again.folder ? [...ARGS.rest, `--folder=${again.folder}`] : ARGS.rest);
+    if (wanted !== core.lib.dir || again.cls !== ARGS.cls) {
+      if (!again.cls && USUAL_DESKTOP) process.env.CHROME_DESKTOP = USUAL_DESKTOP; // as Electron would set it
+      return restart([...ARGS.rest, ...launchedWith(again)]);
+    }
     if (!mainWindow) mainWindow = createWindow(served, core);
     mainWindow.show();
     mainWindow.focus();
@@ -232,7 +247,8 @@ async function main() {
   if (!NO_WINDOW) mainWindow = createWindow(served, core);
 }
 
-if (!app.requestSingleInstanceLock()) app.quit(); // one Inktyset: a second launch brings the first forward
+// one Inktyset: a second launch brings the first forward (or restarts it, above)
+if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on("window-all-closed", () => {
     /* the hidden renderer window stays: quitting is decided above */

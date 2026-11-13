@@ -25,17 +25,21 @@ export async function isPagesFolder(dir: string): Promise<boolean> {
 }
 
 /**
- * The folder given with `--folder=<path>` (or `--folder <path>`), resolved from `cwd`, and the other arguments
- * (to start again without it once the user picks another folder).
+ * What a launcher asked for: `--folder=<path>` (resolved from `cwd`) and `--class=<name>`, the launcher the window
+ * belongs to (shell/electron/main.ts); each also as `--name value`. And the other arguments, to start again.
  */
-export function folderArg(args: readonly string[], cwd: string): { folder?: string; rest: string[] } {
+export function launchArgs(
+  args: readonly string[],
+  cwd: string,
+): { folder?: string; cls?: string; rest: string[] } {
   const rest: string[] = [];
-  let folder: string | undefined;
+  const found: Record<string, string> = {};
   for (let i = 0; i < args.length; i++) {
-    const a = args[i];
-    if (a.startsWith("--folder=")) folder = a.slice("--folder=".length);
-    else if (a === "--folder" && i + 1 < args.length) folder = args[++i];
-    else rest.push(a);
+    const m = /^--(folder|class)(?:=(.*))?$/.exec(args[i]);
+    if (m && m[2] !== undefined) found[m[1]] = m[2];
+    else if (m && i + 1 < args.length) found[m[1]] = args[++i];
+    else rest.push(args[i]);
   }
-  return { folder: folder ? resolve(cwd, folder) : undefined, rest };
+  const cls = /^[\w.-]+$/.test(found.class ?? "") ? found.class : undefined; // a desktop entry's name
+  return { folder: found.folder ? resolve(cwd, found.folder) : undefined, cls, rest };
 }
