@@ -143,6 +143,8 @@ async function main() {
   journal();
   Menu.setApplicationMenu(appMenu());
   const ses = session.defaultSession;
+  // pages shown before 0.7.2 could be in Chromium's cache (in userData, outside the pages folder): emptied
+  await ses.clearCache();
   const allowed = new Set(["notifications", "clipboard-sanitized-write"]);
   ses.setPermissionRequestHandler((_wc, permission, done) => done(allowed.has(permission)));
   ses.setPermissionCheckHandler((_wc, permission) => allowed.has(permission));

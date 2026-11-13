@@ -398,7 +398,11 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       if (path.startsWith("/files/")) {
         const f = dataFile(path.slice("/files/".length));
         if (!f) return send(res, 404, { error: "not found" });
-        res.writeHead(200, { "content-type": TYPES[extname(f).toLowerCase()] ?? "application/octet-stream" });
+        // no-store: a page's scan or preview is never copied to Chromium's cache, outside the pages folder
+        res.writeHead(200, {
+          "content-type": TYPES[extname(f).toLowerCase()] ?? "application/octet-stream",
+          "cache-control": "no-store",
+        });
         return void createReadStream(f).pipe(res);
       }
       const f = staticFile(path);
