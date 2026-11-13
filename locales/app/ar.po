@@ -1053,9 +1053,13 @@ msgctxt "editorTitle"
 msgid "Show or hide the text (E)"
 msgstr "إظهار النص أو إخفاؤه (E)"
 
-msgctxt "closeTitle"
-msgid "Close (Esc)"
-msgstr "إغلاق (Esc)"
+msgctxt "backTitle"
+msgid "Back to the pages (Esc)"
+msgstr "العودة إلى الصفحات (Esc)"
+
+msgctxt "backToPages"
+msgid "Pages"
+msgstr "الصفحات"
 
 msgctxt "handwritten"
 msgid "Handwritten"

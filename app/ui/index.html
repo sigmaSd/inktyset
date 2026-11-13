@@ -136,6 +136,10 @@
     </dialog>
     <dialog id="compare" tabindex="-1" aria-label="Compare a page with its text" data-i18n-aria="compareAria">
       <div class="cmp-head">
+        <!-- back at the start, far from the window's own close button (a ✕ next to it closed the app by mistake) -->
+        <button class="back" data-cmp="close" title="Back to the pages (Esc)" data-i18n-title="backTitle">
+          <span class="back-arrow" aria-hidden="true">←</span> <span data-i18n="backToPages">Pages</span>
+        </button>
         <button class="ghost nav" data-cmp="prev" title="Previous page" data-i18n-title="prevTitle">‹</button>
         <h2 id="cmpTitle"></h2>
         <button class="ghost nav" data-cmp="next" title="Next page" data-i18n-title="nextTitle">›</button>
@@ -179,7 +183,6 @@
           LaTeX
         </button>
         <button class="primary" data-cmp="check" id="cmpCheck">Mark as checked</button>
-        <button class="ghost" data-cmp="close" title="Close (Esc)" data-i18n-title="closeTitle">✕</button>
       </div>
       <div class="cmp-body">
         <div class="cmp-images" id="cmpImages">

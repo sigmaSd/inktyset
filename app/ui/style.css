@@ -658,6 +658,17 @@ html:has(#zoom[open]) {
 #compare textarea {
   overscroll-behavior: contain;
 }
+.cmp-head .back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline-end: 6px;
+}
+/* right to left: the arrow points the way back, to the right */
+[dir="rtl"] .back-arrow {
+  display: inline-block;
+  transform: scaleX(-1);
+}
 .cmp-head {
   display: flex;
   align-items: center;

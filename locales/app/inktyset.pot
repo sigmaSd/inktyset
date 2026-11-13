@@ -1029,8 +1029,12 @@ msgctxt "editorTitle"
 msgid "Show or hide the text (E)"
 msgstr ""
 
-msgctxt "closeTitle"
-msgid "Close (Esc)"
+msgctxt "backTitle"
+msgid "Back to the pages (Esc)"
+msgstr ""
+
+msgctxt "backToPages"
+msgid "Pages"
 msgstr ""
 
 msgctxt "handwritten"
