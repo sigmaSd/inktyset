@@ -7,6 +7,12 @@ const esc = (s) =>
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
   );
 if (navigator.userAgent.includes("Mac")) document.documentElement.classList.add("mac"); // its buttons: left
+// As in MedStation's desktop.ts: no browser context menu outside text fields (in a normal browser, while
+// testing; the app shows its own menu in text fields), and a file dropped outside the drop handling below
+// never replaces the page.
+document.addEventListener("contextmenu", (e) => {
+  if (!e.target.closest?.("input, textarea, [contenteditable]")) e.preventDefault();
+});
 let S = null; // last state from the server
 const texCache = new Map(); // id -> {rev, tex}
 const dirty = new Map(); // id -> timer for unsaved edits
@@ -106,6 +112,8 @@ function renderHeader() {
     $("#langOther").hidden = known;
     if (!known) $("#langOther").value = cur;
   }
+  $("#updateBtn").hidden = !S.update;
+  if (S.update) $("#updateBtn").title = `hand2tex ${S.update} is downloaded: restart to use it`;
   const done = S.pages.filter((p) => p.status === "done").length;
   $("#copyAll").disabled = $("#saveTex").disabled = !done;
 }
@@ -351,6 +359,18 @@ function renderSettings() {
   }
 }
 
+$("#updateBtn").onclick = async () => {
+  if (
+    S.pages.some((p) => p.status === "working" || p.status === "queued") &&
+    !confirm("Pages are still being read. Restart now? They continue after the restart.")
+  )
+    return;
+  try {
+    await api("/api/install-update");
+  } catch (err) {
+    toast(err.message);
+  }
+};
 $("#settingsBtn").onclick = () => {
   $("#settingsDialog").showModal();
   renderSettings();

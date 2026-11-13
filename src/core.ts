@@ -30,6 +30,8 @@ export interface Shell {
   chooseFolder(title: string): Promise<string | null>;
   saveFile(name: string, text: string): Promise<string | null>;
   notify(text: string): void;
+  /** Restart into a downloaded update (offered once `Core.update` is set). */
+  installUpdate(): void;
 }
 
 /** Settings of this computer (userData/settings.json); the language belongs to the pages (state.json). */
@@ -61,6 +63,8 @@ export class Core {
     verify: { status: "idle", progress: null, error: "" },
   };
   missing = { engine: true, model: true };
+  /** A downloaded, verified update waiting for a restart (its version), or null. */
+  update: string | null = null;
   readonly #userData: string;
   renderer!: Renderer;
   shell!: Shell;

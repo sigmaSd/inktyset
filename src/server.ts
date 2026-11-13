@@ -1,9 +1,9 @@
 // The window's way in: a small HTTP server on 127.0.0.1 (a random port) serving the built pages (app/ui/dist),
 // the pages' images, a JSON API and a stream of change notices. Only hand2tex's own windows can use it: they
-// carry a secret cookie that the shell sets (--dev prints a link that sets it in a normal browser, for testing).
+// carry a secret cookie that the shell sets (src/guard.ts; --dev prints a link that sets it in a normal browser).
 // Changes come only as POSTs with an X-Hand2tex header from the same origin, so no web page can make them.
 
-import { randomBytes, timingSafeEqual } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
@@ -11,6 +11,7 @@ import { extname, join, normalize, resolve, sep } from "node:path";
 import type { ComponentId } from "./components.ts";
 import { sizeOf, supported } from "./components.ts";
 import type { Core } from "./core.ts";
+import { CSP, guard, newSecret } from "./guard.ts";
 import { allBodies, fullDocument, LANGS } from "./pipeline.ts";
 
 const TYPES: Record<string, string> = {
@@ -27,8 +28,6 @@ const TYPES: Record<string, string> = {
   ".json": "application/json",
   ".woff2": "font/woff2",
 };
-
-export const COOKIE = "hand2tex";
 
 export interface Served {
   origin: string;
@@ -55,7 +54,7 @@ function readBody(req: IncomingMessage, limit = 200 << 20): Promise<Buffer> {
 }
 
 export async function serve(core: Core, uiDir: string): Promise<Served> {
-  const secret = randomBytes(24).toString("hex");
+  const secret = newSecret();
   let clients = 0;
   let port = 0;
 
@@ -68,13 +67,6 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
           : JSON.stringify(body);
     res.writeHead(code, { "content-type": type, "cache-control": "no-store", ...extra });
     res.end(data);
-  };
-
-  const hasCookie = (req: IncomingMessage) => {
-    const m = new RegExp(`(?:^|;\\s*)${COOKIE}=([0-9a-f]+)`).exec(req.headers.cookie ?? "");
-    const a = Buffer.from(m?.[1] ?? ""),
-      b = Buffer.from(secret);
-    return a.length === b.length && timingSafeEqual(a, b);
   };
 
   const state = async () => {
@@ -113,6 +105,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         custom: { serverPath: core.settings.serverPath ?? "", modelDir: core.settings.modelDir ?? "" },
       },
       machine: core.settings,
+      update: core.update,
       tex: {
         mode: core.tex.mode,
         using: core.tex.using,
@@ -206,6 +199,11 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       await core.setSettings({ modelDir: undefined });
       return { ok: true };
     }
+    if (path === "/api/install-update") {
+      if (!core.update) throw new Error("no update is ready");
+      core.shell.installUpdate();
+      return { ok: true };
+    }
     if (path === "/api/save-document") {
       const text = fullDocument(await lib.doneBodies(), lib.settings.language);
       const saved = await core.shell.saveFile("hand2tex.tex", text);
@@ -257,22 +255,15 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
     void (async () => {
       const url = new URL(req.url ?? "/", "http://x");
       const path = url.pathname;
-      const host = req.headers.host ?? "";
-      if (host !== `127.0.0.1:${port}` && host !== `localhost:${port}`) return send(res, 403, ""); // DNS rebinding
-      // a normal browser, in development: the link printed with --dev sets the cookie once
-      const key = url.searchParams.get("key");
-      if (key && key === secret) {
-        return send(res, 302, "", "text/plain", {
-          "set-cookie": `${COOKIE}=${secret}; HttpOnly; SameSite=Strict; Path=/`,
-          location: "/",
-        });
+      const refused = guard(req, secret, port); // src/guard.ts: only hand2tex's own windows
+      if (refused) {
+        res.writeHead(refused.status, refused.headers);
+        return void res.end(refused.body);
       }
-      if (!hasCookie(req)) return send(res, 403, "hand2tex: open this from the hand2tex app.", "text/plain");
 
       if (req.method === "POST") {
-        const origin = req.headers.origin;
-        if (req.headers["x-hand2tex"] !== "1" || (origin && origin !== `http://${host}`))
-          return send(res, 403, "");
+        // our own pages send this header: a plain form from elsewhere can't
+        if (req.headers["x-hand2tex"] !== "1") return send(res, 403, { error: "Access refused" });
         try {
           return send(res, 200, await post(path, req));
         } catch (e) {
@@ -296,7 +287,12 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       }
       const f = staticFile(path);
       if (f) {
-        res.writeHead(200, { "content-type": TYPES[extname(f).toLowerCase()] ?? "application/octet-stream" });
+        const type = TYPES[extname(f).toLowerCase()] ?? "application/octet-stream";
+        res.writeHead(200, {
+          "content-type": type,
+          "cache-control": "no-store",
+          ...(type.startsWith("text/html") ? { "content-security-policy": CSP } : {}),
+        });
         return void createReadStream(f).pipe(res);
       }
       send(res, 404, { error: "not found" });
