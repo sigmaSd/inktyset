@@ -1,6 +1,6 @@
 # Packaging hand2tex (`vp run dist`, after `vp build` and `vp pack`): electron-builder, into dist/packages/.
 # The package holds Electron, the bundled main process (dist/app/), the built window (app/ui/dist/) and the
-# icon — no node_modules: everything is bundled. The reading engine, the model and Tectonic are not in it:
+# icon — no node_modules: everything is bundled. The engine (llama.cpp), the model and Tectonic are not in it:
 # hand2tex downloads them on first start (src/components.ts), so the installers stay small.
 # Linux packages are built on Linux; Windows and macOS ones on those systems (or in CI, one runner each).
 

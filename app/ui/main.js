@@ -89,14 +89,19 @@ function connect() {
 function renderHeader() {
   const m = S.model;
   const setUp = !S.setup.missing.engine && !S.setup.missing.model;
+  // the engine starts on demand: "stopped" once set up is as good as ready
   const map = {
-    ready: ["ok", "Reading engine ready"],
-    starting: ["warn", "Reading engine starting…"],
-    stopped: setUp ? ["ok", "Reading engine ready to start"] : ["warn", "Not set up yet"],
-    missing: ["warn", "Not set up yet"],
-    error: ["bad", "Reading engine stopped"],
+    ready: ["ok", "Ready"],
+    starting: ["warn", "Loading the model…"],
+    stopped: setUp ? ["ok", "Ready"] : ["warn", "Setup needed"],
+    missing: ["warn", "Setup needed"],
+    error: ["bad", "Model stopped"],
   };
-  const [cls, text] = map[m.status] || ["", m.status];
+  let [cls, text] = map[m.status] || ["", m.status];
+  const reading = S.pages.find((p) => p.status === "working");
+  if (reading && m.status !== "starting" && m.status !== "error") {
+    [cls, text] = ["busy", `Reading page ${pageNumber(reading.id)}…`];
+  }
   $("#engine").innerHTML = `<span class="dot ${cls}"></span><span>${esc(text)}</span>`;
   $("#engine").title = m.detail || "";
 
@@ -246,10 +251,10 @@ function renderSetup() {
     <h2>Set up hand2tex</h2>
     <p>hand2tex reads your pages on this computer, so it needs two downloads, once. Nothing you add ever leaves this computer.
     Pages you add now wait until it's ready.</p>
-    ${row("engine", "Reading engine (llama.cpp)", su.missing.engine)}
+    ${row("engine", "Engine (llama.cpp)", su.missing.engine)}
     ${row("model", "Model (Qwen3.5 9B vision)", su.missing.model)}`;
   if (!su.supported.engine && su.missing.engine) {
-    html += `<p class="err">There is no ready-made reading engine for this system yet. If you have your own llama.cpp build, set its llama-server in Settings.</p>`;
+    html += `<p class="err">There is no ready-made engine for this system yet. If you have your own llama.cpp build, set its llama-server in Settings.</p>`;
   }
   if (!anyRunning) {
     html += `<div class="setup-actions">
@@ -338,7 +343,7 @@ function renderSettings() {
     }
   </section>
   <section class="set">
-    <h3>Reading engine</h3>
+    <h3>Model and engine</h3>
     <p class="note">Model files: ${esc(su.modelDir)}</p>
     <div class="setup-actions">
       <button data-setup="folder">Use model files from another folder…</button>
@@ -347,7 +352,7 @@ function renderSettings() {
     ${su.jobs.verify.status === "running" || su.jobs.verify.status === "error" ? `<div class="setup-row"><span class="setup-name">Checking files</span>${jobHtml(su.jobs.verify)}</div>` : ""}
     <label class="field">Your own llama-server (optional)
       <input type="text" id="setServer" placeholder="Leave empty to use the downloaded one" value="${esc(su.custom.serverPath)}"></label>
-    <p class="note">${su.serverPath ? `Using ${esc(su.serverPath)}` : "No reading engine yet."}</p>
+    <p class="note">${su.serverPath ? `Using ${esc(su.serverPath)}` : "No engine yet."}</p>
   </section>
   <section class="set">
     <h3>Your pages</h3>

@@ -21,7 +21,7 @@ document. Nothing you add leaves your computer.
 - About 8 GB of free memory for the model.
 - A graphics chip with Vulkan (Linux, Windows) or Apple Silicon (Metal) for speed: a page then takes a minute
   or two. Without one, the processor reads it, much more slowly.
-- On first start hand2tex downloads the reading engine
+- On first start hand2tex downloads the engine
   ([llama.cpp](https://github.com/ggml-org/llama.cpp), about 36 MB) and the model
   ([Qwen3.5 9B](https://huggingface.co/unsloth/Qwen3.5-9B-GGUF), 6.6 GB; Apache-2.0). Downloads resume after
   an interruption and are checked before use. If you already have the model files, point hand2tex to them.

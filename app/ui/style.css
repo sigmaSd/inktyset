@@ -114,8 +114,8 @@ button.ghost:hover:not(:disabled) {
 }
 
 header {
-  position: sticky;
-  top: 0;
+  flex: none; /* the page doesn't scroll (main does): the header stays at the top */
+  position: relative;
   z-index: 5;
   display: flex;
   align-items: center;
@@ -177,6 +177,10 @@ header :is(button, input, select, textarea, a, label) {
 .dot.bad {
   background: var(--bad);
 }
+.dot.busy {
+  background: var(--accent);
+  animation: pulse 1.2s infinite;
+}
 @keyframes pulse {
   50% {
     opacity: 0.35;
@@ -206,10 +210,27 @@ select {
   padding: 5px 8px;
 }
 
+/* As in MedStation, the window itself never scrolls: the header (the title bar) stays put and only the
+   content scrolls below it, so no scrollbar runs beside the window's buttons. Its scrollbar is hidden too
+   (the wheel, touchpad and keys still scroll). Content stays centred, at most 1460px wide. */
+html,
+body {
+  height: 100%;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 main {
-  max-width: 1500px;
-  margin: 0 auto;
-  padding: 18px 20px 80px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 18px max(20px, calc((100% - 1460px) / 2)) 80px;
+}
+main::-webkit-scrollbar {
+  display: none;
 }
 .add {
   display: grid;

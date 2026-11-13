@@ -1,4 +1,4 @@
-// What hand2tex downloads on first use, pinned and checksummed: the reading engine (llama.cpp's server, the
+// What hand2tex downloads on first use, pinned and checksummed: the engine (llama.cpp's server, the
 // build for this system), the model (two files), and Tectonic (a self-contained LaTeX, only when no working
 // TeX is installed). Downloads resume after an interruption and are checked (SHA-256) before use.
 
@@ -18,7 +18,7 @@ export interface Download {
 export type ComponentId = "engine" | "model" | "tectonic";
 
 interface Component {
-  /** What the user is told: "the reading engine (36 MB)". */
+  /** What the user is told: "the engine (36 MB)". */
   label: string;
   files: Download[];
   /** An archive to unpack (engine, Tectonic), or plain files (the model). */
@@ -109,7 +109,7 @@ function component(id: ComponentId): Component | null {
   const d = (id === "engine" ? ENGINES : TECTONICS)[PLATFORM];
   if (!d) return null;
   return {
-    label: id === "engine" ? "the reading engine" : "the LaTeX engine (Tectonic)",
+    label: id === "engine" ? "the engine" : "the LaTeX engine (Tectonic)",
     files: [d],
     unpack: true,
   };

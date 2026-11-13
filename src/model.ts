@@ -1,4 +1,4 @@
-// The reading engine: llama.cpp's server with the vision model, on a free port of 127.0.0.1, started by
+// The engine that reads the pages: llama.cpp's server with the vision model, on a free port of 127.0.0.1, started by
 // hand2tex and stopped with it. Its program is the downloaded one (components/engine) unless a path is set in
 // the settings (someone with their own llama.cpp build); the model files likewise (components/model, or a
 // folder chosen in the settings).
@@ -89,7 +89,7 @@ export class Model {
   async #start() {
     const bin = await this.serverPath();
     if (!bin || !(await this.modelReady())) {
-      this.#set("missing", "The reading engine or the model is not downloaded yet.");
+      this.#set("missing", "The engine or the model is not downloaded yet.");
       throw new Error(this.detail);
     }
     await this.#killStale();
@@ -131,7 +131,7 @@ export class Model {
       exited = true;
       if (this.#proc === proc) {
         this.#proc = null;
-        this.#set("error", `The reading engine stopped (code ${code}). See engine.log.`);
+        this.#set("error", `The model stopped (code ${code}). See engine.log.`);
       }
     });
     // loading takes a while (seconds on a graphics chip, longer from a slow disk)
@@ -148,7 +148,7 @@ export class Model {
       await new Promise((r) => setTimeout(r, 1000));
     }
     if (!exited) proc.kill();
-    throw new Error(this.detail || "The reading engine did not start in time.");
+    throw new Error(this.detail || "The model did not load in time.");
   }
 
   #pidFile() {
@@ -202,7 +202,7 @@ export class Model {
       body: JSON.stringify(body),
       signal,
     });
-    if (!r.ok) throw new Error(`The reading engine answered ${r.status}: ${(await r.text()).slice(0, 200)}`);
+    if (!r.ok) throw new Error(`The engine answered ${r.status}: ${(await r.text()).slice(0, 200)}`);
     const resp = (await r.json()) as {
       choices: { message: { content?: string }; finish_reason?: string }[];
     };
