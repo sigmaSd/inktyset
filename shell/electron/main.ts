@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Core } from "../../src/core.ts";
 import { COOKIE, type Served, serve } from "../../src/server.ts";
+import { appMenu, contextMenu } from "./menu.ts";
 import { Renderer } from "./render.ts";
 
 /** The application's files: the checkout, or the package (this file is dist/app/electron.mjs in both). */
@@ -26,18 +27,38 @@ if (app.isPackaged) app.commandLine.appendSwitch("log-level", "3");
 let mainWindow: BrowserWindow | null = null;
 let quitting = false;
 
+/**
+ * No system title bar: the page's own header takes its place (dragged to move the window, app/ui/style.css
+ * header), with the window's buttons drawn over its right end in the header's colours (--bg, --ink), as in
+ * MedStation. macOS keeps its own buttons, on the left.
+ */
+const HEADER_HEIGHT = 52;
+const titleBar = () =>
+  nativeTheme.shouldUseDarkColors
+    ? { color: "#15171c", symbolColor: "#e8e9ec", height: HEADER_HEIGHT }
+    : { color: "#f5f3ee", symbolColor: "#1d1f24", height: HEADER_HEIGHT };
+/** The page's --bg, behind it while it loads: no flash. */
+const background = () => (nativeTheme.shouldUseDarkColors ? "#15171c" : "#f5f3ee");
+
 function createWindow(served: Served, core: Core) {
   const win = new BrowserWindow({
     width: 1400,
     height: 950,
-    minWidth: 720,
+    minWidth: 960, // the header (the title bar) keeps its controls on one line
     minHeight: 500,
     title: "hand2tex",
     icon: ICON,
-    backgroundColor: nativeTheme.shouldUseDarkColors ? "#15171c" : "#f5f3ee",
+    show: false,
+    backgroundColor: background(),
     autoHideMenuBar: true,
+    titleBarStyle: "hidden",
+    ...(process.platform === "darwin" ? {} : { titleBarOverlay: titleBar() }),
     webPreferences: { sandbox: true, contextIsolation: true, spellcheck: false },
   });
+  win.once("ready-to-show", () => win.show());
+  win.webContents.on("context-menu", (_e, params) =>
+    contextMenu(win.webContents, params)?.popup({ window: win }),
+  );
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:\/\//.test(url)) void shell.openExternal(url);
     return { action: "deny" };
@@ -72,11 +93,13 @@ function notify(body: string) {
 }
 
 async function main() {
-  Menu.setApplicationMenu(
-    process.platform === "darwin"
-      ? Menu.buildFromTemplate([{ role: "appMenu" }, { role: "editMenu" }, { role: "windowMenu" }])
-      : null,
-  );
+  Menu.setApplicationMenu(appMenu());
+  nativeTheme.on("updated", () => {
+    // light ↔ dark: the window's buttons follow the header
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.setBackgroundColor(background());
+    if (process.platform !== "darwin") mainWindow.setTitleBarOverlay(titleBar());
+  });
   const ses = session.defaultSession;
   const allowed = new Set(["notifications", "clipboard-sanitized-write"]);
   ses.setPermissionRequestHandler((_wc, permission, done) => done(allowed.has(permission)));

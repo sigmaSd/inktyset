@@ -6,6 +6,7 @@ const esc = (s) =>
     /[&<>"']/g,
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
   );
+if (navigator.userAgent.includes("Mac")) document.documentElement.classList.add("mac"); // its buttons: left
 let S = null; // last state from the server
 const texCache = new Map(); // id -> {rev, tex}
 const dirty = new Map(); // id -> timer for unsaved edits

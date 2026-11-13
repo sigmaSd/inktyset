@@ -120,11 +120,24 @@ header {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 10px 20px;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(8px);
+  height: 52px; /* the window's title bar height (shell/electron/main.ts HEADER_HEIGHT) */
+  padding: 0 20px;
+  background: var(--bg); /* solid: the window's buttons are drawn over it in this colour */
   border-bottom: 1px solid var(--line);
-  flex-wrap: wrap;
+  /* in Electron, this is the window's title bar: drag it to move the window; the window's buttons are drawn
+     over the right end (the window-controls overlay), so the header keeps clear of them */
+  -webkit-app-region: drag;
+  padding-right: max(20px, calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 8px));
+}
+header :is(button, input, select, textarea, a, label) {
+  -webkit-app-region: no-drag;
+}
+.cmp-head :is(button, input, select, a, label) {
+  -webkit-app-region: no-drag;
+}
+/* macOS: its own window buttons sit at the top left */
+.mac :is(header, .cmp-head) {
+  padding-left: 84px;
 }
 .brand {
   display: flex;
@@ -593,8 +606,12 @@ html:has(#zoom[open]) {
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
+  min-height: 52px;
   border-bottom: 1px solid var(--line);
-  background: var(--surface);
+  /* covers the window: it is the title bar too while open (drag to move; the window's buttons stay clear) */
+  background: var(--bg);
+  -webkit-app-region: drag;
+  padding-right: max(14px, calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 8px));
   flex-wrap: wrap;
 }
 .cmp-head h2 {
