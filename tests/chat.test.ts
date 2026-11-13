@@ -77,3 +77,14 @@ test("chat: SEARCH blocks too, and change markers or a piece of the page are nev
   expect(isWholePage("y".repeat(900), page)).toBe(true);
   expect(isWholePage("short", "a short page")).toBe(true);
 });
+
+test("chat: a change block missing its opening line, in a code block, is still a change", () => {
+  // as the real model wrote it, one answer in four
+  const answer =
+    'The text "I\\alpha_i," was incorrect and should be the French word "Ic,".\n\n```latex\n$I\\alpha_i,$\n=======\n$Ic,$\n>>>>>>> REPLACE\n```';
+  expect(editsIn(answer)).toEqual([{ find: "$I\\alpha_i,$", replace: "$Ic,$" }]);
+  expect(proposalIn(answer)).toBeUndefined();
+  expect(withoutEdits(answer)).toBe(
+    'The text "I\\alpha_i," was incorrect and should be the French word "Ic,".',
+  );
+});

@@ -106,15 +106,22 @@ export const isWholePage = (block: string, page: string) =>
 // the model writes SEARCH (as code-editing tools taught it) or FIND (as asked before 0.9.2)
 const EDIT = /<{5,}[ \t]*(?:SEARCH|FIND)?[^\n]*\n([\s\S]*?)\n?={5,}[^\n]*\n([\s\S]*?)\n?>{5,}[^\n]*/g;
 
+// …and sometimes leaves out the opening line, inside a code block: the code block's start is then the start
+// (seen with the real model, one answer in four)
+const HEADLESS = /```\w*[ \t]*\n((?:(?!<{5,})[\s\S])*?)\n?={5,}[^\n]*\n([\s\S]*?)\n?>{5,}[^\n]*\n?```/g;
+
 /** The changes in an answer, as find-and-replace blocks (see chatInstructions). */
 export function editsIn(answer: string): { find: string; replace: string }[] {
-  return [...answer.matchAll(EDIT)].map((m) => ({ find: m[1], replace: m[2] })).filter((e) => e.find.trim());
+  const found = [...answer.matchAll(EDIT)];
+  const blocks = found.length ? found : [...answer.matchAll(HEADLESS)];
+  return blocks.map((m) => ({ find: m[1], replace: m[2] })).filter((e) => e.find.trim());
 }
 
 /** An answer with its change blocks taken out (they're shown as the text they make). */
 export const withoutEdits = (text: string) =>
   text
     .replace(EDIT, "")
+    .replace(HEADLESS, "")
     .replace(/```\w*\s*```/g, "")
     .trim();
 
