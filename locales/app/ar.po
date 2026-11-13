@@ -408,6 +408,18 @@ msgctxt "modelName"
 msgid "Model (Qwen3.5 9B vision)"
 msgstr "النموذج (Qwen3.5 9B للرؤية)"
 
+msgctxt "setupServer"
+msgid "You chose a model server on your own network: enter its address in Settings, under “Model and engine”."
+msgstr "اخترت خادم نماذج على شبكتك الخاصة: أدخل عنوانه في الإعدادات، تحت «النموذج والمحرّك»."
+
+msgctxt "setupFiles"
+msgid "You chose model files of your own: pick them in Settings, under “Model and engine”. Inktyset's engine runs them, a download needed once."
+msgstr "اخترت ملفات نموذج خاصة بك: اخترها في الإعدادات، تحت «النموذج والمحرّك». محرّك Inktyset هو الذي يشغّلها، ويُنزَّل مرة واحدة."
+
+msgctxt "openModelSettings"
+msgid "Open the model settings"
+msgstr "فتح إعدادات النموذج"
+
 msgctxt "noEngine"
 msgid "There is no ready-made engine for this system yet. If you have your own llama.cpp build, set its llama-server in Settings."
 msgstr "لا يوجد بعد محرّك جاهز لهذا النظام. إن كانت لديك نسختك الخاصة من llama.cpp فحدّد llama-server الخاص بها في الإعدادات."
@@ -1050,8 +1062,8 @@ msgid "What Inktyset tells the model. The lines about [??], the theorem environm
 msgstr "ما يقوله Inktyset للنموذج. الأسطر المتعلقة بـ[??] وبيئات النظريات و«Output ONLY the LaTeX body» يعتمد عليها التطبيق: أبقِها."
 
 msgctxt "thenAdded"
-msgid "Added after them: the line about the writing language, then your notes."
-msgstr "تُضاف بعدها: سطر لغة الكتابة، ثم ملاحظاتك."
+msgid "Inktyset sends this right after them, made from the writing language and your notes above:"
+msgstr "يرسل Inktyset هذا مباشرة بعدها، انطلاقًا من لغة الكتابة وملاحظاتك أعلاه:"
 
 msgctxt "promptChanged"
 msgid "changed"

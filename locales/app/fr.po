@@ -400,6 +400,18 @@ msgctxt "modelName"
 msgid "Model (Qwen3.5 9B vision)"
 msgstr "Modèle (Qwen3.5 9B vision)"
 
+msgctxt "setupServer"
+msgid "You chose a model server on your own network: enter its address in Settings, under “Model and engine”."
+msgstr "Vous avez choisi un serveur de modèles sur votre propre réseau : indiquez son adresse dans les Paramètres, sous « Modèle et moteur »."
+
+msgctxt "setupFiles"
+msgid "You chose model files of your own: pick them in Settings, under “Model and engine”. Inktyset's engine runs them, a download needed once."
+msgstr "Vous avez choisi vos propres fichiers de modèle : choisissez-les dans les Paramètres, sous « Modèle et moteur ». Le moteur d'Inktyset les fait tourner ; il se télécharge une seule fois."
+
+msgctxt "openModelSettings"
+msgid "Open the model settings"
+msgstr "Ouvrir les réglages du modèle"
+
 msgctxt "noEngine"
 msgid "There is no ready-made engine for this system yet. If you have your own llama.cpp build, set its llama-server in Settings."
 msgstr "Il n'existe pas encore de moteur tout prêt pour ce système. Si vous avez votre propre version de llama.cpp, indiquez son llama-server dans les Paramètres."
@@ -1030,8 +1042,8 @@ msgid "What Inktyset tells the model. The lines about [??], the theorem environm
 msgstr "Ce qu'Inktyset dit au modèle. Les lignes sur [??], les environnements de théorèmes et « Output ONLY the LaTeX body » sont celles dont l'application dépend : gardez-les."
 
 msgctxt "thenAdded"
-msgid "Added after them: the line about the writing language, then your notes."
-msgstr "Ajoutées ensuite : la ligne sur la langue d'écriture, puis vos remarques."
+msgid "Inktyset sends this right after them, made from the writing language and your notes above:"
+msgstr "Inktyset envoie ceci juste après, d'après la langue d'écriture et vos remarques ci-dessus :"
 
 msgctxt "promptChanged"
 msgid "changed"

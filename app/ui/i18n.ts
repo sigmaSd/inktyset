@@ -67,6 +67,11 @@ export const UI_SOURCE = {
     "Inktyset reads your pages on this computer, so it needs two downloads, once. Nothing you add ever leaves this computer. Pages you add now wait until it's ready.",
   engineName: "Engine (llama.cpp)",
   modelName: "Model (Qwen3.5 9B vision)",
+  setupServer:
+    "You chose a model server on your own network: enter its address in Settings, under “Model and engine”.",
+  setupFiles:
+    "You chose model files of your own: pick them in Settings, under “Model and engine”. Inktyset's engine runs them, a download needed once.",
+  openModelSettings: "Open the model settings",
   noEngine:
     "There is no ready-made engine for this system yet. If you have your own llama.cpp build, set its llama-server in Settings.",
   download: "Download ({size})",
@@ -228,7 +233,7 @@ export const UI_SOURCE = {
   allInstructions: "All the instructions (advanced)",
   allInstructionsHelp:
     "What Inktyset tells the model. The lines about [??], the theorem environments and “Output ONLY the LaTeX body” are what the app relies on: keep them.",
-  thenAdded: "Added after them: the line about the writing language, then your notes.",
+  thenAdded: "Inktyset sends this right after them, made from the writing language and your notes above:",
   promptChanged: "changed",
   promptCustom: "You changed these instructions.",
   resetPrompt: "Back to Inktyset's instructions",

@@ -16,7 +16,7 @@ import { Model } from "./model.ts";
 import { CSP, guard, newSecret } from "./guard.ts";
 import { checkLocalUrl } from "./local.ts";
 import { latexToTypst } from "./convert.ts";
-import { allBodies, fullDocument, langPrompt, LANGS } from "./pipeline.ts";
+import { allBodies, fullDocument, LANGS } from "./pipeline.ts";
 import { typstBodies, typstDocument } from "./typst.ts";
 
 const TYPES: Record<string, string> = {
@@ -100,7 +100,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         defaultPrompt: DEFAULT_PROMPT,
         prompt: core.settings.prompt ?? "",
         instructions: core.settings.instructions ?? "",
-        languageLine: langPrompt(core.lib.settings.language).trim(),
+        added: core.promptAddition().trim(), // shown as it is sent, after the instructions
       },
       phone: core.phone.state,
       scanner: {

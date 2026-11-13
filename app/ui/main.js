@@ -299,6 +299,26 @@ function renderSetup() {
       ${running(k) ? `<button class="ghost" data-setup="cancel" data-id="${k}">${t("stop")}</button>` : ""}
     </div>`;
   const anyRunning = running("engine") || running("model") || running("verify");
+  if (S.model.kind !== "builtin") {
+    // the user's own model: what's left is in Settings → Model (and our engine, for model files)
+    const engine = S.model.kind === "files" && su.missing.engine;
+    const html = `<div class="setup-card">
+      <h2>${t("setupTitle")}</h2>
+      <p>${t(S.model.kind === "server" ? "setupServer" : "setupFiles")}</p>
+      ${engine ? row("engine", t("engineName"), true) : ""}
+      ${engine && !su.supported.engine ? `<p class="err">${t("noEngine")}</p>` : ""}
+      <div class="setup-actions">
+        ${engine && su.supported.engine && !running("engine") ? `<button class="primary" data-setup="engine">${t("download", { size: bytes(su.sizes.engine) })}</button>` : ""}
+        <button data-setup="settings">${t("openModelSettings")}</button>
+      </div>
+      ${S.model.kind === "files" ? hardwareHtml() : ""}
+    </div>`;
+    if (el.dataset.html !== html) {
+      el.innerHTML = html;
+      el.dataset.html = html;
+    }
+    return;
+  }
   const total = (su.missing.engine ? su.sizes.engine : 0) + (su.missing.model ? su.sizes.model : 0);
   let html = `<div class="setup-card">
     <h2>${t("setupTitle")}</h2>
@@ -329,6 +349,11 @@ document.addEventListener("click", async (e) => {
     if (b.dataset.setup === "download") {
       if (su.missing.engine) await api("/api/setup/download", { id: "engine" });
       if (su.missing.model) await api("/api/setup/download", { id: "model" });
+    } else if (b.dataset.setup === "engine") await api("/api/setup/download", { id: "engine" });
+    else if (b.dataset.setup === "settings") {
+      $("#settingsDialog").showModal();
+      renderSettings();
+      $("#modelSection")?.scrollIntoView({ block: "start" });
     } else if (b.dataset.setup === "cancel") await api("/api/setup/cancel", { id: b.dataset.id });
     else if (b.dataset.setup === "folder") await api("/api/setup/model-folder");
     else if (b.dataset.setup === "tectonic") await api("/api/setup/download", { id: "tectonic" });
@@ -478,7 +503,7 @@ function readingHtml() {
         ${custom ? `<span class="warn-note">${t("promptCustom")}</span>` : ""}
         <button id="resetPrompt" data-act="resetPrompt" ${custom ? "" : "disabled"}>${t("resetPrompt")}</button>
       </div>
-      <p class="note">${t("thenAdded")}${rd.languageLine ? `<br><bdi dir="ltr">${esc(rd.languageLine)}</bdi>` : ""}</p>
+      ${rd.added ? `<p class="note">${t("thenAdded")}</p><pre class="prompt-added" dir="ltr">${esc(rd.added)}</pre>` : ""}
     </details>
     <p class="note">${t("tryOnPagesHelp")}</p>
     <button data-act="tryOn" ${anyDone ? "" : "disabled"}>${t("tryOnPages")}</button>
@@ -524,7 +549,7 @@ function modelHtml() {
       <input type="text" id="setServer" dir="ltr" placeholder="${t("ownServerPh")}" value="${esc(su.custom.serverPath)}"></label>
     <p class="note">${su.serverPath ? t("using", { d: `<bdi>${esc(su.serverPath)}</bdi>` }) : t("noEngineYet")}</p>
     ${hardwareHtml()}`;
-  return `<section class="set">
+  return `<section class="set" id="modelSection">
     <h3>${t("modelEngine")}</h3>
     ${radio("builtin", t("modelBuiltin"), t("modelBuiltinHelp"))}
     ${radio("files", t("modelFilesKind"), t("modelFilesHelp"))}

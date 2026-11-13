@@ -149,9 +149,13 @@ export class Core {
 
   /** The instructions a page is read with now: Inktyset's (or the user's own), the writing language, the user's notes. */
   readingPrompt(): string {
+    return (this.settings.prompt?.trim() || PROMPT) + this.promptAddition();
+  }
+
+  /** What follows the instructions, from the user's settings: the writing language's rule, then their notes. */
+  promptAddition(): string {
     const notes = this.settings.instructions?.trim();
     return (
-      (this.settings.prompt?.trim() || PROMPT) +
       langPrompt(this.lib.settings.language) +
       (notes ? `\n\nNotes from the person who wrote these pages (follow them):\n${notes}` : "")
     );

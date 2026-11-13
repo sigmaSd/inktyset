@@ -865,6 +865,29 @@ button.icon svg {
 }
 #settingsDialog {
   max-width: 640px;
+  overflow: hidden;
+}
+/* the settings scroll between a fixed title and a fixed Done button, with no scrollbar drawn */
+#settingsDialog[open] {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 48px);
+}
+#settingsBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  margin-inline: -24px;
+  padding-inline: 24px;
+}
+#settingsBody::-webkit-scrollbar {
+  display: none;
+}
+#settingsDialog .dialog-foot {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
 }
 .set {
   border-top: 1px solid var(--line);
@@ -982,6 +1005,15 @@ button.icon svg {
   border-radius: 6px;
   padding: 1px 6px;
   font-size: 12px;
+}
+.prompt-added {
+  white-space: pre-wrap;
+  font: 12px/1.5 var(--mono);
+  color: var(--muted); /* not editable here: it comes from the writing language and the notes */
+  margin: 4px 0 0;
+  padding: 6px 10px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
 }
 #settingsBody details summary {
   cursor: pointer;
