@@ -759,7 +759,7 @@ function buildCard(p) {
       .join("");
     right = `<div class="col preview"><h3>${t("preview")}</h3>${prev}</div>`;
   }
-  el.innerHTML = `<div class="card-head">
+  el.innerHTML = `<div class="card-head" draggable="true" title="${t("dragToMove")}">
       <h2>${t("pageN", { n: pageNumber(p.id) })}</h2><span class="chip ${cls}">${esc(label)}</span>
       ${trialChip(p)}
       <span class="src" title="${esc(p.label)}"><bdi>${esc(p.label)}</bdi></span><span class="spacer"></span>
@@ -1443,9 +1443,37 @@ async function upload(files) {
     }
   }
 }
+// Dragging a page (its header, scan or preview) moves it in the list. Only files from outside the window add
+// pages: a picture dragged from a page carries itself as a file, and used to come back as another page.
+let pageDrag = null; // the page being dragged, "inside" for any other drag that started in the window, or null
+const element = (n) => (n?.nodeType === 1 ? n : n?.parentElement);
+const editable = (n) => !!element(n)?.closest?.("textarea, input, [contenteditable=true], .cm-editor");
+function clearDropMark() {
+  for (const c of document.querySelectorAll(".card.drop-before, .card.drop-after"))
+    c.classList.remove("drop-before", "drop-after");
+}
+/** The card under the pointer, and whether the dragged page goes after it. */
+function dropMark(e) {
+  const card = element(e.target)?.closest?.(".card");
+  if (!card || card.dataset.id === pageDrag) return null;
+  const r = card.getBoundingClientRect();
+  return { card, after: e.clientY > r.top + r.height / 2 };
+}
+addEventListener("dragstart", (e) => {
+  const card = editable(e.target) ? null : element(e.target)?.closest?.(".card");
+  pageDrag = card?.dataset.id ?? "inside";
+  if (!card) return;
+  e.dataTransfer.effectAllowed = "move";
+  card.classList.add("lifted");
+});
+addEventListener("dragend", () => {
+  clearDropMark();
+  document.querySelector(".card.lifted")?.classList.remove("lifted");
+  pageDrag = null;
+});
 let dragDepth = 0;
 addEventListener("dragenter", (e) => {
-  if (e.dataTransfer?.types.includes("Files")) {
+  if (!pageDrag && e.dataTransfer?.types.includes("Files")) {
     dragDepth++;
     document.body.classList.add("dragging");
   }
@@ -1456,11 +1484,36 @@ addEventListener("dragleave", () => {
     document.body.classList.remove("dragging");
   }
 });
-addEventListener("dragover", (e) => e.preventDefault());
+addEventListener("dragover", (e) => {
+  if (pageDrag === "inside" && editable(e.target)) return; // text moved within the editors: as usual
+  e.preventDefault();
+  if (!pageDrag || pageDrag === "inside") return;
+  e.dataTransfer.dropEffect = "move";
+  const m = dropMark(e);
+  const same = m && m.card.classList.contains(m.after ? "drop-after" : "drop-before");
+  if (!same) {
+    clearDropMark();
+    if (m) m.card.classList.add(m.after ? "drop-after" : "drop-before");
+  }
+});
 addEventListener("drop", (e) => {
+  if (pageDrag === "inside" && editable(e.target)) return;
   e.preventDefault();
   dragDepth = 0;
   document.body.classList.remove("dragging");
+  if (pageDrag) {
+    // from inside the window: a page put elsewhere, or nothing
+    const m = pageDrag !== "inside" && dropMark(e);
+    clearDropMark();
+    if (!m) return;
+    const ids = S.pages.map((p) => p.id);
+    const from = ids.indexOf(pageDrag);
+    let to = ids.indexOf(m.card.dataset.id) + (m.after ? 1 : 0);
+    if (from < to) to--;
+    if (from >= 0 && to !== from)
+      api(`/api/page/${pageDrag}/move`, { by: to - from }).catch((err) => toast(err.message));
+    return;
+  }
   upload([...e.dataTransfer.files]);
 });
 addEventListener("paste", (e) => {

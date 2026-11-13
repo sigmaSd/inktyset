@@ -177,6 +177,7 @@ export const UI_SOURCE = {
   pageN: "Page {n}",
   compare: "Compare",
   compareTitle: "Scan and text side by side, to proofread",
+  dragToMove: "Drag to move this page",
   moveUp: "Move up",
   moveDown: "Move down",
   readAgain: "Read again",

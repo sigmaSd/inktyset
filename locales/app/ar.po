@@ -828,6 +828,10 @@ msgctxt "compareTitle"
 msgid "Scan and text side by side, to proofread"
 msgstr "الصورة والنص جنبًا إلى جنب للمراجعة"
 
+msgctxt "dragToMove"
+msgid "Drag to move this page"
+msgstr "اسحب لنقل هذه الصفحة"
+
 msgctxt "moveUp"
 msgid "Move up"
 msgstr "تحريك لأعلى"

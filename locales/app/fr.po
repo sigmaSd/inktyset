@@ -812,6 +812,10 @@ msgctxt "compareTitle"
 msgid "Scan and text side by side, to proofread"
 msgstr "Le scan et le texte côte à côte, pour relire"
 
+msgctxt "dragToMove"
+msgid "Drag to move this page"
+msgstr "Faites glisser pour déplacer cette page"
+
 msgctxt "moveUp"
 msgid "Move up"
 msgstr "Monter"

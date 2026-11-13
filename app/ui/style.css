@@ -365,6 +365,23 @@ button.tile:hover:not(:disabled) {
   border-bottom: 1px solid var(--line);
   flex-wrap: wrap;
 }
+.card-head[draggable="true"] {
+  cursor: grab;
+}
+.card.lifted {
+  opacity: 0.5;
+}
+/* where a dragged page will go: a line above or below this one */
+.card.drop-before {
+  box-shadow:
+    0 -4px 0 0 var(--accent),
+    var(--shadow);
+}
+.card.drop-after {
+  box-shadow:
+    0 4px 0 0 var(--accent),
+    var(--shadow);
+}
 .card-head h2 {
   margin: 0;
   font-size: 16px;
