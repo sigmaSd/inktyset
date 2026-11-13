@@ -229,6 +229,7 @@ export const UI_SOURCE = {
   allInstructionsHelp:
     "What Inktyset tells the model. The lines about [??], the theorem environments and “Output ONLY the LaTeX body” are what the app relies on: keep them.",
   thenAdded: "Added after them: the line about the writing language, then your notes.",
+  promptChanged: "changed",
   promptCustom: "You changed these instructions.",
   resetPrompt: "Back to Inktyset's instructions",
   tryOnPages: "Try on some pages…",

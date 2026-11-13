@@ -1033,6 +1033,10 @@ msgctxt "thenAdded"
 msgid "Added after them: the line about the writing language, then your notes."
 msgstr "Ajoutées ensuite : la ligne sur la langue d'écriture, puis vos remarques."
 
+msgctxt "promptChanged"
+msgid "changed"
+msgstr "modifiées"
+
 msgctxt "promptCustom"
 msgid "You changed these instructions."
 msgstr "Vous avez modifié ces instructions."

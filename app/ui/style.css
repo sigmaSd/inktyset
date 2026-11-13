@@ -965,6 +965,24 @@ button.icon svg {
   min-height: 260px;
   font-size: 12px;
 }
+.prompt-reset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+.prompt-reset button {
+  margin-inline-start: auto;
+}
+#settingsBody summary .changed {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 12px;
+}
 #settingsBody details summary {
   cursor: pointer;
   margin: 8px 0 4px;

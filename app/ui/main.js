@@ -471,11 +471,14 @@ function readingHtml() {
     <h3>${t("readingInstructions")}</h3>
     <label class="field">${t("yourNotes")}<small>${esc(t("yourNotesHelp"))}</small>
       <textarea id="setNotes" rows="3" placeholder="${esc(t("yourNotesPh"))}">${esc(rd.instructions)}</textarea></label>
-    <details id="promptBox" ${promptOpen ? "open" : ""}><summary>${t("allInstructions")}</summary>
+    <details id="promptBox" ${promptOpen ? "open" : ""}><summary>${t("allInstructions")}${custom ? ` <span class="changed">${t("promptChanged")}</span>` : ""}</summary>
       <p class="note">${esc(t("allInstructionsHelp"))}</p>
       <textarea id="setPrompt" class="prompt" rows="14" dir="ltr" spellcheck="false">${esc(rd.prompt || rd.defaultPrompt)}</textarea>
+      <div class="prompt-reset">
+        ${custom ? `<span class="warn-note">${t("promptCustom")}</span>` : ""}
+        <button id="resetPrompt" data-act="resetPrompt" ${custom ? "" : "disabled"}>${t("resetPrompt")}</button>
+      </div>
       <p class="note">${t("thenAdded")}${rd.languageLine ? `<br><bdi dir="ltr">${esc(rd.languageLine)}</bdi>` : ""}</p>
-      ${custom ? `<p class="warn-note">${t("promptCustom")} <button class="ghost" data-act="resetPrompt">${t("resetPrompt")}</button></p>` : ""}
     </details>
     <p class="note">${t("tryOnPagesHelp")}</p>
     <button data-act="tryOn" ${anyDone ? "" : "disabled"}>${t("tryOnPages")}</button>
@@ -541,6 +544,12 @@ $("#settingsDialog").addEventListener(
   true,
 );
 
+// the reset button wakes up as soon as the instructions are typed into, before they're saved
+$("#settingsDialog").addEventListener("input", (e) => {
+  if (e.target.id !== "setPrompt") return;
+  const b = $("#resetPrompt");
+  if (b) b.disabled = !S.reading.prompt && e.target.value.trim() === S.reading.defaultPrompt.trim();
+});
 $("#settingsDialog").addEventListener("change", async (e) => {
   const v = e.target.value;
   try {
