@@ -1201,6 +1201,18 @@ msgctxt "promptChanged"
 msgid "changed"
 msgstr "معدّلة"
 
+msgctxt "expand"
+msgid "Expand"
+msgstr "توسيع"
+
+msgctxt "expandTitle"
+msgid "Edit in a bigger window"
+msgstr "التعديل في نافذة أكبر"
+
+msgctxt "discardEdits"
+msgid "Discard your changes?"
+msgstr "تجاهل تغييراتك؟"
+
 msgctxt "promptCustom"
 msgid "You changed these instructions."
 msgstr "لقد غيّرت هذه التعليمات."

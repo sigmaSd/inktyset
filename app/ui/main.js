@@ -501,6 +501,43 @@ function foldersHtml() {
   </section>`;
 }
 
+// The notes and the instructions, in a big editor over Settings: Done puts the text back in the box, which
+// saves it as typing there does; Cancel (or Esc) leaves it, after asking when something was changed.
+const expandBtn = (id) =>
+  `<button class="ghost small" data-act="expand" data-for="${id}" title="${t("expandTitle")}">⤢ ${t("expand")}</button>`;
+let expanding = null; // the box being edited in the big editor, and its text when opened
+function openExpand(id) {
+  const box = $(`#${id}`);
+  if (!box) return;
+  expanding = { id, start: box.value };
+  $("#expandTitle").textContent = t(id === "setNotes" ? "yourNotes" : "allInstructions");
+  const ta = $("#expandText");
+  Object.assign(ta, { value: box.value, placeholder: box.placeholder, spellcheck: id === "setNotes" });
+  ta.dir = id === "setPrompt" ? "ltr" : "auto"; // Inktyset's instructions are English
+  $("#expandDialog").showModal();
+  ta.focus();
+}
+const expandChanged = () => expanding && $("#expandText").value !== expanding.start;
+$("#expandDone").onclick = () => {
+  const box = expanding && $(`#${expanding.id}`); // (Settings may have been redrawn meanwhile)
+  if (box && expandChanged()) {
+    box.value = $("#expandText").value;
+    box.dispatchEvent(new Event("input", { bubbles: true }));
+    box.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  expanding = null;
+  $("#expandDialog").close();
+};
+$("#expandCancel").onclick = () => {
+  if (expandChanged() && !confirm(t("discardEdits"))) return;
+  expanding = null;
+  $("#expandDialog").close();
+};
+$("#expandDialog").addEventListener("cancel", (e) => {
+  if (expandChanged() && !confirm(t("discardEdits"))) e.preventDefault();
+  else expanding = null;
+});
+
 // Settings → Reading instructions: the user's notes, and (advanced) all of Inktyset's instructions.
 let promptOpen = false;
 function readingHtml() {
@@ -509,12 +546,16 @@ function readingHtml() {
   const anyDone = S.pages.some((p) => p.status === "done");
   return `<section class="set">
     <h3>${t("readingInstructions")}</h3>
-    <label class="field">${t("yourNotes")}<small>${esc(t("yourNotesHelp"))}</small>
-      <textarea id="setNotes" rows="3" placeholder="${esc(t("yourNotesPh"))}">${esc(rd.instructions)}</textarea></label>
+    <div class="field">
+      <div class="field-row"><label for="setNotes">${t("yourNotes")}</label>${expandBtn("setNotes")}</div>
+      <small>${esc(t("yourNotesHelp"))}</small>
+      <textarea id="setNotes" rows="3" placeholder="${esc(t("yourNotesPh"))}">${esc(rd.instructions)}</textarea>
+    </div>
     <details id="promptBox" ${promptOpen ? "open" : ""}><summary>${t("allInstructions")}${custom ? ` <span class="changed">${t("promptChanged")}</span>` : ""}</summary>
       <p class="note">${esc(t("allInstructionsHelp"))}</p>
       <textarea id="setPrompt" class="prompt" rows="14" dir="ltr" spellcheck="false">${esc(rd.prompt || rd.defaultPrompt)}</textarea>
       <div class="prompt-reset">
+        ${expandBtn("setPrompt")}
         ${custom ? `<span class="warn-note">${t("promptCustom")}</span>` : ""}
         <button id="resetPrompt" data-act="resetPrompt" ${custom ? "" : "disabled"}>${t("resetPrompt")}</button>
       </div>
@@ -1196,6 +1237,7 @@ document.addEventListener("click", async (e) => {
     else if (act === "stopAll") await api("/api/stop-all");
     else if (act === "readStopped") await api("/api/read-stopped");
     else if (act === "editPicture") await openPicture(id);
+    else if (act === "expand") openExpand(b.dataset.for);
     else if (act === "tryOn") openTrial();
     else if (act === "stopTrials") await api("/api/trial/cancel");
     else if (act === "resetPrompt") {

@@ -1244,3 +1244,20 @@ button.small {
 .waiting > button {
   margin-top: 4px;
 }
+
+/* the notes or the instructions in a big editor, over Settings */
+.expand-dialog {
+  max-width: 1000px;
+  width: calc(100% - 48px);
+}
+.expand-dialog textarea {
+  height: 70vh;
+  min-height: 200px;
+  resize: none;
+}
+.field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
