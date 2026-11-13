@@ -11,7 +11,7 @@ LaTeX (or Typst) into your thesis or save one file. Nothing you add leaves your 
 
 **[Download](https://sigmasd.github.io/inktyset/)** · Linux, Windows, macOS
 
-![The page list: each page's scan, its LaTeX in a highlighting editor, and the compiled preview](docs/screenshots/list-light.png)
+![The page list: each page's scan, its LaTeX in a highlighting editor, and the compiled preview](docs/screenshots/list-dark.png)
 
 ## Why not just paste a photo into a chat?
 

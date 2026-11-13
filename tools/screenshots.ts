@@ -4,7 +4,8 @@
 //   INKTYSET_DATA=… INKTYSET_USERDATA=… electron . --dev --no-window     (prints the link)
 //   node tools/screenshots.ts '<link with ?k=…>' docs/screenshots
 //
-// Needs google-chrome or chromium on PATH. Only the page is captured, not the window around it.
+// Needs google-chrome or chromium on PATH. Only the page is captured, not the window around it. Dark theme
+// only: the README and the website show the app dark.
 
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -85,8 +86,8 @@ await send("Emulation.setDeviceMetricsOverride", {
 await send("Page.navigate", { url: link });
 await sleep(3000);
 
-for (const dark of [false, true]) {
-  const suffix = dark ? "dark" : "light";
+for (const dark of [true]) {
+  const suffix = "dark";
   await theme(dark);
   await js(`document.querySelector("#compare").open && document.querySelector("#compare").close()`);
   await sleep(600);
