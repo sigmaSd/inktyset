@@ -1676,6 +1676,8 @@ $("#compare").addEventListener("close", () => {
 // and what the user attaches (parts picked on the scan or the preview, or the whole preview). An answer that
 // rewrites the page is shown word by word against the text; Apply makes it a new version.
 const chat = { open: store.get("cmpChat", false), regions: [], picking: false, html: "", pending: false };
+/** Which chat is shown, for each page (else its newest, or a new one). */
+const chatOf = {};
 const openThoughts = new Set(); // thinking the user unfolded (kept open as the log is drawn again)
 
 /** Text with math ($…$, $$…$$, \(…\), \[…\]), code and a little Markdown, as safe HTML. */
@@ -1746,7 +1748,7 @@ async function renderChat() {
   chat.pending = true;
   let c;
   try {
-    c = await (await fetch(`/api/chat/${id}`)).json();
+    c = await (await fetch(`/api/chat/${id}?c=${chatOf[id] ?? ""}`)).json();
   } finally {
     chat.pending = false;
   }
@@ -1755,6 +1757,22 @@ async function renderChat() {
     return renderChat();
   }
   if (id !== cmp.id) return;
+  chatOf[id] = c.id;
+  // the page's chats, named by their first question; the one shown first if it's new
+  const when = (s) =>
+    new Date(s * 1000).toLocaleString(`${uiLang()}-u-nu-latn`, { dateStyle: "short", timeStyle: "short" });
+  const items = c.chats.map((x) => [
+    x.id,
+    `${x.title || (x.pictures ? t("chatPicture") : "…")} · ${when(x.at)}`,
+  ]);
+  if (!c.chats.some((x) => x.id === c.id)) items.unshift([c.id, t("newChat")]);
+  const options = items.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join("");
+  if ($("#chatList").dataset.html !== options) {
+    $("#chatList").innerHTML = options;
+    $("#chatList").dataset.html = options;
+  }
+  $("#chatList").value = c.id;
+  $("#cmpChat [data-cmp=chatDelete]").disabled = !c.messages.length;
   const current = c.text ?? ""; // the page's saved text (the editor may not have it yet)
   let html = c.messages.length
     ? ""
@@ -1845,6 +1863,7 @@ async function chatAction(act, p, btn) {
     const preview = $("#chatPreview").checked;
     if ((!text && !chat.regions.length && !preview) || chat.busy) return;
     await api(`/api/chat/${p.id}/ask`, {
+      chat: chatOf[p.id],
       text,
       preview,
       regions: chat.regions.map(({ data, w, h, from }) => ({ data, w, h, from })),
@@ -1852,18 +1871,24 @@ async function chatAction(act, p, btn) {
     $("#chatText").value = "";
     $("#chatPreview").checked = false;
     chat.regions = [];
-  } else if (act === "chatNow") await api(`/api/chat/${p.id}/now`);
-  else if (act === "chatStop") await api(`/api/chat/${p.id}/stop`);
+  } else if (act === "chatNow") await api(`/api/chat/${p.id}/now`, { chat: chatOf[p.id] });
+  else if (act === "chatStop") await api(`/api/chat/${p.id}/stop`, { chat: chatOf[p.id] });
   else if (act === "chatApply") {
     if (dirty.has(p.id)) await new Promise((r) => setTimeout(r, 950)); // the last edit is saved first
-    await api(`/api/chat/${p.id}/apply`, { n });
+    await api(`/api/chat/${p.id}/apply`, { chat: chatOf[p.id], n });
     texCache.delete(p.id);
     cmpEd.load(p.id, "", fmtOf(p)); // filled again with the new version
     toast(t("nowShowing", { v: S.pages.find((x) => x.id === p.id)?.current ?? "" }));
-  } else if (act === "chatDismiss") await api(`/api/chat/${p.id}/dismiss`, { n });
-  else if (act === "chatClear") {
-    if (!confirm(t("confirmNewChat"))) return;
-    await api(`/api/chat/${p.id}/clear`);
+  } else if (act === "chatDismiss") await api(`/api/chat/${p.id}/dismiss`, { chat: chatOf[p.id], n });
+  else if (act === "chatNew") {
+    // the chat shown stays saved; a new one starts (saved with its first question)
+    chatOf[p.id] = (await api(`/api/chat/${p.id}/new`)).chat;
+    openThoughts.clear();
+    $("#chatText").focus();
+  } else if (act === "chatDelete") {
+    if (!confirm(t("confirmDeleteChat"))) return;
+    await api(`/api/chat/${p.id}/delete`, { chat: chatOf[p.id] });
+    delete chatOf[p.id]; // the newest left, or a new one
     openThoughts.clear();
   } else if (act === "chatUnattach") chat.regions.splice(n, 1);
   else if (act === "chatPick") {
@@ -1873,6 +1898,14 @@ async function chatAction(act, p, btn) {
   chat.html = "";
   await renderChat();
 }
+
+$("#chatList").addEventListener("change", (e) => {
+  if (!cmp.id) return;
+  chatOf[cmp.id] = e.target.value;
+  openThoughts.clear();
+  chat.html = "";
+  void renderChat();
+});
 
 $("#chatText").addEventListener("keydown", (e) => {
   // Enter sends, Shift+Enter starts a new line (and Enter isn't "checked, next page" here)

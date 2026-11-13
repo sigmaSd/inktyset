@@ -268,9 +268,11 @@ export const UI_SOURCE = {
   promptChanged: "changed",
   chat: "Ask",
   chatTitle: "Ask about this page (C)",
-  chatAbout: "Ask about this page",
   newChat: "New chat",
-  confirmNewChat: "Start a new chat? This one is deleted.",
+  deleteChat: "Delete",
+  confirmDeleteChat: "Delete this chat? Its questions and answers are lost.",
+  chatList: "Chats about this page",
+  chatPicture: "A picture",
   chatPh: "Ask about this page, or how to write something differently…",
   chatEmpty:
     "Ask anything about this page: what a symbol is, why the preview looks wrong, or to write something another way. The model sees the scan and the text; pick a part of either to point at something.",

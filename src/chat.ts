@@ -1,5 +1,5 @@
 // The page chat (Compare view): questions about one page, answered by the same local model that reads the pages.
-// Each page's chat is kept in the pages folder (chats/<id>.json, its pictures in chats/<id>/), like the pages.
+// A page's chats are kept in the pages folder (chats/<page>/c1.json, c2.json…, their pictures beside them).
 // The model sees the page's scan and its current text, then the conversation: as much of it as fits in its
 // context (fitHistory). An answer that rewrites the page carries the whole new text in one code block
 // (proposalIn), or, for a fix, only the changes as find-and-replace blocks (editsIn, applied here by
@@ -39,6 +39,8 @@ export interface ChatMessage {
 
 export interface Chat {
   page: string;
+  /** Which of the page's chats: c1, c2… */
+  id: string;
   messages: ChatMessage[];
 }
 

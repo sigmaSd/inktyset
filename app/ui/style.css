@@ -1283,6 +1283,10 @@ button.small {
   align-items: center;
   gap: 8px;
 }
+.chat-head select {
+  flex: 1;
+  min-width: 0;
+}
 .chat-head .grow,
 .chat-tools .grow {
   flex: 1;

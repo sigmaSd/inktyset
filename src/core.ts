@@ -4,7 +4,7 @@
 // through server.ts.
 
 import { existsSync } from "node:fs";
-import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { type ComponentId, install, type Progress, sizeOf, supported, verifyModelDir } from "./components.ts";
 import { checkHardware, type Hardware } from "./hardware.ts";
@@ -651,56 +651,99 @@ export class Core {
   }
 
   // ------------------------------------------------------------------ the page chat (src/chat.ts)
+  // A page has any number of chats: chats/<page>/<chat>.json (c1, c2…), their pictures beside them. A question
+  // is known by `<page>/<chat>`; the engine answers one at a time, before the next page is read.
 
-  /** Pages whose last question waits for its answer, in the order asked. */
+  /** Questions waiting for their answer (`<page>/<chat>`), in the order asked. */
   #asked: string[] = [];
   #chatAbort: AbortController | null = null;
-  /** The answer being written: its page, and the thinking and text so far (the window shows them as they come). */
-  chatLive: { page: string; thinking: string; text: string; started: number } | null = null;
+  /** The answer being written: its page and chat, and the thinking and text so far (shown as they come). */
+  chatLive: { page: string; chat: string; thinking: string; text: string; started: number } | null = null;
 
-  #chatPath = (id: string) => join(this.lib.dir, "chats", `${id}.json`);
+  #chatDir = (page: string) => join(this.lib.dir, "chats", page);
+  #chatPath = (page: string, chat: string) => join(this.#chatDir(page), `${chat}.json`);
 
-  async chat(id: string): Promise<Chat> {
+  /** A page's chats, newest first: their name (the first question), when they began, how long they are. */
+  async chats(page: string) {
+    // 0.9.0–0.9.5 kept one chat per page, chats/<page>.json: it becomes the page's first
+    const old = join(this.lib.dir, "chats", `${page}.json`);
+    if (existsSync(old)) {
+      await mkdir(this.#chatDir(page), { recursive: true });
+      const c = JSON.parse(await readFile(old, "utf8")) as Chat;
+      await writeFile(this.#chatPath(page, "c1"), JSON.stringify({ ...c, id: "c1" }, null, 1));
+      await rm(old, { force: true });
+    }
+    const files = (await readdir(this.#chatDir(page)).catch(() => [] as string[])).filter((f) =>
+      /^c\d+\.json$/.test(f),
+    );
+    const list = await Promise.all(
+      files.map(async (f) => {
+        const c = await this.chat(page, f.slice(0, -5));
+        const first = c.messages.find((m) => m.role === "user");
+        return {
+          id: c.id,
+          title: (first?.text ?? "").split("\n")[0].slice(0, 60),
+          pictures: !!first?.attach?.length,
+          at: c.messages[0]?.at ?? 0,
+          n: c.messages.length,
+        };
+      }),
+    );
+    return list.filter((c) => c.n).sort((x, y) => y.at - x.at);
+  }
+
+  /** A new chat's name: the next free one (it is saved with its first question). */
+  async newChat(page: string) {
+    const files = await readdir(this.#chatDir(page)).catch(() => [] as string[]);
+    const n = Math.max(0, ...files.map((f) => Number(/^c(\d+)\.json$/.exec(f)?.[1] ?? 0)));
+    return `c${n + 1}`;
+  }
+
+  async chat(page: string, chat: string): Promise<Chat> {
     try {
-      return JSON.parse(await readFile(this.#chatPath(id), "utf8")) as Chat;
+      return { ...(JSON.parse(await readFile(this.#chatPath(page, chat), "utf8")) as Chat), page, id: chat };
     } catch {
-      return { page: id, messages: [] };
+      return { page, id: chat, messages: [] };
     }
   }
 
   async #saveChat(c: Chat) {
-    await mkdir(join(this.lib.dir, "chats"), { recursive: true });
-    await writeFile(this.#chatPath(c.page), JSON.stringify(c, null, 1));
+    await mkdir(this.#chatDir(c.page), { recursive: true });
+    await writeFile(this.#chatPath(c.page, c.id), JSON.stringify(c, null, 1));
   }
 
-  /** Where a page's chat stands: waiting its turn, being answered, or neither. */
-  chatState(id: string) {
+  /** Where a chat stands: its question waiting its turn, being answered, or neither. */
+  chatState(page: string, chat: string) {
+    const key = `${page}/${chat}`;
     return {
-      waiting: this.#asked.includes(id),
-      live: this.chatLive?.page === id ? this.chatLive : null,
+      waiting: this.#asked.includes(key),
+      live: this.chatLive?.page === page && this.chatLive.chat === chat ? this.chatLive : null,
       reading: this.lib.pages.find((p) => p.status === "working" || p.trial === "working")?.id ?? null,
     };
   }
 
   /**
-   * A question about a page: its text, parts of the scan or preview the user picked (JPEG, base64), and the
-   * whole preview if asked. Answered before the next page is read.
+   * A question in one of a page's chats: its text, parts of the scan or preview the user picked (JPEG, base64),
+   * and the whole preview if asked. Answered before the next page is read.
    */
   async ask(
-    id: string,
+    page: string,
+    chat: string,
     text: string,
     regions: { data: string; w: number; h: number; from: string }[],
     preview: boolean,
   ) {
-    const p = this.lib.get(id);
+    const p = this.lib.get(page);
     if (!p || p.status !== "done") throw Object.assign(new Error("page is not ready"), { code: 409 });
     if (this.missing.engine || this.missing.model) throw new Error(msg("notDownloaded"));
-    if (this.#asked.includes(id) || this.chatLive?.page === id)
+    const key = `${page}/${chat}`;
+    if (this.#asked.includes(key) || (this.chatLive?.page === page && this.chatLive.chat === chat))
       throw Object.assign(new Error("already asked"), { code: 409 });
-    const c = await this.chat(id);
-    const dir = join(this.lib.dir, "chats", id);
+    const c = await this.chat(page, chat);
+    const dir = this.#chatDir(page);
     await mkdir(dir, { recursive: true });
-    let n = c.messages.reduce((k, m) => k + (m.attach?.length ?? 0), 0);
+    // pictures are numbered across the page's chats (they share the folder)
+    let n = Math.max(0, ...(await readdir(dir)).map((f) => Number(/^a(\d+)\.jpg$/.exec(f)?.[1] ?? 0)));
     const attach: Chat["messages"][number]["attach"] = [];
     const keep = async (jpeg: Buffer, from: "scan" | "preview", w: number, h: number) => {
       const file = join(dir, `a${++n}.jpg`);
@@ -722,15 +765,16 @@ export class Core {
       ...(attach.length ? { attach } : {}),
     });
     await this.#saveChat(c);
-    this.#asked.push(id);
+    this.#asked.push(key);
     this.lib.changed();
     this.wake();
   }
 
   /** Don't wait for the page being read: it goes back in the queue (read again after), the question goes now. */
-  answerNow(id: string) {
-    if (!this.#asked.includes(id)) return;
-    this.#asked = [id, ...this.#asked.filter((x) => x !== id)];
+  answerNow(page: string, chat: string) {
+    const key = `${page}/${chat}`;
+    if (!this.#asked.includes(key)) return;
+    this.#asked = [key, ...this.#asked.filter((x) => x !== key)];
     const p = this.lib.pages.find((x) => x.status === "working" || x.trial === "working");
     if (!p) return;
     if (p.status === "working") p.status = "queued";
@@ -740,23 +784,26 @@ export class Core {
   }
 
   /** Stop a question: not asked any more if it waits, cut short if it's being answered. */
-  stopChat(id: string) {
-    this.#asked = this.#asked.filter((x) => x !== id);
-    if (this.chatLive?.page === id) this.#chatAbort?.abort();
+  stopChat(page: string, chat: string) {
+    this.#asked = this.#asked.filter((x) => x !== `${page}/${chat}`);
+    if (this.chatLive?.page === page && this.chatLive.chat === chat) this.#chatAbort?.abort();
     this.lib.changed();
   }
 
-  async clearChat(id: string) {
-    this.stopChat(id);
-    await rm(this.#chatPath(id), { force: true });
-    await rm(join(this.lib.dir, "chats", id), { recursive: true, force: true });
+  /** Forget a chat, and the pictures attached to it. */
+  async deleteChat(page: string, chat: string) {
+    this.stopChat(page, chat);
+    const c = await this.chat(page, chat);
+    for (const m of c.messages)
+      for (const a of m.attach ?? []) await rm(join(this.lib.dir, a.file), { force: true });
+    await rm(this.#chatPath(page, chat), { force: true });
     this.lib.changed();
   }
 
   /** An answer's rewrite becomes the page's text: a new version (the text it replaces stays in its own). */
-  async applyProposal(id: string, n: number) {
-    const p = this.lib.get(id);
-    const c = await this.chat(id);
+  async applyProposal(page: string, chat: string, n: number) {
+    const p = this.lib.get(page);
+    const c = await this.chat(page, chat);
     const m = c.messages[n];
     if (!p || p.status !== "done" || !m?.proposal || m.applied) throw new Error("nothing to apply");
     m.applied = await this.lib.addVersion(p, m.proposal, {
@@ -768,11 +815,11 @@ export class Core {
     });
     await this.#saveChat(c);
     this.lib.changed();
-    await this.compile(id);
+    await this.compile(page);
   }
 
-  async dismissProposal(id: string, n: number) {
-    const c = await this.chat(id);
+  async dismissProposal(page: string, chat: string, n: number) {
+    const c = await this.chat(page, chat);
     if (c.messages[n]) c.messages[n].dismissed = true;
     await this.#saveChat(c);
     this.lib.changed();
@@ -787,15 +834,16 @@ export class Core {
     );
   }
 
-  async #answer(id: string) {
+  async #answer(key: string) {
+    const [id, chat] = key.split("/");
     const p = this.lib.get(id);
-    const c = await this.chat(id);
+    const c = await this.chat(id, chat);
     if (!p || c.messages.at(-1)?.role !== "user") return;
     const format = p.format ?? "latex";
     const name = format === "typst" ? "Typst" : "LaTeX";
     const abort = new AbortController();
     this.#chatAbort = abort;
-    this.chatLive = { page: id, thinking: "", text: "", started: Date.now() / 1000 };
+    this.chatLive = { page: id, chat, thinking: "", text: "", started: Date.now() / 1000 };
     this.lib.changed();
     const t0 = Date.now();
     const answer: Chat["messages"][number] = { role: "assistant", text: "", at: 0 };
@@ -876,7 +924,7 @@ export class Core {
     }
     answer.at = Date.now() / 1000;
     answer.secs = (Date.now() - t0) / 1000;
-    const now = await this.chat(id); // (cleared meanwhile: the answer goes nowhere)
+    const now = await this.chat(id, chat); // (deleted meanwhile: the answer goes nowhere)
     if (now.messages.length) {
       now.messages.push(answer);
       await this.#saveChat(now);

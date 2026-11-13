@@ -1209,17 +1209,25 @@ msgctxt "chatTitle"
 msgid "Ask about this page (C)"
 msgstr "اسأل عن هذه الصفحة (C)"
 
-msgctxt "chatAbout"
-msgid "Ask about this page"
-msgstr "أسئلة عن هذه الصفحة"
-
 msgctxt "newChat"
 msgid "New chat"
 msgstr "محادثة جديدة"
 
-msgctxt "confirmNewChat"
-msgid "Start a new chat? This one is deleted."
-msgstr "بدء محادثة جديدة؟ ستُحذف هذه المحادثة."
+msgctxt "deleteChat"
+msgid "Delete"
+msgstr "حذف"
+
+msgctxt "confirmDeleteChat"
+msgid "Delete this chat? Its questions and answers are lost."
+msgstr "حذف هذه المحادثة؟ ستضيع أسئلتها وإجاباتها."
+
+msgctxt "chatList"
+msgid "Chats about this page"
+msgstr "المحادثات حول هذه الصفحة"
+
+msgctxt "chatPicture"
+msgid "A picture"
+msgstr "صورة"
 
 msgctxt "chatPh"
 msgid "Ask about this page, or how to write something differently…"

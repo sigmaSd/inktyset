@@ -230,8 +230,10 @@
         <!-- the page chat (src/chat.ts): questions about this page, answered by the local model -->
         <div class="cmp-chat" id="cmpChat" hidden>
           <div class="chat-head">
-            <strong data-i18n="chatAbout">Ask about this page</strong><span class="grow"></span>
-            <button class="ghost small" data-cmp="chatClear" data-i18n="newChat">New chat</button>
+            <!-- the page's chats: each saved, newest first -->
+            <select id="chatList" aria-label="Chats about this page" data-i18n-aria="chatList"></select>
+            <button class="ghost small" data-cmp="chatNew" data-i18n="newChat">New chat</button>
+            <button class="ghost small" data-cmp="chatDelete" data-i18n="deleteChat">Delete</button>
           </div>
           <div class="chat-log" id="chatLog"></div>
           <div class="chat-status" id="chatStatus"></div>

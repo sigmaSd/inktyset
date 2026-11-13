@@ -333,9 +333,13 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       await core.editPicture(pic[1], body.edit, body.readAgain === true);
       return { ok: true };
     }
-    const ch = /^\/api\/chat\/(page\d+)\/(ask|now|stop|apply|dismiss|clear)$/.exec(path);
+    const ch = /^\/api\/chat\/(page\d+)\/(ask|now|stop|apply|dismiss|delete|new)$/.exec(path);
     if (ch) {
       const [, id, action] = ch;
+      if (action === "new") return { chat: await core.newChat(id) };
+      // which of the page's chats
+      const chat = String(body.chat ?? "");
+      if (!/^c\d+$/.test(chat)) throw new Error("no such chat");
       if (action === "ask") {
         const regions = (Array.isArray(body.regions) ? body.regions : []).map(
           (r: Record<string, unknown>) => ({
@@ -347,12 +351,12 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         );
         const text = String(body.text ?? "").slice(0, 8000);
         if (!text.trim() && !regions.length && body.preview !== true) throw new Error("nothing asked");
-        await core.ask(id, text, regions, body.preview === true);
-      } else if (action === "now") core.answerNow(id);
-      else if (action === "stop") core.stopChat(id);
-      else if (action === "apply") await core.applyProposal(id, Number(body.n));
-      else if (action === "dismiss") await core.dismissProposal(id, Number(body.n));
-      else await core.clearChat(id);
+        await core.ask(id, chat, text, regions, body.preview === true);
+      } else if (action === "now") core.answerNow(id, chat);
+      else if (action === "stop") core.stopChat(id, chat);
+      else if (action === "apply") await core.applyProposal(id, chat, Number(body.n));
+      else if (action === "dismiss") await core.dismissProposal(id, chat, Number(body.n));
+      else await core.deleteChat(id, chat);
       return { ok: true };
     }
     if (path === "/api/read-stopped") {
@@ -427,13 +431,19 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         return send(res, 200, text, "text/plain; charset=utf-8");
       }
       const cm = /^\/api\/chat\/(page\d+)$/.exec(path);
-      // (with the page's text, which a rewrite is compared with)
-      if (cm)
+      if (cm) {
+        // one of the page's chats (?c=c2; else the newest, or a new one), the list of them, and the page's
+        // text (which a rewrite is compared with)
+        const list = await core.chats(cm[1]);
+        const asked = url.searchParams.get("c") ?? "";
+        const chat = /^c\d+$/.test(asked) ? asked : (list[0]?.id ?? (await core.newChat(cm[1])));
         return send(res, 200, {
-          ...(await core.chat(cm[1])),
-          ...core.chatState(cm[1]),
+          ...(await core.chat(cm[1], chat)),
+          ...core.chatState(cm[1], chat),
+          chats: list,
           text: await core.lib.body(cm[1]),
         });
+      }
       const pm = /^\/api\/page\/(page\d+)$/.exec(path);
       if (pm) return send(res, 200, { tex: await core.lib.body(pm[1]) });
       // a version's text (LaTeX, or the Typst shown), and the instructions it was read with

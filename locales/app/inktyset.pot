@@ -1181,16 +1181,24 @@ msgctxt "chatTitle"
 msgid "Ask about this page (C)"
 msgstr ""
 
-msgctxt "chatAbout"
-msgid "Ask about this page"
-msgstr ""
-
 msgctxt "newChat"
 msgid "New chat"
 msgstr ""
 
-msgctxt "confirmNewChat"
-msgid "Start a new chat? This one is deleted."
+msgctxt "deleteChat"
+msgid "Delete"
+msgstr ""
+
+msgctxt "confirmDeleteChat"
+msgid "Delete this chat? Its questions and answers are lost."
+msgstr ""
+
+msgctxt "chatList"
+msgid "Chats about this page"
+msgstr ""
+
+msgctxt "chatPicture"
+msgid "A picture"
 msgstr ""
 
 msgctxt "chatPh"
