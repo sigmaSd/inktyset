@@ -64,20 +64,116 @@ const PACKAGES = String.raw`\usepackage{amsmath,amssymb,amsthm,mathtools}
 \IfFileExists{enumitem.sty}{\usepackage{enumitem}}{}
 `;
 
-const DEFINITIONS = String.raw`\newtheorem{theorem}{Theorem}[section]
-\newtheorem{lemma}[theorem]{Lemma}
-\newtheorem{proposition}[theorem]{Proposition}
-\newtheorem{corollary}[theorem]{Corollary}
+/** Theorem-like headings in the writing language (both formats); other languages: English. */
+export const THEOREM_NAMES: Record<string, Record<string, string>> = {
+  english: {
+    theorem: "Theorem",
+    lemma: "Lemma",
+    proposition: "Proposition",
+    corollary: "Corollary",
+    definition: "Definition",
+    example: "Example",
+    remark: "Remark",
+    proof: "Proof",
+  },
+  french: {
+    theorem: "Théorème",
+    lemma: "Lemme",
+    proposition: "Proposition",
+    corollary: "Corollaire",
+    definition: "Définition",
+    example: "Exemple",
+    remark: "Remarque",
+    proof: "Démonstration",
+  },
+  german: {
+    theorem: "Satz",
+    lemma: "Lemma",
+    proposition: "Proposition",
+    corollary: "Korollar",
+    definition: "Definition",
+    example: "Beispiel",
+    remark: "Bemerkung",
+    proof: "Beweis",
+  },
+  spanish: {
+    theorem: "Teorema",
+    lemma: "Lema",
+    proposition: "Proposición",
+    corollary: "Corolario",
+    definition: "Definición",
+    example: "Ejemplo",
+    remark: "Observación",
+    proof: "Demostración",
+  },
+  italian: {
+    theorem: "Teorema",
+    lemma: "Lemma",
+    proposition: "Proposizione",
+    corollary: "Corollario",
+    definition: "Definizione",
+    example: "Esempio",
+    remark: "Osservazione",
+    proof: "Dimostrazione",
+  },
+  portuguese: {
+    theorem: "Teorema",
+    lemma: "Lema",
+    proposition: "Proposição",
+    corollary: "Corolário",
+    definition: "Definição",
+    example: "Exemplo",
+    remark: "Observação",
+    proof: "Demonstração",
+  },
+  turkish: {
+    theorem: "Teorem",
+    lemma: "Önsav",
+    proposition: "Önerme",
+    corollary: "Sonuç",
+    definition: "Tanım",
+    example: "Örnek",
+    remark: "Not",
+    proof: "İspat",
+  },
+  arabic: {
+    theorem: "مبرهنة",
+    lemma: "توطئة",
+    proposition: "قضية",
+    corollary: "نتيجة",
+    definition: "تعريف",
+    example: "مثال",
+    remark: "ملاحظة",
+    proof: "برهان",
+  },
+};
+
+export const theoremNames = (lang: string) =>
+  THEOREM_NAMES[(lang || "english").trim().toLowerCase()] ?? THEOREM_NAMES.english;
+
+/**
+ * Numbered straight through (Theorem 1, Lemma 2…), one counter for all: the model writes headings as
+ * \section*, so numbering within sections gave "Lemma 0.1". \proofname is set at \begin{document}, after
+ * babel/polyglossia set theirs.
+ */
+function definitions(lang: string): string {
+  const n = theoremNames(lang);
+  return String.raw`\newtheorem{theorem}{${n.theorem}}
+\newtheorem{lemma}[theorem]{${n.lemma}}
+\newtheorem{proposition}[theorem]{${n.proposition}}
+\newtheorem{corollary}[theorem]{${n.corollary}}
 \theoremstyle{definition}
-\newtheorem{definition}[theorem]{Definition}
-\newtheorem{example}[theorem]{Example}
+\newtheorem{definition}[theorem]{${n.definition}}
+\newtheorem{example}[theorem]{${n.example}}
 \theoremstyle{remark}
-\newtheorem{remark}[theorem]{Remark}
+\newtheorem{remark}[theorem]{${n.remark}}
+\AtBeginDocument{\renewcommand{\proofname}{${n.proof}}}
 % common shortcuts models like to use
 \providecommand{\R}{\mathbb{R}}\providecommand{\N}{\mathbb{N}}
 \providecommand{\Z}{\mathbb{Z}}\providecommand{\Q}{\mathbb{Q}}
 \providecommand{\C}{\mathbb{C}}
 `;
+}
 
 export function preamble(lang: string, family: Family): string {
   const info = langInfo(lang);
@@ -99,7 +195,7 @@ export function preamble(lang: string, family: Family): string {
       }
     }
   }
-  return `\\documentclass[11pt,a4paper]{article}\n${setup}${DEFINITIONS}`;
+  return `\\documentclass[11pt,a4paper]{article}\n${setup}${definitions(lang)}`;
 }
 
 /** The model's answer → the page's LaTeX body. */

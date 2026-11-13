@@ -54,3 +54,14 @@ test("typst: language, theorem blocks, and pages separated by page breaks", () =
   expect(typstDocument(["a", "b"], "english")).toContain("#pagebreak()\n// ---- page 2");
   expect(typstBodies(["a"])).toBe("// ---- page 1\na\n");
 });
+
+test("theorems: named in the writing language, numbered straight through (no 'Lemma 0.1')", () => {
+  const fr = preamble("french", "pdftex");
+  expect(fr).toContain("\\newtheorem{theorem}{Théorème}\n");
+  expect(fr).toContain("\\newtheorem{lemma}[theorem]{Lemme}");
+  expect(fr).toContain("\\renewcommand{\\proofname}{Démonstration}");
+  expect(preamble("english", "pdftex")).not.toContain("[section]");
+  expect(preamble("Dutch", "pdftex")).toContain("{Theorem}"); // unknown language: English names
+  expect(typstPreamble("arabic")).toContain('_thm("توطئة", body)');
+  expect(typstPreamble("german")).toContain("_Beweis._");
+});

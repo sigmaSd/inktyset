@@ -6,6 +6,7 @@ import { existsSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { dirOf, findFile, install, supported } from "./components.ts";
+import { theoremNames } from "./pipeline.ts";
 import { run, which } from "./run.ts";
 
 /** Typst's language codes, for hyphenation, quotes and text direction (Arabic is right to left). */
@@ -22,6 +23,7 @@ const CODES: Record<string, string> = {
 
 export function typstPreamble(lang: string): string {
   const key = (lang || "english").trim().toLowerCase();
+  const n = theoremNames(lang);
   const code = CODES[key];
   const fonts =
     key === "arabic"
@@ -30,16 +32,18 @@ export function typstPreamble(lang: string): string {
   return `#set page(paper: "a4", margin: 2.5cm)
 #set text(size: 11pt${code ? `, lang: "${code}"` : ""})
 ${fonts}#set par(justify: true)
-// theorem-like blocks, as the LaTeX preamble's \\newtheorem
-#let _thm(name, body, italic: true) = block(width: 100%, above: 1.2em, below: 1.2em)[*#name.* #if italic { emph(body) } else { body }]
-#let theorem(body) = _thm("Theorem", body)
-#let lemma(body) = _thm("Lemma", body)
-#let proposition(body) = _thm("Proposition", body)
-#let corollary(body) = _thm("Corollary", body)
-#let definition(body) = _thm("Definition", body, italic: false)
-#let example(body) = _thm("Example", body, italic: false)
-#let remark(body) = _thm("Remark", body, italic: false)
-#let proof(body) = block(width: 100%, above: 1.2em, below: 1.2em)[_Proof._ #body #h(1fr) $square$]
+// theorem-like blocks, as the LaTeX preamble's \\newtheorem: named in the writing language, numbered
+// straight through with one counter
+#let _thmcount = counter("inktyset-theorem")
+#let _thm(name, body, italic: true) = block(width: 100%, above: 1.2em, below: 1.2em)[#_thmcount.step()*#name #context _thmcount.display().* #if italic { emph(body) } else { body }]
+#let theorem(body) = _thm("${n.theorem}", body)
+#let lemma(body) = _thm("${n.lemma}", body)
+#let proposition(body) = _thm("${n.proposition}", body)
+#let corollary(body) = _thm("${n.corollary}", body)
+#let definition(body) = _thm("${n.definition}", body, italic: false)
+#let example(body) = _thm("${n.example}", body, italic: false)
+#let remark(body) = _thm("${n.remark}", body, italic: false)
+#let proof(body) = block(width: 100%, above: 1.2em, below: 1.2em)[_${n.proof}._ #body #h(1fr) $square$]
 `;
 }
 
