@@ -956,3 +956,100 @@ button.icon svg {
 :root:lang(ar) body {
   font-family: system-ui, "Noto Sans Arabic", "Noto Naskh Arabic", "Segoe UI", Tahoma, sans-serif;
 }
+/* Settings: the reading instructions and the model */
+#settingsBody textarea {
+  min-height: 0;
+  margin-top: 4px;
+}
+#settingsBody textarea.prompt {
+  min-height: 260px;
+  font-size: 12px;
+}
+#settingsBody details summary {
+  cursor: pointer;
+  margin: 8px 0 4px;
+}
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  margin: 4px 0;
+}
+.file-row .note {
+  overflow-wrap: anywhere;
+}
+/* Trying instructions on some pages */
+.trial-list {
+  max-height: 50vh;
+  overflow: auto;
+  display: grid;
+  gap: 4px;
+  margin: 10px 0;
+}
+.trial-list label {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.trial-list small {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dialog-foot .grow {
+  flex: 1;
+}
+button.fresh {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* Compare: two versions of a page */
+.versions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.cmp-diff {
+  width: 36%;
+  min-width: 320px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-inline-start: 1px solid var(--line);
+  background: var(--surface);
+  padding: 10px 12px;
+}
+.cmp-diff[hidden] {
+  display: none;
+}
+.diff-head {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cmp-diff pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 12.5px/1.55 var(--mono);
+  margin: 8px 0 0;
+}
+.cmp-diff del {
+  background: color-mix(in srgb, var(--bad) 22%, transparent);
+  text-decoration: line-through;
+}
+.cmp-diff ins {
+  background: color-mix(in srgb, var(--ok) 26%, transparent);
+  text-decoration: none;
+}
+@media (max-width: 1000px) {
+  .cmp-diff {
+    width: auto;
+    min-width: 0;
+    height: 40%;
+    border-inline-start: 0;
+    border-top: 1px solid var(--line);
+  }
+}

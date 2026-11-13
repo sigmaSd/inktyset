@@ -132,6 +132,14 @@ async function main() {
       });
       return r.canceled ? null : (r.filePaths[0] ?? null);
     },
+    async chooseFile(title, extensions) {
+      const r = await dialog.showOpenDialog(mainWindow ?? undefined!, {
+        title,
+        properties: ["openFile"],
+        filters: [{ name: extensions.join(", "), extensions }],
+      });
+      return r.canceled ? null : (r.filePaths[0] ?? null);
+    },
     async saveFile(name, text) {
       const r = await dialog.showSaveDialog(mainWindow ?? undefined!, {
         defaultPath: join(app.getPath("documents"), name),

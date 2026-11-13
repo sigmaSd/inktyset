@@ -21,13 +21,32 @@ export interface Catalog {
   entries: PoEntry[];
 }
 
-const unquote = (s: string) =>
-  JSON.parse(
-    s
-      .trim()
-      .replace(/\\(?!["\\nt])/g, "\\\\")
-      .replace(/\t/g, "\\t"),
-  ) as string;
+/** A quoted PO string's text: C escapes (\\n \\t \\" \\\\ …) undone. */
+function unquote(quoted: string): string {
+  const s = quoted.trim();
+  if (s.length < 2 || !s.startsWith('"') || !s.endsWith('"')) throw new Error(`not a quoted string: ${s}`);
+  const ESC: Record<string, string> = {
+    n: "\n",
+    t: "\t",
+    r: "\r",
+    '"': '"',
+    "\\": "\\",
+    a: "\x07",
+    b: "\b",
+    f: "\f",
+    v: "\v",
+  };
+  let out = "";
+  for (let i = 1; i < s.length - 1; i++) {
+    const c = s[i];
+    if (c !== "\\") out += c;
+    else {
+      const n = s[++i];
+      out += ESC[n] ?? "\\" + n;
+    }
+  }
+  return out;
+}
 
 export function parsePo(text: string): Catalog {
   const entries: PoEntry[] = [];

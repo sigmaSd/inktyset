@@ -141,6 +141,10 @@
         <button class="ghost nav" data-cmp="next" title="Next page" data-i18n-title="nextTitle">›</button>
         <span class="chip" id="cmpChip"></span>
         <span class="note" id="cmpProgress"></span>
+        <label class="versions" id="cmpVersions" hidden
+          ><span data-i18n="compareWith">Compare with</span>
+          <select id="cmpOther"></select
+        ></label>
         <span class="spacer"></span>
         <span class="zoomctl">
           <button class="ghost" data-cmp="out" title="Zoom out (−)" data-i18n-title="zoomOut">−</button
@@ -187,7 +191,13 @@
             <span class="pane-label">LaTeX preview</span>
             <div class="pane-inner" id="prevInner"></div>
           </div>
+          <!-- another version of the page, while two are compared -->
+          <div class="pane" id="paneOther" hidden>
+            <span class="pane-label"></span>
+            <div class="pane-inner" id="otherInner"></div>
+          </div>
         </div>
+        <div class="cmp-diff" id="cmpDiff" hidden></div>
         <div class="cmp-editor" id="cmpEditor">
           <div class="code" id="cmpCode"></div>
           <div class="editor-foot">
@@ -206,6 +216,19 @@
         </div>
       </div>
       <div class="cmp-hint"></div>
+    </dialog>
+    <dialog id="trialDialog">
+      <h2 data-i18n="trialTitle">Try on some pages</h2>
+      <p class="note" data-i18n="trialText">
+        Each page you choose is read again with the current instructions and model, as a new version. Its text
+        is not replaced: compare the two, then keep the one you prefer.
+      </p>
+      <div id="trialList" class="trial-list"></div>
+      <div class="dialog-foot">
+        <span class="note" id="trialInfo"></span><span class="grow"></span>
+        <button id="trialCancel" data-i18n="cancel">Cancel</button>
+        <button id="trialGo" class="primary"></button>
+      </div>
     </dialog>
     <dialog id="zoom"><img alt="" /></dialog>
     <div class="drop" data-i18n="dropHere">Drop photos or PDFs to add them</div>

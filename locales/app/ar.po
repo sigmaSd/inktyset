@@ -114,6 +114,46 @@ msgctxt "couldNotStart"
 msgid "Inktyset could not start: {error}"
 msgstr "تعذّر تشغيل Inktyset: {error}"
 
+msgctxt "notAnAddress"
+msgid "“{url}” is not an address (it starts with http:// or https://)."
+msgstr "«{url}» ليس عنوانًا (يبدأ العنوان بـhttp:// أو https://)."
+
+msgctxt "hostNotFound"
+msgid "{host} could not be found on the network."
+msgstr "تعذّر العثور على {host} على الشبكة."
+
+msgctxt "notLocal"
+msgid "{host} is not on this computer or the local network. Inktyset only uses models on your own machines: your pages never leave them."
+msgstr "{host} ليس على هذا الحاسوب ولا على الشبكة المحلية. لا يستخدم Inktyset إلا نماذج على أجهزتك: لا تغادرها صفحاتك أبدًا."
+
+msgctxt "modelFileMissing"
+msgid "The model file is not there any more: {file}"
+msgstr "ملف النموذج لم يعد موجودًا: {file}"
+
+msgctxt "serverNoAnswer"
+msgid "The model server at {url} did not answer: {error}"
+msgstr "لم يستجب خادم النماذج على {url}: {error}"
+
+msgctxt "noModelOnServer"
+msgid "The model server at {url} has no model loaded."
+msgstr "لا يوجد نموذج محمَّل على خادم النماذج في {url}."
+
+msgctxt "modelWrongSize"
+msgid "{file} is missing or has the wrong size in that folder."
+msgstr "{file} مفقود في ذلك المجلد أو حجمه غير صحيح."
+
+msgctxt "modelWrongSum"
+msgid "{file} in that folder is not the expected file (checksum differs)."
+msgstr "{file} في ذلك المجلد ليس الملف المتوقع (المجموع الاختباري مختلف)."
+
+msgctxt "chooseModelFile"
+msgid "The model (.gguf)"
+msgstr "النموذج (‎.gguf)"
+
+msgctxt "chooseMmprojFile"
+msgid "The model's vision file (mmproj .gguf)"
+msgstr "ملف الرؤية للنموذج (mmproj ‎.gguf)"
+
 msgctxt "cut"
 msgid "Cut"
 msgstr "قص"
@@ -789,8 +829,8 @@ msgid "Not saved: {e}"
 msgstr "لم يُحفظ: {e}"
 
 msgctxt "confirmRedo"
-msgid "Read this page again? Your corrections on this page will be replaced."
-msgstr "قراءة هذه الصفحة مجددًا؟ ستُستبدل تصحيحاتك على هذه الصفحة."
+msgid "Read this page again? The text you have now is kept as a version you can go back to."
+msgstr "قراءة هذه الصفحة مجددًا؟ يُحفظ النص الحالي كإصدار يمكنك الرجوع إليه."
 
 msgctxt "confirmRemove"
 msgid "Remove page {n} from the list?"
@@ -983,3 +1023,252 @@ msgstr "حُفظ في {p}"
 msgctxt "saveFailed"
 msgid "Could not save: {e}"
 msgstr "تعذّر الحفظ: {e}"
+
+msgctxt "readingInstructions"
+msgid "Reading instructions"
+msgstr "تعليمات القراءة"
+
+msgctxt "yourNotes"
+msgid "Your notes for the model"
+msgstr "ملاحظاتك للنموذج"
+
+#. Keep \R as it is: it is LaTeX
+msgctxt "yourNotesHelp"
+msgid "About your handwriting or notation, in any language. For example: “I write ℝ as \\R”, “ignore the page numbers”."
+msgstr "عن خطك أو رموزك، بأي لغة. مثلًا: «أكتب ℝ هكذا \\R»، «تجاهل أرقام الصفحات»."
+
+msgctxt "yourNotesPh"
+msgid "Nothing yet"
+msgstr "لا شيء بعد"
+
+msgctxt "allInstructions"
+msgid "All the instructions (advanced)"
+msgstr "كل التعليمات (متقدم)"
+
+msgctxt "allInstructionsHelp"
+msgid "What Inktyset tells the model. The lines about [??], the theorem environments and “Output ONLY the LaTeX body” are what the app relies on: keep them."
+msgstr "ما يقوله Inktyset للنموذج. الأسطر المتعلقة بـ[??] وبيئات النظريات و«Output ONLY the LaTeX body» يعتمد عليها التطبيق: أبقِها."
+
+msgctxt "thenAdded"
+msgid "Added after them: the line about the writing language, then your notes."
+msgstr "تُضاف بعدها: سطر لغة الكتابة، ثم ملاحظاتك."
+
+msgctxt "promptCustom"
+msgid "You changed these instructions."
+msgstr "لقد غيّرت هذه التعليمات."
+
+msgctxt "resetPrompt"
+msgid "Back to Inktyset's instructions"
+msgstr "العودة إلى تعليمات Inktyset"
+
+msgctxt "tryOnPages"
+msgid "Try on some pages…"
+msgstr "تجربة على بعض الصفحات…"
+
+msgctxt "tryOnPagesHelp"
+msgid "Read a few pages again with these instructions and this model, and compare with what you have."
+msgstr "أعد قراءة بضع صفحات بهذه التعليمات وهذا النموذج، وقارن بما لديك."
+
+msgctxt "modelBuiltin"
+msgid "Built-in: Qwen3.5 9B"
+msgstr "المدمج: Qwen3.5 9B"
+
+msgctxt "modelBuiltinHelp"
+msgid "Downloaded once and checked. A good reader of handwritten math."
+msgstr "يُنزَّل مرة واحدة ويُتحقَّق منه. قارئ جيد للرياضيات المكتوبة بخط اليد."
+
+msgctxt "modelFilesKind"
+msgid "Model files on this computer"
+msgstr "ملفات نموذج على هذا الحاسوب"
+
+msgctxt "modelFilesHelp"
+msgid "Any vision model llama.cpp runs: a .gguf file and its mmproj .gguf (from Hugging Face, for example)."
+msgstr "أي نموذج رؤية يشغّله llama.cpp: ملف ‎.gguf وملف mmproj ‎.gguf الخاص به (من Hugging Face مثلًا)."
+
+msgctxt "modelServerKind"
+msgid "A model server on this computer or your network"
+msgstr "خادم نماذج على هذا الحاسوب أو على شبكتك"
+
+msgctxt "modelServerHelp"
+msgid "Ollama, LM Studio, llama-server, vLLM… already running. Never a cloud service: your pages stay on your own machines."
+msgstr "Ollama أو LM Studio أو llama-server أو vLLM… يعمل مسبقًا. ليس خدمة سحابية أبدًا: تبقى صفحاتك على أجهزتك."
+
+msgctxt "modelFileLabel"
+msgid "Model: {p}"
+msgstr "النموذج: {p}"
+
+msgctxt "mmprojLabel"
+msgid "Vision file: {p}"
+msgstr "ملف الرؤية: {p}"
+
+msgctxt "notChosen"
+msgid "not chosen"
+msgstr "لم يُختر"
+
+msgctxt "choose"
+msgid "Choose…"
+msgstr "اختيار…"
+
+msgctxt "serverUrl"
+msgid "Address"
+msgstr "العنوان"
+
+msgctxt "serverModelName"
+msgid "Model on the server"
+msgstr "النموذج على الخادم"
+
+msgctxt "serverModelPh"
+msgid "The server's own when empty"
+msgstr "نموذج الخادم نفسه إن تُرك فارغًا"
+
+msgctxt "findModels"
+msgid "Find its models"
+msgstr "البحث عن نماذجه"
+
+#. Models offered by the model server
+msgctxt "modelsFound"
+msgid "{n} model found"
+msgid_plural "{n} models found"
+msgstr[0] "لم يُعثر على نماذج"
+msgstr[1] "عُثر على نموذج واحد"
+msgstr[2] "عُثر على نموذجين"
+msgstr[3] "عُثر على {n} نماذج"
+msgstr[4] "عُثر على {n} نموذجًا"
+msgstr[5] "عُثر على {n} نموذج"
+
+msgctxt "serverKey"
+msgid "Key (only if the server asks for one)"
+msgstr "المفتاح (فقط إن طلبه الخادم)"
+
+msgctxt "readingWith"
+msgid "Reading with: {m}"
+msgstr "القراءة باستخدام: {m}"
+
+msgctxt "trialTitle"
+msgid "Try on some pages"
+msgstr "تجربة على بعض الصفحات"
+
+msgctxt "trialText"
+msgid "Each page you choose is read again with the current instructions and model, as a new version. Its text is not replaced: compare the two, then keep the one you prefer."
+msgstr "تُقرأ كل صفحة تختارها مجددًا بالتعليمات والنموذج الحاليين، كإصدار جديد. لا يُستبدل نصها: قارن بين الاثنين، ثم احتفظ بما تفضّله."
+
+msgctxt "cancel"
+msgid "Cancel"
+msgstr "إلغاء"
+
+msgctxt "trialGo"
+msgid "Read {n} page"
+msgid_plural "Read {n} pages"
+msgstr[0] "قراءة {n} صفحة"
+msgstr[1] "قراءة صفحة واحدة"
+msgstr[2] "قراءة صفحتين"
+msgstr[3] "قراءة {n} صفحات"
+msgstr[4] "قراءة {n} صفحةً"
+msgstr[5] "قراءة {n} صفحة"
+
+msgctxt "trialNone"
+msgid "Choose pages"
+msgstr "اختر صفحات"
+
+msgctxt "trialWaiting"
+msgid "Waiting to try"
+msgstr "في انتظار التجربة"
+
+msgctxt "trying"
+msgid "Trying…"
+msgstr "جارٍ التجربة…"
+
+msgctxt "trialFailedShort"
+msgid "Trial failed"
+msgstr "فشلت التجربة"
+
+msgctxt "trialsLeft"
+msgid "Trying other instructions: {n} page left"
+msgid_plural "Trying other instructions: {n} pages left"
+msgstr[0] "تجربة تعليمات أخرى: لا صفحات متبقية"
+msgstr[1] "تجربة تعليمات أخرى: تبقى صفحة واحدة"
+msgstr[2] "تجربة تعليمات أخرى: تبقى صفحتان"
+msgstr[3] "تجربة تعليمات أخرى: تبقى {n} صفحات"
+msgstr[4] "تجربة تعليمات أخرى: تبقى {n} صفحةً"
+msgstr[5] "تجربة تعليمات أخرى: تبقى {n} صفحة"
+
+msgctxt "stopTrials"
+msgid "Stop trying"
+msgstr "إيقاف التجربة"
+
+msgctxt "newVersion"
+msgid "New version: compare"
+msgstr "إصدار جديد: قارن"
+
+msgctxt "newVersionTitle"
+msgid "A trial reading of this page is ready: compare it with the one shown"
+msgstr "قراءة تجريبية لهذه الصفحة جاهزة: قارنها بالمعروضة"
+
+msgctxt "versionsN"
+msgid "{n} version"
+msgid_plural "{n} versions"
+msgstr[0] "لا إصدارات"
+msgstr[1] "إصدار واحد"
+msgstr[2] "إصداران"
+msgstr[3] "{n} إصدارات"
+msgstr[4] "{n} إصدارًا"
+msgstr[5] "{n} إصدار"
+
+msgctxt "versionsTitle"
+msgid "Compare the readings of this page"
+msgstr "قارن قراءات هذه الصفحة"
+
+msgctxt "compareWith"
+msgid "Compare with"
+msgstr "قارن مع"
+
+msgctxt "nothing"
+msgid "nothing"
+msgstr "لا شيء"
+
+#. {v} is a version name like v2
+msgctxt "shownVersion"
+msgid "{v}, shown"
+msgstr "{v}، المعروض"
+
+msgctxt "earlierReading"
+msgid "an earlier reading"
+msgstr "قراءة سابقة"
+
+#. {a} and {b} are version names like v2
+msgctxt "diffLegend"
+msgid "Struck out: only in the text shown ({a}). Highlighted: only in {b}."
+msgstr "المشطوب: موجود فقط في النص المعروض ({a}). المظلَّل: موجود فقط في {b}."
+
+#. {v} is a version name like v2
+msgctxt "useVersion"
+msgid "Use {v}"
+msgstr "استخدام {v}"
+
+msgctxt "useVersionTitle"
+msgid "Show {v} instead: the text shown now is kept as a version"
+msgstr "اعرض {v} بدلًا منه: يُحفظ النص المعروض الآن كإصدار"
+
+msgctxt "deleteVersion"
+msgid "Delete {v}"
+msgstr "حذف {v}"
+
+msgctxt "confirmDeleteVersion"
+msgid "Delete {v} of this page? This can't be undone."
+msgstr "حذف {v} من هذه الصفحة؟ لا يمكن التراجع عن ذلك."
+
+msgctxt "sameInstructions"
+msgid "Read with the same instructions."
+msgstr "قُرئ بالتعليمات نفسها."
+
+msgctxt "otherInstructions"
+msgid "Read with other instructions"
+msgstr "قُرئ بتعليمات أخرى"
+
+msgctxt "sameText"
+msgid "The two texts are the same."
+msgstr "النصان متطابقان."
+
+msgctxt "nowShowing"
+msgid "Now showing {v}."
+msgstr "يُعرض الآن {v}."

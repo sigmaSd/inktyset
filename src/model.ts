@@ -1,7 +1,10 @@
-// The engine that reads the pages: llama.cpp's server with the vision model, on a free port of 127.0.0.1, started by
-// Inktyset and stopped with it. Its program is the downloaded one (components/engine) unless a path is set in
-// the settings (someone with their own llama.cpp build); the model files likewise (components/model, or a
-// folder chosen in the settings).
+// The engine that reads the pages. Three kinds, chosen in Settings:
+//   builtin  llama.cpp's server with the downloaded Qwen3.5 9B (components/model, or the same files in a folder
+//            chosen in the settings), on a free port of 127.0.0.1, started by Inktyset and stopped with it
+//   files    the same server with any vision model llama.cpp runs: a .gguf and its mmproj .gguf
+//   server   a model server already running on this computer or the local network (Ollama, LM Studio,
+//            llama-server, vLLM…), through its OpenAI-style API. Never a cloud service: src/local.ts.
+// The server program is the downloaded one (components/engine) unless a path is set in the settings.
 
 import { msg } from "./i18n.ts";
 import { type ChildProcess, spawn } from "node:child_process";
@@ -9,16 +12,33 @@ import { randomBytes } from "node:crypto";
 import { createWriteStream, existsSync } from "node:fs";
 import { readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { dirOf, findFile, MODEL_FILES } from "./components.ts";
+import { checkLocalUrl } from "./local.ts";
 
 export type ModelStatus = "missing" | "stopped" | "starting" | "ready" | "error";
 
+export type ModelKind = "builtin" | "files" | "server";
+
 export interface ModelConfig {
+  kind?: ModelKind;
   /** A llama-server the user chose, instead of the downloaded one. */
   serverPath?: string;
-  /** A folder holding the model files, instead of the downloaded copy. */
+  /** builtin: a folder holding the model files, instead of the downloaded copy. */
   modelDir?: string;
+  /** files: the model and its vision part. */
+  modelFile?: string;
+  mmprojFile?: string;
+  /** server: its address, the model to use there (empty: the server's own), and a key if it needs one. */
+  url?: string;
+  name?: string;
+  apiKey?: string;
+}
+
+/** "http://host:11434" or ".../v1/" → "http://host:11434/v1": where the OpenAI-style API is. */
+export function apiBase(url: string) {
+  const u = url.trim().replace(/\/+$/, "");
+  return u.endsWith("/v1") ? u : `${u}/v1`;
 }
 
 function freePort(): Promise<number> {
@@ -36,13 +56,32 @@ export class Model {
   status: ModelStatus = "stopped";
   detail = "";
   #proc: ChildProcess | null = null;
-  #url = "";
+  #url = ""; // the API, ".../v1"
   #starting: Promise<void> | null = null;
   /** Only Inktyset may use the engine (a web page could otherwise reach 127.0.0.1). */
   readonly #key = randomBytes(24).toString("hex");
   readonly #base: string;
   readonly #changed: () => void;
   config: ModelConfig = {};
+
+  get kind(): ModelKind {
+    return this.config.kind ?? "builtin";
+  }
+
+  /** What reads the pages, as shown on each version. */
+  label(): string {
+    if (this.kind === "files") return basename(this.config.modelFile ?? "").replace(/\.gguf$/i, "");
+    if (this.kind === "server") {
+      let host = this.config.url ?? "";
+      try {
+        host = new URL(host).host;
+      } catch {
+        /* shown as typed */
+      }
+      return `${this.config.name || "model"} · ${host}`;
+    }
+    return "Qwen3.5 9B";
+  }
 
   constructor(base: string, changed: () => void) {
     this.#base = base;
@@ -68,6 +107,14 @@ export class Model {
 
   /** Are the model files there, at the right size? (Their checksums were checked when they arrived.) */
   async modelReady(): Promise<boolean> {
+    if (this.kind === "server") return !!this.config.url;
+    if (this.kind === "files")
+      return (
+        !!this.config.modelFile &&
+        !!this.config.mmprojFile &&
+        existsSync(this.config.modelFile) &&
+        existsSync(this.config.mmprojFile)
+      );
     for (const f of MODEL_FILES) {
       const st = await stat(join(this.modelDir(), f.file)).catch(() => null);
       if (!st || st.size !== f.size) return false;
@@ -76,18 +123,23 @@ export class Model {
   }
 
   async missing(): Promise<{ engine: boolean; model: boolean }> {
-    return { engine: !(await this.serverPath()), model: !(await this.modelReady()) };
+    // a model server needs no engine of ours
+    return {
+      engine: this.kind !== "server" && !(await this.serverPath()),
+      model: !(await this.modelReady()),
+    };
   }
 
   /** Start the server (once), and wait until it has loaded the model. */
   async ensure(): Promise<string> {
-    if (this.status === "ready" && this.#proc) return this.#url;
+    if (this.status === "ready" && (this.#proc || (this.kind === "server" && this.#url))) return this.#url;
     this.#starting ??= this.#start().finally(() => (this.#starting = null));
     await this.#starting;
     return this.#url;
   }
 
   async #start() {
+    if (this.kind === "server") return await this.#connect();
     const bin = await this.serverPath();
     if (!bin || !(await this.modelReady())) {
       this.#set("missing", msg("notDownloaded"));
@@ -98,11 +150,12 @@ export class Model {
     const dir = this.modelDir();
     const log = createWriteStream(join(this.#base, "engine.log"), { flags: "a" });
     log.write(`\n--- ${new Date().toISOString()} ${bin}\n`);
+    const own = this.kind === "files";
     const args = [
       "-m",
-      join(dir, MODEL_FILES[0].file),
+      own ? this.config.modelFile! : join(dir, MODEL_FILES[0].file),
       "--mmproj",
-      join(dir, MODEL_FILES[1].file),
+      own ? this.config.mmprojFile! : join(dir, MODEL_FILES[1].file),
       "-ngl",
       "99", // everything on the graphics chip when there is one (Vulkan, Metal); the CPU otherwise
       "-c",
@@ -125,7 +178,7 @@ export class Model {
     proc.stdout?.pipe(log, { end: false });
     proc.stderr?.pipe(log, { end: false });
     this.#proc = proc;
-    this.#url = `http://127.0.0.1:${port}`;
+    this.#url = `http://127.0.0.1:${port}/v1`;
     await writeFile(this.#pidFile(), `${proc.pid ?? ""}\n${bin}\n`);
     let exited = false;
     proc.on("exit", (code) => {
@@ -138,7 +191,7 @@ export class Model {
     // loading takes a while (seconds on a graphics chip, longer from a slow disk)
     for (let i = 0; i < 600 && !exited; i++) {
       try {
-        const r = await fetch(`${this.#url}/health`);
+        const r = await fetch(`http://127.0.0.1:${port}/health`);
         if (r.ok) {
           this.#set("ready");
           return;
@@ -150,6 +203,50 @@ export class Model {
     }
     if (!exited) proc.kill();
     throw new Error(this.detail || msg("modelTimeout"));
+  }
+
+  /** A model server of the user's: on their own network, and answering. */
+  async #connect() {
+    const url = this.config.url ?? "";
+    this.#set("starting");
+    const fail = (text: string) => {
+      this.#set("error", text);
+      return new Error(text);
+    };
+    try {
+      await checkLocalUrl(url);
+    } catch (e) {
+      throw fail((e as Error).message);
+    }
+    try {
+      const r = await fetch(`${apiBase(url)}/models`, {
+        headers: this.#headers(),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    } catch (e) {
+      throw fail(msg("serverNoAnswer", { url, error: (e as Error).message }));
+    }
+    this.#url = apiBase(url);
+    this.#set("ready");
+  }
+
+  #headers(): Record<string, string> {
+    const key = this.kind === "server" ? this.config.apiKey : this.#key;
+    return { "content-type": "application/json", ...(key ? { authorization: `Bearer ${key}` } : {}) };
+  }
+
+  /** The models a server offers (to choose one in the settings). */
+  static async listModels(url: string, apiKey?: string): Promise<string[]> {
+    await checkLocalUrl(url);
+    const r = await fetch(`${apiBase(url)}/models`, {
+      headers: apiKey ? { authorization: `Bearer ${apiKey}` } : {},
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!r.ok) throw new Error(msg("serverNoAnswer", { url, error: `${r.status} ${r.statusText}` }));
+    const data = (await r.json()) as { data?: { id: string }[]; models?: { name: string }[] };
+    // llama-server answers in both shapes: each model once
+    return [...new Set((data.data ?? []).map((m) => m.id).concat((data.models ?? []).map((m) => m.name)))];
   }
 
   #pidFile() {
@@ -181,25 +278,36 @@ export class Model {
   /** Read one page image (JPEG bytes). */
   async read(jpeg: Buffer, prompt: string, signal: AbortSignal) {
     const url = await this.ensure();
-    const body = {
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${jpeg.toString("base64")}` } },
-            { type: "text", text: prompt },
-          ],
-        },
-      ],
-      temperature: 0,
-      top_k: 1,
-      repeat_penalty: 1.05,
-      max_tokens: 4096,
-      chat_template_kwargs: { enable_thinking: false }, // Qwen3.5 thinks by default: we want the transcription
+    const server = this.kind === "server";
+    if (server) await checkLocalUrl(this.config.url ?? ""); // still on the user's network
+    const image = {
+      type: "image_url",
+      image_url: { url: `data:image/jpeg;base64,${jpeg.toString("base64")}` },
     };
-    const r = await fetch(`${url}/v1/chat/completions`, {
+    // another program's server: only the standard fields (some refuse the others)
+    const body = server
+      ? {
+          ...(this.config.name ? { model: this.config.name } : {}),
+          messages: [{ role: "user", content: [image, { type: "text", text: prompt }] }],
+          temperature: 0,
+          max_tokens: 4096,
+        }
+      : {
+          messages: [
+            {
+              role: "user",
+              content: [image, { type: "text", text: prompt }],
+            },
+          ],
+          temperature: 0,
+          top_k: 1,
+          repeat_penalty: 1.05,
+          max_tokens: 4096,
+          chat_template_kwargs: { enable_thinking: false }, // Qwen3.5 thinks by default: we want the transcription
+        };
+    const r = await fetch(`${url}/chat/completions`, {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${this.#key}` },
+      headers: this.#headers(),
       body: JSON.stringify(body),
       signal,
     });
@@ -216,6 +324,7 @@ export class Model {
     this.#proc = null;
     if (p && p.exitCode === null) p.kill();
     void unlink(this.#pidFile()).catch(() => {});
+    this.#url = "";
     this.status = "stopped";
   }
 }

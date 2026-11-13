@@ -3,12 +3,12 @@
 // Renderer (Chromium's image and PDF decoding, in a hidden window) and its dialogs; the window talks to it
 // through server.ts.
 
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { type ComponentId, install, type Progress, sizeOf, supported, verifyModelDir } from "./components.ts";
 import { checkHardware, type Hardware } from "./hardware.ts";
 import { Library } from "./library.ts";
-import { Model } from "./model.ts";
+import { Model, type ModelKind } from "./model.ts";
 import { Phone } from "./phone.ts";
 import { cleanLatex, type Format, langPrompt, PROMPT } from "./pipeline.ts";
 import { Scanner } from "./scanner.ts";
@@ -34,6 +34,8 @@ export interface Renderer {
 /** What only the shell can do. */
 export interface Shell {
   chooseFolder(title: string): Promise<string | null>;
+  /** One file, of these extensions (without the dot). */
+  chooseFile(title: string, extensions: string[]): Promise<string | null>;
   saveFile(name: string, text: string): Promise<string | null>;
   notify(text: string): void;
   /** Restart into a downloaded update (offered once `Core.update` is set). */
@@ -48,7 +50,21 @@ export interface Settings {
   modelDir?: string;
   /** The app's own language: "auto" (the computer's), "en", "fr" or "ar" (src/i18n.ts). */
   ui?: string;
+  /** Added to the instructions the model reads with (the user's notes on their handwriting). */
+  instructions?: string;
+  /** The whole instructions, when the user changed them (empty: Inktyset's own, pipeline.ts PROMPT). */
+  prompt?: string;
+  /** What reads the pages (src/model.ts): the built-in model, other model files, or a local server. */
+  modelKind?: ModelKind;
+  modelFile?: string;
+  mmprojFile?: string;
+  serverUrl?: string;
+  serverModel?: string;
+  serverKey?: string;
 }
+
+/** Inktyset's own instructions, as shown in the settings. */
+export const DEFAULT_PROMPT = PROMPT;
 
 interface Job {
   status: "idle" | "running" | "done" | "error";
@@ -131,11 +147,34 @@ export class Core {
     return join(this.#userData, "settings.json");
   }
 
+  /** The instructions a page is read with now: Inktyset's (or the user's own), the writing language, the user's notes. */
+  readingPrompt(): string {
+    const notes = this.settings.instructions?.trim();
+    return (
+      (this.settings.prompt?.trim() || PROMPT) +
+      langPrompt(this.lib.settings.language) +
+      (notes ? `\n\nNotes from the person who wrote these pages (follow them):\n${notes}` : "")
+    );
+  }
+
   #applySettings() {
     const lang = resolveLang(this.settings.ui, this.systemLocales, ["en", ...Object.keys(this.locales)]);
     setCoreLanguage(lang, this.locales[lang] ?? null);
     this.tex.mode = this.settings.tex;
-    this.model.config = { serverPath: this.settings.serverPath, modelDir: this.settings.modelDir };
+    const s = this.settings;
+    const config = {
+      kind: s.modelKind ?? "builtin",
+      serverPath: s.serverPath,
+      modelDir: s.modelDir,
+      modelFile: s.modelFile,
+      mmprojFile: s.mmprojFile,
+      url: s.serverUrl,
+      name: s.serverModel,
+      apiKey: s.serverKey,
+    };
+    // another model: the running one stops, the next page starts the new one
+    if (JSON.stringify(config) !== JSON.stringify(this.model.config)) this.model.stop();
+    this.model.config = config;
   }
 
   async setSettings(next: Partial<Settings>) {
@@ -319,24 +358,110 @@ export class Core {
 
   async #loop() {
     for (;;) {
+      // pages to read first, then trial readings (other instructions or model, never replacing the text)
       const page = this.lib.pages.find((p) => p.status === "queued");
+      const trial = page
+        ? undefined
+        : this.lib.pages.find((p) => p.trial === "queued" && p.status === "done");
       // nothing to read, or not set up yet (the engine or the model still to download)
-      if (!page || this.missing.engine || this.missing.model) {
+      if ((!page && !trial) || this.missing.engine || this.missing.model) {
         await new Promise<void>((r) => (this.#wake = r));
         this.#wake = null;
         continue;
       }
-      await this.#read(page.id);
+      if (page) await this.#read(page.id);
+      else await this.#read(trial!.id, true);
     }
+  }
+
+  /** Read these finished pages again with the current instructions and model, as new versions to compare. */
+  tryOn(ids: string[]) {
+    for (const id of ids) {
+      const p = this.lib.get(id);
+      if (p?.status === "done" && p.trial !== "working") Object.assign(p, { trial: "queued", trialErr: "" });
+    }
+    this.lib.changed();
+    this.wake();
+  }
+
+  /** Stop the trial readings not started yet (the one being read finishes). */
+  cancelTrials() {
+    for (const p of this.lib.pages) if (p.trial === "queued" || p.trial === "failed") p.trial = undefined;
+    this.lib.changed();
+  }
+
+  async useVersion(id: string, vid: string) {
+    const p = this.lib.get(id);
+    if (!p || p.status !== "done") throw new Error("page is not ready");
+    await this.lib.useVersion(p, vid);
+    if ((p.format ?? "latex") === "typst") await this.#ensureTypst(id);
+    this.lib.changed();
+    await this.compile(id);
+  }
+
+  async deleteVersion(id: string, vid: string) {
+    const p = this.lib.get(id);
+    if (!p) throw new Error("no such page");
+    await this.lib.deleteVersion(p, vid);
+    this.lib.changed();
+  }
+
+  /** A version's own preview, to compare it with the one shown (built once; again after an edit). */
+  versionPreview(id: string, vid: string): Promise<void> {
+    this.#compiling = this.#compiling.then(() => this.#versionPreview(id, vid)).catch(() => {});
+    return this.#compiling;
+  }
+
+  async #versionPreview(id: string, vid: string) {
+    const p = this.lib.get(id);
+    const v = p?.versions?.find((x) => x.id === vid);
+    if (!p || !v || p.current === vid) return;
+    const typst = (p.format ?? "latex") === "typst";
+    let body = await this.lib.versionText(p, vid, typst ? "typ" : "tex");
+    if (typst && !body) body = latexToTypst(await this.lib.versionText(p, vid));
+    const dir = join(this.lib.buildDir(id), vid);
+    const lang = this.lib.settings.language;
+    let pngs: string[] = [],
+      ok = false,
+      err = "";
+    try {
+      const r = typst ? await this.typst.compile(dir, body, lang) : await this.tex.compile(dir, body, lang);
+      ok = r.ok;
+      err = r.err;
+      if (r.pdf) {
+        const images = await this.renderer.preview(this.rel(r.pdf), 150);
+        pngs = await Promise.all(
+          images.map(async (png, i) => {
+            const f = join(dir, `render-${i + 1}.png`);
+            await writeFile(f, png);
+            return this.rel(f);
+          }),
+        );
+      }
+    } catch (e) {
+      err = (e as Error).message;
+    }
+    Object.assign(v, { ok, err, pngs, rev: (v.rev ?? 0) + 1 });
+    this.lib.changed();
+  }
+
+  /** Choose the model and vision files of another model (Settings → Model). */
+  async chooseModelFile(which: "model" | "mmproj") {
+    const file = await this.shell.chooseFile(
+      msg(which === "model" ? "chooseModelFile" : "chooseMmprojFile"),
+      ["gguf"],
+    );
+    if (file) await this.setSettings(which === "model" ? { modelFile: file } : { mmprojFile: file });
   }
 
   wake() {
     this.#wake?.();
   }
 
-  async #read(id: string) {
+  async #read(id: string, trial = false) {
     const page = this.lib.get(id)!;
-    Object.assign(page, { status: "working", started: Date.now() / 1000, err: "" });
+    if (trial) Object.assign(page, { trial: "working", trialErr: "", started: Date.now() / 1000 });
+    else Object.assign(page, { status: "working", started: Date.now() / 1000, err: "" });
     this.lib.changed();
     const abort = new AbortController();
     this.#reading = abort;
@@ -345,28 +470,44 @@ export class Core {
       const t0 = Date.now();
       const format = this.lib.settings.format;
       // always LaTeX: the model reads it far better than Typst, which is converted from it (src/convert.ts)
-      const prompt = PROMPT + langPrompt(this.lib.settings.language);
+      const prompt = this.readingPrompt();
       const { text, finish } = await this.model.read(jpeg, prompt, abort.signal);
       const p = this.lib.get(id);
       if (!p) return; // removed while it was read
       const body = cleanLatex(text);
+      // every reading is a version (versions/<id>/vN.tex); the text it replaces stays in its own
+      await this.lib.ensureVersions(p);
+      const vid = this.lib.nextVersion(p);
+      const secs = (Date.now() - t0) / 1000;
+      const truncated = finish === "length";
+      await mkdir(join(this.lib.dir, "versions", id), { recursive: true });
+      await writeFile(this.lib.versionPath(id, vid), body);
+      (p.versions ??= []).push({
+        id: vid,
+        at: Date.now() / 1000,
+        prompt: this.lib.promptKey(prompt),
+        model: this.model.label(),
+        secs,
+        truncated,
+      });
+      if (trial) {
+        Object.assign(p, { trial: undefined, fresh: vid });
+        this.lib.changed();
+        return;
+      }
+      await this.lib.saveCurrent(p);
       await writeFile(this.lib.texPath(id), body);
       await writeFile(join(this.lib.dir, "raw", `${id}.tex`), body); // untouched, to diff against corrections
+      await rm(this.lib.typPath(id), { force: true });
       if (format === "typst") await writeFile(this.lib.typPath(id), latexToTypst(body));
-      Object.assign(p, {
-        status: "done",
-        format,
-        secs: (Date.now() - t0) / 1000,
-        truncated: finish === "length",
-      });
+      Object.assign(p, { status: "done", format, secs, truncated, current: vid });
       this.lib.changed();
       await this.compile(id);
     } catch (e) {
       const p = this.lib.get(id);
-      if (p) {
-        Object.assign(p, { status: "failed", err: (e as Error).message });
-        this.lib.changed();
-      }
+      if (p && trial) Object.assign(p, { trial: "failed", trialErr: (e as Error).message });
+      else if (p) Object.assign(p, { status: "failed", err: (e as Error).message });
+      if (p) this.lib.changed();
     } finally {
       this.#reading = null;
     }
@@ -374,7 +515,8 @@ export class Core {
 
   /** A page removed while it's being read: stop reading it. */
   cancelReading(id: string) {
-    if (this.lib.get(id)?.status === "working") this.#reading?.abort();
+    const p = this.lib.get(id);
+    if (p?.status === "working" || p?.trial === "working") this.#reading?.abort();
   }
 
   // ------------------------------------------------------------------ previews

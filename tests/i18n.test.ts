@@ -113,12 +113,14 @@ test("i18n: catalogs round-trip through the writer, multi-line text included", (
         comments: [],
         previous: "old",
       },
+      // backslashes (LaTeX in a sentence) and a tab
+      { ctx: "c", id: "I write \\R\tand \\\\", str: ["J'écris \\R"], fuzzy: false, comments: [] },
     ],
   };
   const back = parsePo(writePo(cat));
   expect(back.headers).toEqual(cat.headers);
   expect(back.entries).toEqual(cat.entries);
-  expect(translations(back).strings).toEqual({ a: "Dis « salut »\npuis va" }); // fuzzy: left out
+  expect(translations(back).strings).toEqual({ a: "Dis « salut »\npuis va", c: "J'écris \\R" }); // fuzzy: left out
 });
 
 test("i18n: the website's Arabic page is right to left, one folder down, with the language menu", async () => {

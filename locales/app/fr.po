@@ -110,6 +110,46 @@ msgctxt "couldNotStart"
 msgid "Inktyset could not start: {error}"
 msgstr "Inktyset n'a pas pu démarrer : {error}"
 
+msgctxt "notAnAddress"
+msgid "“{url}” is not an address (it starts with http:// or https://)."
+msgstr "« {url} » n'est pas une adresse (elle commence par http:// ou https://)."
+
+msgctxt "hostNotFound"
+msgid "{host} could not be found on the network."
+msgstr "{host} est introuvable sur le réseau."
+
+msgctxt "notLocal"
+msgid "{host} is not on this computer or the local network. Inktyset only uses models on your own machines: your pages never leave them."
+msgstr "{host} n'est ni sur cet ordinateur ni sur le réseau local. Inktyset n'utilise que des modèles sur vos propres machines : vos pages ne les quittent jamais."
+
+msgctxt "modelFileMissing"
+msgid "The model file is not there any more: {file}"
+msgstr "Le fichier du modèle n'est plus là : {file}"
+
+msgctxt "serverNoAnswer"
+msgid "The model server at {url} did not answer: {error}"
+msgstr "Le serveur de modèles à {url} n'a pas répondu : {error}"
+
+msgctxt "noModelOnServer"
+msgid "The model server at {url} has no model loaded."
+msgstr "Le serveur de modèles à {url} n'a aucun modèle chargé."
+
+msgctxt "modelWrongSize"
+msgid "{file} is missing or has the wrong size in that folder."
+msgstr "{file} manque dans ce dossier ou n'a pas la bonne taille."
+
+msgctxt "modelWrongSum"
+msgid "{file} in that folder is not the expected file (checksum differs)."
+msgstr "{file} dans ce dossier n'est pas le fichier attendu (la somme de contrôle diffère)."
+
+msgctxt "chooseModelFile"
+msgid "The model (.gguf)"
+msgstr "Le modèle (.gguf)"
+
+msgctxt "chooseMmprojFile"
+msgid "The model's vision file (mmproj .gguf)"
+msgstr "Le fichier de vision du modèle (mmproj .gguf)"
+
 msgctxt "cut"
 msgid "Cut"
 msgstr "Couper"
@@ -773,8 +813,8 @@ msgid "Not saved: {e}"
 msgstr "Non enregistré : {e}"
 
 msgctxt "confirmRedo"
-msgid "Read this page again? Your corrections on this page will be replaced."
-msgstr "Lire cette page à nouveau ? Vos corrections sur cette page seront remplacées."
+msgid "Read this page again? The text you have now is kept as a version you can go back to."
+msgstr "Lire cette page à nouveau ? Le texte actuel est gardé comme une version à laquelle vous pourrez revenir."
 
 msgctxt "confirmRemove"
 msgid "Remove page {n} from the list?"
@@ -963,3 +1003,236 @@ msgstr "Enregistré dans {p}"
 msgctxt "saveFailed"
 msgid "Could not save: {e}"
 msgstr "Enregistrement impossible : {e}"
+
+msgctxt "readingInstructions"
+msgid "Reading instructions"
+msgstr "Instructions de lecture"
+
+msgctxt "yourNotes"
+msgid "Your notes for the model"
+msgstr "Vos remarques pour le modèle"
+
+#. Keep \R as it is: it is LaTeX
+msgctxt "yourNotesHelp"
+msgid "About your handwriting or notation, in any language. For example: “I write ℝ as \\R”, “ignore the page numbers”."
+msgstr "Sur votre écriture ou vos notations, dans n'importe quelle langue. Par exemple : « j'écris ℝ comme \\R », « ignore les numéros de page »."
+
+msgctxt "yourNotesPh"
+msgid "Nothing yet"
+msgstr "Rien pour l'instant"
+
+msgctxt "allInstructions"
+msgid "All the instructions (advanced)"
+msgstr "Toutes les instructions (avancé)"
+
+msgctxt "allInstructionsHelp"
+msgid "What Inktyset tells the model. The lines about [??], the theorem environments and “Output ONLY the LaTeX body” are what the app relies on: keep them."
+msgstr "Ce qu'Inktyset dit au modèle. Les lignes sur [??], les environnements de théorèmes et « Output ONLY the LaTeX body » sont celles dont l'application dépend : gardez-les."
+
+msgctxt "thenAdded"
+msgid "Added after them: the line about the writing language, then your notes."
+msgstr "Ajoutées ensuite : la ligne sur la langue d'écriture, puis vos remarques."
+
+msgctxt "promptCustom"
+msgid "You changed these instructions."
+msgstr "Vous avez modifié ces instructions."
+
+msgctxt "resetPrompt"
+msgid "Back to Inktyset's instructions"
+msgstr "Revenir aux instructions d'Inktyset"
+
+msgctxt "tryOnPages"
+msgid "Try on some pages…"
+msgstr "Essayer sur quelques pages…"
+
+msgctxt "tryOnPagesHelp"
+msgid "Read a few pages again with these instructions and this model, and compare with what you have."
+msgstr "Relire quelques pages avec ces instructions et ce modèle, et comparer avec ce que vous avez."
+
+msgctxt "modelBuiltin"
+msgid "Built-in: Qwen3.5 9B"
+msgstr "Intégré : Qwen3.5 9B"
+
+msgctxt "modelBuiltinHelp"
+msgid "Downloaded once and checked. A good reader of handwritten math."
+msgstr "Téléchargé une fois et vérifié. Un bon lecteur de maths manuscrites."
+
+msgctxt "modelFilesKind"
+msgid "Model files on this computer"
+msgstr "Des fichiers de modèle sur cet ordinateur"
+
+msgctxt "modelFilesHelp"
+msgid "Any vision model llama.cpp runs: a .gguf file and its mmproj .gguf (from Hugging Face, for example)."
+msgstr "Tout modèle de vision que llama.cpp sait faire tourner : un fichier .gguf et son mmproj .gguf (de Hugging Face, par exemple)."
+
+msgctxt "modelServerKind"
+msgid "A model server on this computer or your network"
+msgstr "Un serveur de modèles sur cet ordinateur ou votre réseau"
+
+msgctxt "modelServerHelp"
+msgid "Ollama, LM Studio, llama-server, vLLM… already running. Never a cloud service: your pages stay on your own machines."
+msgstr "Ollama, LM Studio, llama-server, vLLM… déjà lancé. Jamais un service dans le cloud : vos pages restent sur vos propres machines."
+
+msgctxt "modelFileLabel"
+msgid "Model: {p}"
+msgstr "Modèle : {p}"
+
+msgctxt "mmprojLabel"
+msgid "Vision file: {p}"
+msgstr "Fichier de vision : {p}"
+
+msgctxt "notChosen"
+msgid "not chosen"
+msgstr "non choisi"
+
+msgctxt "choose"
+msgid "Choose…"
+msgstr "Choisir…"
+
+msgctxt "serverUrl"
+msgid "Address"
+msgstr "Adresse"
+
+msgctxt "serverModelName"
+msgid "Model on the server"
+msgstr "Modèle sur le serveur"
+
+msgctxt "serverModelPh"
+msgid "The server's own when empty"
+msgstr "Celui du serveur si vide"
+
+msgctxt "findModels"
+msgid "Find its models"
+msgstr "Trouver ses modèles"
+
+#. Models offered by the model server
+msgctxt "modelsFound"
+msgid "{n} model found"
+msgid_plural "{n} models found"
+msgstr[0] "{n} modèle trouvé"
+msgstr[1] "{n} modèles trouvés"
+
+msgctxt "serverKey"
+msgid "Key (only if the server asks for one)"
+msgstr "Clé (seulement si le serveur en demande une)"
+
+msgctxt "readingWith"
+msgid "Reading with: {m}"
+msgstr "Lecture avec : {m}"
+
+msgctxt "trialTitle"
+msgid "Try on some pages"
+msgstr "Essayer sur quelques pages"
+
+msgctxt "trialText"
+msgid "Each page you choose is read again with the current instructions and model, as a new version. Its text is not replaced: compare the two, then keep the one you prefer."
+msgstr "Chaque page choisie est relue avec les instructions et le modèle actuels, comme une nouvelle version. Son texte n'est pas remplacé : comparez les deux, puis gardez celle que vous préférez."
+
+msgctxt "cancel"
+msgid "Cancel"
+msgstr "Annuler"
+
+msgctxt "trialGo"
+msgid "Read {n} page"
+msgid_plural "Read {n} pages"
+msgstr[0] "Lire {n} page"
+msgstr[1] "Lire {n} pages"
+
+msgctxt "trialNone"
+msgid "Choose pages"
+msgstr "Choisissez des pages"
+
+msgctxt "trialWaiting"
+msgid "Waiting to try"
+msgstr "En attente d'essai"
+
+msgctxt "trying"
+msgid "Trying…"
+msgstr "Essai…"
+
+msgctxt "trialFailedShort"
+msgid "Trial failed"
+msgstr "Échec de l'essai"
+
+msgctxt "trialsLeft"
+msgid "Trying other instructions: {n} page left"
+msgid_plural "Trying other instructions: {n} pages left"
+msgstr[0] "Essai d'autres instructions : encore {n} page"
+msgstr[1] "Essai d'autres instructions : encore {n} pages"
+
+msgctxt "stopTrials"
+msgid "Stop trying"
+msgstr "Arrêter l'essai"
+
+msgctxt "newVersion"
+msgid "New version: compare"
+msgstr "Nouvelle version : comparer"
+
+msgctxt "newVersionTitle"
+msgid "A trial reading of this page is ready: compare it with the one shown"
+msgstr "Une lecture d'essai de cette page est prête : comparez-la avec celle affichée"
+
+msgctxt "versionsN"
+msgid "{n} version"
+msgid_plural "{n} versions"
+msgstr[0] "{n} version"
+msgstr[1] "{n} versions"
+
+msgctxt "versionsTitle"
+msgid "Compare the readings of this page"
+msgstr "Comparer les lectures de cette page"
+
+msgctxt "compareWith"
+msgid "Compare with"
+msgstr "Comparer avec"
+
+msgctxt "nothing"
+msgid "nothing"
+msgstr "rien"
+
+#. {v} is a version name like v2
+msgctxt "shownVersion"
+msgid "{v}, shown"
+msgstr "{v}, affichée"
+
+msgctxt "earlierReading"
+msgid "an earlier reading"
+msgstr "une lecture précédente"
+
+#. {a} and {b} are version names like v2
+msgctxt "diffLegend"
+msgid "Struck out: only in the text shown ({a}). Highlighted: only in {b}."
+msgstr "Barré : seulement dans le texte affiché ({a}). Surligné : seulement dans {b}."
+
+#. {v} is a version name like v2
+msgctxt "useVersion"
+msgid "Use {v}"
+msgstr "Utiliser {v}"
+
+msgctxt "useVersionTitle"
+msgid "Show {v} instead: the text shown now is kept as a version"
+msgstr "Afficher {v} à la place : le texte affiché maintenant est gardé comme une version"
+
+msgctxt "deleteVersion"
+msgid "Delete {v}"
+msgstr "Supprimer {v}"
+
+msgctxt "confirmDeleteVersion"
+msgid "Delete {v} of this page? This can't be undone."
+msgstr "Supprimer {v} de cette page ? C'est définitif."
+
+msgctxt "sameInstructions"
+msgid "Read with the same instructions."
+msgstr "Lue avec les mêmes instructions."
+
+msgctxt "otherInstructions"
+msgid "Read with other instructions"
+msgstr "Lue avec d'autres instructions"
+
+msgctxt "sameText"
+msgid "The two texts are the same."
+msgstr "Les deux textes sont identiques."
+
+msgctxt "nowShowing"
+msgid "Now showing {v}."
+msgstr "{v} est maintenant affichée."

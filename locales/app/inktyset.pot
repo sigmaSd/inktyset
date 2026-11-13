@@ -110,6 +110,46 @@ msgctxt "couldNotStart"
 msgid "Inktyset could not start: {error}"
 msgstr ""
 
+msgctxt "notAnAddress"
+msgid "“{url}” is not an address (it starts with http:// or https://)."
+msgstr ""
+
+msgctxt "hostNotFound"
+msgid "{host} could not be found on the network."
+msgstr ""
+
+msgctxt "notLocal"
+msgid "{host} is not on this computer or the local network. Inktyset only uses models on your own machines: your pages never leave them."
+msgstr ""
+
+msgctxt "modelFileMissing"
+msgid "The model file is not there any more: {file}"
+msgstr ""
+
+msgctxt "serverNoAnswer"
+msgid "The model server at {url} did not answer: {error}"
+msgstr ""
+
+msgctxt "noModelOnServer"
+msgid "The model server at {url} has no model loaded."
+msgstr ""
+
+msgctxt "modelWrongSize"
+msgid "{file} is missing or has the wrong size in that folder."
+msgstr ""
+
+msgctxt "modelWrongSum"
+msgid "{file} in that folder is not the expected file (checksum differs)."
+msgstr ""
+
+msgctxt "chooseModelFile"
+msgid "The model (.gguf)"
+msgstr ""
+
+msgctxt "chooseMmprojFile"
+msgid "The model's vision file (mmproj .gguf)"
+msgstr ""
+
 msgctxt "cut"
 msgid "Cut"
 msgstr ""
@@ -773,7 +813,7 @@ msgid "Not saved: {e}"
 msgstr ""
 
 msgctxt "confirmRedo"
-msgid "Read this page again? Your corrections on this page will be replaced."
+msgid "Read this page again? The text you have now is kept as a version you can go back to."
 msgstr ""
 
 msgctxt "confirmRemove"
@@ -962,4 +1002,237 @@ msgstr ""
 
 msgctxt "saveFailed"
 msgid "Could not save: {e}"
+msgstr ""
+
+msgctxt "readingInstructions"
+msgid "Reading instructions"
+msgstr ""
+
+msgctxt "yourNotes"
+msgid "Your notes for the model"
+msgstr ""
+
+#. Keep \R as it is: it is LaTeX
+msgctxt "yourNotesHelp"
+msgid "About your handwriting or notation, in any language. For example: “I write ℝ as \\R”, “ignore the page numbers”."
+msgstr ""
+
+msgctxt "yourNotesPh"
+msgid "Nothing yet"
+msgstr ""
+
+msgctxt "allInstructions"
+msgid "All the instructions (advanced)"
+msgstr ""
+
+msgctxt "allInstructionsHelp"
+msgid "What Inktyset tells the model. The lines about [??], the theorem environments and “Output ONLY the LaTeX body” are what the app relies on: keep them."
+msgstr ""
+
+msgctxt "thenAdded"
+msgid "Added after them: the line about the writing language, then your notes."
+msgstr ""
+
+msgctxt "promptCustom"
+msgid "You changed these instructions."
+msgstr ""
+
+msgctxt "resetPrompt"
+msgid "Back to Inktyset's instructions"
+msgstr ""
+
+msgctxt "tryOnPages"
+msgid "Try on some pages…"
+msgstr ""
+
+msgctxt "tryOnPagesHelp"
+msgid "Read a few pages again with these instructions and this model, and compare with what you have."
+msgstr ""
+
+msgctxt "modelBuiltin"
+msgid "Built-in: Qwen3.5 9B"
+msgstr ""
+
+msgctxt "modelBuiltinHelp"
+msgid "Downloaded once and checked. A good reader of handwritten math."
+msgstr ""
+
+msgctxt "modelFilesKind"
+msgid "Model files on this computer"
+msgstr ""
+
+msgctxt "modelFilesHelp"
+msgid "Any vision model llama.cpp runs: a .gguf file and its mmproj .gguf (from Hugging Face, for example)."
+msgstr ""
+
+msgctxt "modelServerKind"
+msgid "A model server on this computer or your network"
+msgstr ""
+
+msgctxt "modelServerHelp"
+msgid "Ollama, LM Studio, llama-server, vLLM… already running. Never a cloud service: your pages stay on your own machines."
+msgstr ""
+
+msgctxt "modelFileLabel"
+msgid "Model: {p}"
+msgstr ""
+
+msgctxt "mmprojLabel"
+msgid "Vision file: {p}"
+msgstr ""
+
+msgctxt "notChosen"
+msgid "not chosen"
+msgstr ""
+
+msgctxt "choose"
+msgid "Choose…"
+msgstr ""
+
+msgctxt "serverUrl"
+msgid "Address"
+msgstr ""
+
+msgctxt "serverModelName"
+msgid "Model on the server"
+msgstr ""
+
+msgctxt "serverModelPh"
+msgid "The server's own when empty"
+msgstr ""
+
+msgctxt "findModels"
+msgid "Find its models"
+msgstr ""
+
+#. Models offered by the model server
+msgctxt "modelsFound"
+msgid "{n} model found"
+msgid_plural "{n} models found"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "serverKey"
+msgid "Key (only if the server asks for one)"
+msgstr ""
+
+msgctxt "readingWith"
+msgid "Reading with: {m}"
+msgstr ""
+
+msgctxt "trialTitle"
+msgid "Try on some pages"
+msgstr ""
+
+msgctxt "trialText"
+msgid "Each page you choose is read again with the current instructions and model, as a new version. Its text is not replaced: compare the two, then keep the one you prefer."
+msgstr ""
+
+msgctxt "cancel"
+msgid "Cancel"
+msgstr ""
+
+msgctxt "trialGo"
+msgid "Read {n} page"
+msgid_plural "Read {n} pages"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "trialNone"
+msgid "Choose pages"
+msgstr ""
+
+msgctxt "trialWaiting"
+msgid "Waiting to try"
+msgstr ""
+
+msgctxt "trying"
+msgid "Trying…"
+msgstr ""
+
+msgctxt "trialFailedShort"
+msgid "Trial failed"
+msgstr ""
+
+msgctxt "trialsLeft"
+msgid "Trying other instructions: {n} page left"
+msgid_plural "Trying other instructions: {n} pages left"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "stopTrials"
+msgid "Stop trying"
+msgstr ""
+
+msgctxt "newVersion"
+msgid "New version: compare"
+msgstr ""
+
+msgctxt "newVersionTitle"
+msgid "A trial reading of this page is ready: compare it with the one shown"
+msgstr ""
+
+msgctxt "versionsN"
+msgid "{n} version"
+msgid_plural "{n} versions"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "versionsTitle"
+msgid "Compare the readings of this page"
+msgstr ""
+
+msgctxt "compareWith"
+msgid "Compare with"
+msgstr ""
+
+msgctxt "nothing"
+msgid "nothing"
+msgstr ""
+
+#. {v} is a version name like v2
+msgctxt "shownVersion"
+msgid "{v}, shown"
+msgstr ""
+
+msgctxt "earlierReading"
+msgid "an earlier reading"
+msgstr ""
+
+#. {a} and {b} are version names like v2
+msgctxt "diffLegend"
+msgid "Struck out: only in the text shown ({a}). Highlighted: only in {b}."
+msgstr ""
+
+#. {v} is a version name like v2
+msgctxt "useVersion"
+msgid "Use {v}"
+msgstr ""
+
+msgctxt "useVersionTitle"
+msgid "Show {v} instead: the text shown now is kept as a version"
+msgstr ""
+
+msgctxt "deleteVersion"
+msgid "Delete {v}"
+msgstr ""
+
+msgctxt "confirmDeleteVersion"
+msgid "Delete {v} of this page? This can't be undone."
+msgstr ""
+
+msgctxt "sameInstructions"
+msgid "Read with the same instructions."
+msgstr ""
+
+msgctxt "otherInstructions"
+msgid "Read with other instructions"
+msgstr ""
+
+msgctxt "sameText"
+msgid "The two texts are the same."
+msgstr ""
+
+msgctxt "nowShowing"
+msgid "Now showing {v}."
 msgstr ""

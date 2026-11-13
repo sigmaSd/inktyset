@@ -107,6 +107,16 @@ msgid "<b>Languages:</b> English by default; French, Arabic (right to left), Ger
 msgstr ""
 
 #. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featVersions"
+msgid "<b>Every reading kept:</b> read a page again, with your own instructions or another model, and compare the two versions side by side before keeping one. Your corrections are never lost."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featModels"
+msgid "<b>Any model, on your machines:</b> the built-in one, any vision model llama.cpp runs, or a model server on your own network (Ollama, LM Studio, vLLM). Never a cloud service."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
 msgctxt "featAppLanguages"
 msgid "<b>In your language:</b> the app speaks English, French and Arabic, and anyone can <a href=\"https://github.com/sigmaSd/inktyset/blob/main/docs/translating.md\">add a language</a>."
 msgstr ""

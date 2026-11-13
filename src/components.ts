@@ -175,13 +175,11 @@ export async function verifyModelDir(dir: string, onProgress: (done: number, tot
   for (const f of MODEL_FILES) {
     const path = join(dir, f.file);
     const st = await stat(path).catch(() => null);
-    if (!st || st.size !== f.size)
-      throw new Error(`${f.file} is missing or has the wrong size in that folder.`);
+    if (!st || st.size !== f.size) throw new Error(msg("modelWrongSize", { file: f.file }));
   }
   for (const f of MODEL_FILES) {
     const sum = await sha256Of(join(dir, f.file), (n) => onProgress((done += n), total));
-    if (sum !== f.sha256)
-      throw new Error(`${f.file} in that folder is not the expected file (checksum differs).`);
+    if (sum !== f.sha256) throw new Error(msg("modelWrongSum", { file: f.file }));
   }
 }
 

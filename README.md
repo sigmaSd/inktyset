@@ -36,6 +36,13 @@ A chat model reads one photo. Inktyset is built for the whole stack of pages:
   Turkish, or any other language for the prose. The math is unaffected and nothing is translated.
   Pages that mix scripts work too, French or English with Arabic words or the other way round: each word
   stays in its own language and direction.
+- **Every reading kept:** reading a page again makes a new version; your corrections stay in the old one.
+  Compare two versions side by side (both previews, and the words that differ), and keep the one you prefer.
+- **Your instructions:** tell the model about your handwriting or notation ("I write ℝ as \\R"), or edit
+  all of its instructions. *Try on some pages* reads a few pages again with them, as versions to compare.
+- **Any model, on your machines:** the built-in Qwen3.5 9B, any vision model llama.cpp runs (a `.gguf` and
+  its `mmproj`), or a model server on your computer or local network (Ollama, LM Studio, llama-server,
+  vLLM). Never a cloud service: Inktyset refuses addresses outside your own network.
 - **The app in your language:** English, French or Arabic (right to left), following your computer's language
   or chosen in Settings. Other languages are welcome ([translating](docs/translating.md)).
 - **LaTeX or Typst:** choose the output in the header. Pages are converted to [Typst](https://typst.app)

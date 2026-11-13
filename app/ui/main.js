@@ -1,6 +1,7 @@
 // The Inktyset window. It talks to src/server.ts: /api/state for everything shown, /api/events for change
 // notices, POSTs (with the X-Inktyset header) for every action.
 import { createLatexEditor } from "./editor.ts";
+import { diffWords } from "../../src/diff.ts";
 import { bytes, isRtl, languageName, ltr, num, setUiLang, t, uiLang, websiteUrl } from "./i18n.ts";
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -136,7 +137,7 @@ function renderHeader() {
     error: ["bad", t("modelStopped")],
   };
   let [cls, text] = map[m.status] || ["", m.status];
-  const reading = S.pages.find((p) => p.status === "working");
+  const reading = S.pages.find((p) => p.status === "working" || p.trial === "working"); // a trial too
   if (reading && m.status !== "starting" && m.status !== "error") {
     [cls, text] = ["busy", t("readingPage", { n: pageNumber(reading.id) })];
   }
@@ -359,12 +360,12 @@ function renderSettings() {
   const d = $("#settingsDialog");
   if (!d.open) return;
   const body = $("#settingsBody");
+  const a = document.activeElement;
   if (
-    body.contains(document.activeElement) &&
-    document.activeElement.tagName === "INPUT" &&
-    document.activeElement.type === "text"
+    body.contains(a) &&
+    (a.tagName === "TEXTAREA" || (a.tagName === "INPUT" && /^(text|password|url)$/.test(a.type)))
   )
-    return;
+    return; // being typed in: it's saved when left, then the dialog is drawn again
   const m = S.machine,
     ph = S.phone,
     sc = S.scanner,
@@ -424,19 +425,8 @@ function renderSettings() {
         : `<p class="note">${t("saneNote")}</p>`
     }
   </section>
-  <section class="set">
-    <h3>${t("modelEngine")}</h3>
-    <p class="note">${t("modelFiles", { p: `<bdi>${esc(su.modelDir)}</bdi>` })}</p>
-    <div class="setup-actions">
-      <button data-setup="folder">${t("otherFolder")}</button>
-      ${su.custom.modelDir ? `<button class="ghost" data-setup="default-model">${t("ownCopy")}</button>` : ""}
-    </div>
-    ${su.jobs.verify.status === "running" || su.jobs.verify.status === "error" ? `<div class="setup-row"><span class="setup-name">${t("checkingFiles")}</span>${jobHtml(su.jobs.verify)}</div>` : ""}
-    <label class="field">${t("ownServer")}
-      <input type="text" id="setServer" dir="ltr" placeholder="${t("ownServerPh")}" value="${esc(su.custom.serverPath)}"></label>
-    <p class="note">${su.serverPath ? t("using", { d: `<bdi>${esc(su.serverPath)}</bdi>` }) : t("noEngineYet")}</p>
-    ${hardwareHtml()}
-  </section>
+  ${readingHtml()}
+  ${modelHtml()}
   <section class="set">
     <h3>${t("yourPages")}</h3>
     <p class="note">${t("savedIn", { p: `<bdi>${esc(S.folder)}</bdi>` })}</p>
@@ -471,19 +461,144 @@ $("#settingsBtn").onclick = () => {
   renderSettings();
 };
 $("#settingsClose").onclick = () => $("#settingsDialog").close();
+// Settings → Reading instructions: the user's notes, and (advanced) all of Inktyset's instructions.
+let promptOpen = false;
+function readingHtml() {
+  const rd = S.reading,
+    custom = !!rd.prompt;
+  const anyDone = S.pages.some((p) => p.status === "done");
+  return `<section class="set">
+    <h3>${t("readingInstructions")}</h3>
+    <label class="field">${t("yourNotes")}<small>${esc(t("yourNotesHelp"))}</small>
+      <textarea id="setNotes" rows="3" placeholder="${esc(t("yourNotesPh"))}">${esc(rd.instructions)}</textarea></label>
+    <details id="promptBox" ${promptOpen ? "open" : ""}><summary>${t("allInstructions")}</summary>
+      <p class="note">${esc(t("allInstructionsHelp"))}</p>
+      <textarea id="setPrompt" class="prompt" rows="14" dir="ltr" spellcheck="false">${esc(rd.prompt || rd.defaultPrompt)}</textarea>
+      <p class="note">${t("thenAdded")}${rd.languageLine ? `<br><bdi dir="ltr">${esc(rd.languageLine)}</bdi>` : ""}</p>
+      ${custom ? `<p class="warn-note">${t("promptCustom")} <button class="ghost" data-act="resetPrompt">${t("resetPrompt")}</button></p>` : ""}
+    </details>
+    <p class="note">${t("tryOnPagesHelp")}</p>
+    <button data-act="tryOn" ${anyDone ? "" : "disabled"}>${t("tryOnPages")}</button>
+  </section>`;
+}
+
+// Settings → Model: the built-in one, other model files, or a model server on the user's own network.
+let serverModels = [];
+function modelHtml() {
+  const m = S.machine,
+    su = S.setup,
+    kind = S.model.kind;
+  const radio = (v, label, help) =>
+    `<label class="choice"><input type="radio" name="modelKind" value="${v}" ${kind === v ? "checked" : ""}>
+    <span><b>${label}</b><small>${help}</small></span></label>`;
+  const path = (p) => (p ? `<bdi>${esc(p)}</bdi>` : t("notChosen"));
+  let detail = "";
+  if (kind === "builtin")
+    detail = `<p class="note">${t("modelFiles", { p: `<bdi>${esc(su.modelDir)}</bdi>` })}</p>
+    <div class="setup-actions">
+      <button data-setup="folder">${t("otherFolder")}</button>
+      ${su.custom.modelDir ? `<button class="ghost" data-setup="default-model">${t("ownCopy")}</button>` : ""}
+    </div>
+    ${su.jobs.verify.status === "running" || su.jobs.verify.status === "error" ? `<div class="setup-row"><span class="setup-name">${t("checkingFiles")}</span>${jobHtml(su.jobs.verify)}</div>` : ""}`;
+  else if (kind === "files")
+    detail = `<div class="file-row"><span class="note">${t("modelFileLabel", { p: path(m.modelFile) })}</span>
+      <button data-act="chooseFile" data-which="model">${t("choose")}</button></div>
+    <div class="file-row"><span class="note">${t("mmprojLabel", { p: path(m.mmprojFile) })}</span>
+      <button data-act="chooseFile" data-which="mmproj">${t("choose")}</button></div>`;
+  else
+    detail = `<label class="field">${t("serverUrl")}
+      <input type="url" id="setUrl" dir="ltr" placeholder="http://127.0.0.1:11434" value="${esc(m.serverUrl ?? "")}"></label>
+    <label class="field">${t("serverModelName")}
+      <input type="text" id="setSrvModel" dir="ltr" list="srvModels" placeholder="${esc(t("serverModelPh"))}" value="${esc(m.serverModel ?? "")}">
+      <datalist id="srvModels">${serverModels.map((n) => `<option value="${esc(n)}">`).join("")}</datalist></label>
+    <div class="setup-actions"><button data-act="findModels">${t("findModels")}</button></div>
+    <label class="field">${t("serverKey")}
+      <input type="password" id="setSrvKey" dir="ltr" autocomplete="off" value="${esc(m.serverKey ?? "")}"></label>`;
+  const engine =
+    kind === "server"
+      ? ""
+      : `<label class="field">${t("ownServer")}
+      <input type="text" id="setServer" dir="ltr" placeholder="${t("ownServerPh")}" value="${esc(su.custom.serverPath)}"></label>
+    <p class="note">${su.serverPath ? t("using", { d: `<bdi>${esc(su.serverPath)}</bdi>` }) : t("noEngineYet")}</p>
+    ${hardwareHtml()}`;
+  return `<section class="set">
+    <h3>${t("modelEngine")}</h3>
+    ${radio("builtin", t("modelBuiltin"), t("modelBuiltinHelp"))}
+    ${radio("files", t("modelFilesKind"), t("modelFilesHelp"))}
+    ${radio("server", t("modelServerKind"), t("modelServerHelp"))}
+    ${detail}
+    <p class="note">${t("readingWith", { m: `<bdi>${esc(S.model.label)}</bdi>` })}</p>
+    ${S.model.status === "error" && S.model.detail ? `<p class="err">${esc(S.model.detail)}</p>` : ""}
+    ${engine}
+  </section>`;
+}
+
+$("#settingsDialog").addEventListener(
+  "toggle",
+  (e) => {
+    if (e.target.id === "promptBox") promptOpen = e.target.open;
+  },
+  true,
+);
+
 $("#settingsDialog").addEventListener("change", async (e) => {
+  const v = e.target.value;
   try {
-    if (e.target.name === "tex") await api("/api/settings", { tex: e.target.value });
+    if (e.target.name === "tex") await api("/api/settings", { tex: v });
+    else if (e.target.name === "modelKind") await api("/api/settings", { modelKind: v });
+    else if (e.target.id === "setNotes") await api("/api/settings", { instructions: v });
+    else if (e.target.id === "setPrompt")
+      // the same as Inktyset's own: keep following Inktyset's (it may improve in an update)
+      await api("/api/settings", { prompt: v.trim() === S.reading.defaultPrompt.trim() ? "" : v });
+    else if (e.target.id === "setUrl") await api("/api/settings", { serverUrl: v });
+    else if (e.target.id === "setSrvModel") await api("/api/settings", { serverModel: v });
+    else if (e.target.id === "setSrvKey") await api("/api/settings", { serverKey: v });
     else if (e.target.id === "setPhone") await api("/api/settings", { phone: e.target.checked });
     else if (e.target.id === "setUi") await api("/api/settings", { ui: e.target.value });
     else if (e.target.id === "setServer") {
       await api("/api/settings", { serverPath: e.target.value });
       toast(t("saved"));
     }
+    if (/^set(Notes|Prompt|Url|SrvModel|SrvKey)$/.test(e.target.id)) toast(t("saved"));
+  } catch (err) {
+    toast(err.message, 6000);
+  }
+  $("#settingsBody").dataset.html = ""; // drawn again with what was saved
+  renderSettings();
+});
+
+// ---------------------------------------------------------------- trying other instructions on some pages
+function openTrial() {
+  const list = $("#trialList");
+  list.innerHTML = S.pages
+    .filter((p) => p.status === "done")
+    .map(
+      (p) =>
+        `<label><input type="checkbox" value="${esc(p.id)}"> ${esc(t("pageN", { n: pageNumber(p.id) }))}
+        <small><bdi>${esc(p.label)}</bdi></small></label>`,
+    )
+    .join("");
+  $("#trialInfo").textContent = t("usuallyTakes", { t: about(S.avgSecs) });
+  updateTrialGo();
+  $("#trialDialog").showModal();
+}
+function updateTrialGo() {
+  const n = $("#trialList").querySelectorAll("input:checked").length;
+  $("#trialGo").textContent = n ? t("trialGo", { n }) : t("trialNone");
+  $("#trialGo").disabled = !n;
+}
+$("#trialList").addEventListener("change", updateTrialGo);
+$("#trialCancel").onclick = () => $("#trialDialog").close();
+$("#trialGo").onclick = async () => {
+  const ids = [...$("#trialList").querySelectorAll("input:checked")].map((i) => i.value);
+  try {
+    await api("/api/trial", { ids });
+    $("#trialDialog").close();
+    $("#settingsDialog").close();
   } catch (err) {
     toast(err.message);
   }
-});
+};
 
 // ---------------------------------------------------------------- pages
 function statusOf(p) {
@@ -523,6 +638,9 @@ function renderStatusLine() {
     html += `<span>${S.intake ? t("addingFiles") + " · " : ""}${working || queued ? t("timeLeft", { t: about(left) }) : ""}</span>`;
     html += `<span class="note">${t("canClose")}</span>`;
   }
+  const trials = pages.filter((p) => p.trial === "queued" || p.trial === "working").length;
+  if (trials)
+    html += `<span>· ${t("trialsLeft", { n: trials })} <button class="ghost" data-act="stopTrials">${t("stopTrials")}</button></span>`;
   el.innerHTML = html;
 }
 
@@ -531,8 +649,31 @@ function pageNumber(id) {
 }
 
 function cardKey(p) {
-  return [p.status, p.rev, p.ok, p.unk, p.err, p.truncated, p.checked, p.pngs.join()].join("|");
+  return [
+    p.status,
+    p.rev,
+    p.ok,
+    p.unk,
+    p.err,
+    p.truncated,
+    p.checked,
+    p.pngs.join(),
+    p.trial,
+    p.fresh,
+    p.current,
+    p.versions?.length,
+  ].join("|");
 }
+
+/** A trial reading of the page, waiting, running or failed. */
+const trialChip = (p) =>
+  p.trial === "queued"
+    ? `<span class="chip">${t("trialWaiting")}</span>`
+    : p.trial === "working"
+      ? `<span class="chip busy">${t("trying")}</span>`
+      : p.trial === "failed"
+        ? `<span class="chip bad" title="${esc(p.trialErr)}">${t("trialFailedShort")}</span>`
+        : "";
 
 function buildCard(p) {
   const [cls, label] = statusOf(p);
@@ -573,7 +714,10 @@ function buildCard(p) {
   }
   el.innerHTML = `<div class="card-head">
       <h2>${t("pageN", { n: pageNumber(p.id) })}</h2><span class="chip ${cls}">${esc(label)}</span>
+      ${trialChip(p)}
       <span class="src" title="${esc(p.label)}"><bdi>${esc(p.label)}</bdi></span><span class="spacer"></span>
+      ${p.fresh ? `<button class="compare fresh" data-act="fresh" title="${t("newVersionTitle")}">${t("newVersion")}</button>` : ""}
+      ${!p.fresh && (p.versions?.length ?? 0) > 1 ? `<button class="ghost" data-act="versions" title="${t("versionsTitle")}">${t("versionsN", { n: p.versions.length })}</button>` : ""}
       ${p.status === "done" ? `<button class="ghost compare" data-act="compare" title="${t("compareTitle")}">${t("compare")}</button>` : ""}
       <button class="ghost" data-act="up" title="${t("moveUp")}">↑</button>
       <button class="ghost" data-act="down" title="${t("moveDown")}">↓</button>
@@ -808,7 +952,25 @@ document.addEventListener("click", async (e) => {
     id = card?.dataset.id;
   try {
     if (act === "compare") openCompare(id);
-    else if (act === "compareNext") {
+    else if (act === "fresh") {
+      const p = S.pages.find((x) => x.id === id);
+      openCompare(id, { other: p?.fresh });
+    } else if (act === "versions") {
+      const p = S.pages.find((x) => x.id === id);
+      openCompare(id, { other: p?.versions?.filter((v) => v.id !== p.current).at(-1)?.id });
+    } else if (act === "tryOn") openTrial();
+    else if (act === "stopTrials") await api("/api/trial/cancel");
+    else if (act === "resetPrompt") {
+      await api("/api/settings", { prompt: "" });
+      $("#settingsBody").dataset.html = "";
+    } else if (act === "chooseFile") await api("/api/model/file", { which: b.dataset.which });
+    else if (act === "findModels") {
+      const r = await api("/api/model/list", { url: $("#setUrl")?.value, key: $("#setSrvKey")?.value });
+      serverModels = r.models;
+      toast(t("modelsFound", { n: serverModels.length }));
+      $("#settingsBody").dataset.html = "";
+      renderSettings();
+    } else if (act === "compareNext") {
       const n = nextUnchecked(null);
       if (n) openCompare(n);
     } else if (act === "copy") {
@@ -866,8 +1028,10 @@ function nextUnchecked(fromId) {
   return null;
 }
 
-function openCompare(id) {
+function openCompare(id, opts = {}) {
   const d = $("#compare");
+  cmp.other = opts.other ?? null; // another version beside the one shown
+  if (opts.other && S.pages.find((p) => p.id === id)?.fresh === opts.other) void api(`/api/page/${id}/seen`);
   cmp.id = id;
   cmp.rev = null;
   cmp.z = 1;
@@ -876,8 +1040,7 @@ function openCompare(id) {
     d.showModal();
   } // a layout picked by hand stays while paging
   renderCompare();
-  $("#paneScan").scrollTo(0, 0);
-  $("#panePrev").scrollTo(0, 0);
+  for (const pane of panes()) pane.scrollTo(0, 0);
   if (!cmpEd.hasFocus()) d.focus(); // keys to the view (Enter = checked), unless typing in the editor
 }
 
@@ -890,13 +1053,16 @@ function applyLayout() {
   $("#cmpLayout").textContent = layout === "stack" ? t("sideBySide") : t("stacked");
 }
 
+/** The image panes shown: scan, preview, and another version's preview while two are compared. */
+const panes = () => ["#paneScan", "#panePrev", "#paneOther"].map((s) => $(s)).filter((el) => !el.hidden);
+
 function setZoom(z) {
   const old = cmp.z;
   cmp.z = Math.max(0.5, Math.min(5, z));
   $("#cmpImages").style.setProperty("--z", cmp.z);
   $("#cmpZoom").textContent = Math.round(cmp.z * 100) + "%";
   // keep the middle of the view in place
-  for (const pane of [$("#paneScan"), $("#panePrev")]) {
+  for (const pane of panes()) {
     const k = cmp.z / old;
     pane.scrollLeft = (pane.scrollLeft + pane.clientWidth / 2) * k - pane.clientWidth / 2;
     pane.scrollTop = (pane.scrollTop + pane.clientHeight / 2) * k - pane.clientHeight / 2;
@@ -942,9 +1108,35 @@ function renderCompare() {
   cb.textContent = p.checked ? t("checked") : t("markChecked");
   cb.className = p.checked ? "checked" : "primary";
   cb.title = p.checked ? t("unmarkTitle") : t("markTitle");
-  $("#cmpEditor").hidden = !cmp.editor;
-  $("#cmpEditorBtn").classList.toggle("on", cmp.editor);
   $("#cmpUnk").hidden = !p.unk;
+  // versions: the one shown, and another one beside it (its preview, and what differs)
+  const others = (p.versions ?? []).filter((v) => v.id !== p.current);
+  if (cmp.other && !others.some((v) => v.id === cmp.other)) cmp.other = null;
+  const ov = others.find((v) => v.id === cmp.other);
+  $("#cmpVersions").hidden = !others.length;
+  const sel = $("#cmpOther"),
+    key = others.map((v) => v.id).join() + "|" + uiLang() + "|" + p.id;
+  if (sel.dataset.key !== key) {
+    sel.innerHTML =
+      `<option value="">${esc(t("nothing"))}</option>` +
+      [...others]
+        .reverse()
+        .map((v) => `<option value="${v.id}">${esc(versionName(v))}</option>`)
+        .join("");
+    sel.dataset.key = key;
+  }
+  sel.value = cmp.other ?? "";
+  $("#cmpEditor").hidden = !cmp.editor || !!ov;
+  $("#cmpEditorBtn").classList.toggle("on", cmp.editor);
+  $("#cmpEditorBtn").disabled = !!ov;
+  $("#paneOther").hidden = !ov;
+  $("#cmpDiff").hidden = !ov;
+  if (ov) {
+    $("#panePrev .pane-label").textContent = t("shownVersion", { v: p.current ?? "" });
+    $("#paneOther .pane-label").textContent = versionName(ov);
+    renderOther(p, ov);
+    void renderDiff(p, ov);
+  } else cmp.otherKey = cmp.diffKey = null;
 
   if (cmp.rev !== p.rev || cmp.revLang !== uiLang()) {
     // new page, or its preview was rebuilt (or the language changed): keep zoom and scroll
@@ -987,6 +1179,71 @@ function renderCompare() {
   }
 }
 
+/** "v2 · 13/11/2026 10:02 · Qwen3.5 9B" */
+function versionName(v) {
+  const date = new Date(v.at * 1000).toLocaleString(`${uiLang()}-u-nu-latn`, {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+  return `${v.id} · ${date} · ${v.model || t("earlierReading")}`;
+}
+
+/** The other version's preview: built when first compared. */
+function renderOther(p, ov) {
+  const key = `${p.id}|${ov.id}|${ov.rev ?? 0}|${uiLang()}`;
+  if (cmp.otherKey === key) return;
+  cmp.otherKey = key;
+  let html = "";
+  if (ov.truncated) html += `<div class="err">${t("cutOff")}</div>`;
+  if (ov.ok === false)
+    html += `<div class="err">${t("noCompile", { f: FORMAT_NAME[fmtOf(p)] })}<pre>${esc(ov.err)}</pre></div>`;
+  if (!ov.pngs) {
+    html += `<div class="waiting"><div class="spinner"></div>${t("buildingPreview")}</div>`;
+    void api(`/api/page/${p.id}/version/${ov.id}/preview`).catch((e) => toast(e.message));
+  } else
+    html += ov.pngs.map((s) => `<img src="/files/${esc(s)}?r=${ov.rev}" alt="${t("renderedAlt")}">`).join("");
+  $("#otherInner").innerHTML = html;
+}
+
+/** What differs between the text shown and the other version, word by word, and what to do with it. */
+async function renderDiff(p, ov) {
+  const key = `${p.id}|${ov.id}|${p.rev}|${uiLang()}`;
+  if (cmp.diffKey === key) return;
+  cmp.diffKey = key;
+  const get = (vid) => fetch(`/api/page/${p.id}/version/${vid}`).then((r) => r.json());
+  const [other, shown] = await Promise.all([
+    get(ov.id),
+    p.current ? get(p.current) : { tex: "", prompt: "" },
+  ]);
+  if (cmp.diffKey !== key) return; // moved on meanwhile
+  const shownText = cmpEd.pageId === p.id && cmpEd.text ? cmpEd.text : shown.tex;
+  const parts = diffWords(shownText, other.tex);
+  const text = parts
+    .map((x) =>
+      x.op === "same"
+        ? esc(x.text)
+        : x.op === "del"
+          ? `<del>${esc(x.text)}</del>`
+          : `<ins>${esc(x.text)}</ins>`,
+    )
+    .join("");
+  const samePrompt = other.prompt === shown.prompt;
+  $("#cmpDiff").innerHTML = `<div class="diff-head">
+      <button class="primary" data-cmp="useOther" title="${esc(t("useVersionTitle", { v: ov.id }))}">${esc(t("useVersion", { v: ov.id }))}</button>
+      <button class="ghost" data-cmp="deleteOther">${esc(t("deleteVersion", { v: ov.id }))}</button>
+    </div>
+    <p class="note">${esc(t("diffLegend", { a: p.current ?? "", b: ov.id }))}</p>
+    ${
+      !other.prompt || !shown.prompt
+        ? ""
+        : samePrompt
+          ? `<p class="note">${esc(t("sameInstructions"))}</p>`
+          : `<details class="note"><summary>${esc(t("otherInstructions"))}</summary><pre dir="ltr">${esc(other.prompt)}</pre></details>`
+    }
+    ${parts.every((x) => x.op === "same") ? `<p class="note">${esc(t("sameText"))}</p>` : ""}
+    <pre class="diff" dir="auto">${text}</pre>`;
+}
+
 const cmpEd = createLatexEditor($("#cmpCode"), {
   onChange: (id, text) => save(id, text, $("#compare .saved"), () => cmpEd.pageId === id),
   onCheck: () => cmpCheckAndNext().catch((err) => toast(err.message)),
@@ -1025,7 +1282,27 @@ async function cmpAction(act) {
   } else if (act === "copy")
     copyText(cmpEd.text, t("pageN", { n: pageNumber(cmp.id) }), $("[data-cmp=copy]"));
   else if (act === "nextUnk") cmpEd.nextUnclear();
+  else if (act === "useOther" && cmp.other) {
+    const was = p.current,
+      next = cmp.other;
+    if (dirty.has(p.id)) await new Promise((r) => setTimeout(r, 950)); // the last edit is saved first
+    await api(`/api/page/${p.id}/version/${next}/use`);
+    texCache.delete(p.id);
+    cmpEd.load(p.id, "", fmtOf(p)); // filled again with the version now shown
+    cmp.other = was; // still side by side, the other way round
+    cmp.diffKey = cmp.otherKey = null;
+    toast(t("nowShowing", { v: next }));
+  } else if (act === "deleteOther" && cmp.other) {
+    if (!confirm(t("confirmDeleteVersion", { v: cmp.other }))) return;
+    await api(`/api/page/${p.id}/version/${cmp.other}/delete`);
+    cmp.other = null;
+  }
 }
+$("#cmpOther").addEventListener("change", (e) => {
+  cmp.other = e.target.value || null;
+  cmp.diffKey = cmp.otherKey = null;
+  renderCompare();
+});
 
 $("#compare").addEventListener("click", (e) => {
   const b = e.target.closest("[data-cmp]");
@@ -1072,19 +1349,18 @@ $("#cmpImages").addEventListener(
   { passive: false },
 );
 // scrolling one image scrolls the other to the same relative place
-for (const [a, b] of [
-  ["#paneScan", "#panePrev"],
-  ["#panePrev", "#paneScan"],
-]) {
+for (const a of ["#paneScan", "#panePrev", "#paneOther"]) {
   $(a).addEventListener("scroll", () => {
     if (cmp.syncing) return;
     cmp.syncing = true;
-    const A = $(a),
-      B = $(b);
+    const A = $(a);
     const fy = A.scrollTop / Math.max(1, A.scrollHeight - A.clientHeight);
     const fx = A.scrollLeft / Math.max(1, A.scrollWidth - A.clientWidth);
-    B.scrollTop = fy * (B.scrollHeight - B.clientHeight);
-    B.scrollLeft = fx * (B.scrollWidth - B.clientWidth);
+    for (const B of panes())
+      if (B !== A) {
+        B.scrollTop = fy * (B.scrollHeight - B.clientHeight);
+        B.scrollLeft = fx * (B.scrollWidth - B.clientWidth);
+      }
     requestAnimationFrame(() => {
       cmp.syncing = false;
     });

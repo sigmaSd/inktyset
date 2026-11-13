@@ -11,9 +11,12 @@ import { extname, join, normalize, resolve, sep } from "node:path";
 import type { ComponentId } from "./components.ts";
 import { sizeOf, supported } from "./components.ts";
 import { currentLang, msg, nativeName } from "./i18n.ts";
-import type { Core } from "./core.ts";
+import { type Core, DEFAULT_PROMPT } from "./core.ts";
+import { Model } from "./model.ts";
 import { CSP, guard, newSecret } from "./guard.ts";
-import { allBodies, fullDocument, LANGS } from "./pipeline.ts";
+import { checkLocalUrl } from "./local.ts";
+import { latexToTypst } from "./convert.ts";
+import { allBodies, fullDocument, langPrompt, LANGS } from "./pipeline.ts";
 import { typstBodies, typstDocument } from "./typst.ts";
 
 const TYPES: Record<string, string> = {
@@ -87,7 +90,18 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       settings: core.lib.settings,
       languages: Object.entries(LANGS).map(([id, l]) => ({ id, name: l.name })),
       avgSecs: recent.length ? recent.reduce((a, b) => a + b, 0) / recent.length : 90,
-      model: { status: core.model.status, detail: core.model.detail },
+      model: {
+        status: core.model.status,
+        detail: core.model.detail,
+        kind: core.model.kind,
+        label: core.model.label(),
+      },
+      reading: {
+        defaultPrompt: DEFAULT_PROMPT,
+        prompt: core.settings.prompt ?? "",
+        instructions: core.settings.instructions ?? "",
+        languageLine: langPrompt(core.lib.settings.language).trim(),
+      },
       phone: core.phone.state,
       scanner: {
         available: core.scanner.available,
@@ -206,6 +220,27 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         machine.ui = String(body.ui);
       }
       if (body.serverPath !== undefined) machine.serverPath = String(body.serverPath).trim() || undefined;
+      // the instructions (an empty one means Inktyset's own) and the model
+      const text = (k: string, max: number) => {
+        if (body[k] === undefined) return;
+        const v = String(body[k] ?? "");
+        if (v.length > max) throw new Error(`${k} is too long`);
+        machine[k] = v.trim() ? v : undefined;
+      };
+      text("instructions", 4000);
+      text("prompt", 20000);
+      if (body.modelKind !== undefined) {
+        if (!["builtin", "files", "server"].includes(String(body.modelKind)))
+          throw new Error("unknown model kind");
+        machine.modelKind = String(body.modelKind);
+      }
+      text("serverModel", 200);
+      text("serverKey", 400);
+      if (body.serverUrl !== undefined) {
+        const url = String(body.serverUrl).trim();
+        if (url) await checkLocalUrl(url); // src/local.ts: never a cloud service
+        machine.serverUrl = url || undefined;
+      }
       if (Object.keys(machine).length) await core.setSettings(machine);
       return { ok: true };
     }
@@ -227,6 +262,20 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       await core.setSettings({ modelDir: undefined });
       return { ok: true };
     }
+    if (path === "/api/model/file") {
+      const which = String(body.which);
+      if (which !== "model" && which !== "mmproj") throw new Error("unknown file");
+      void core.chooseModelFile(which);
+      return { ok: true };
+    }
+    if (path === "/api/model/list")
+      return { models: await Model.listModels(String(body.url ?? ""), String(body.key ?? "") || undefined) };
+    if (path === "/api/trial") {
+      if (!Array.isArray(body.ids)) throw new Error("ids expected");
+      core.tryOn(body.ids.map(String));
+      return { ok: true };
+    }
+    if (path === "/api/trial/cancel") return (core.cancelTrials(), { ok: true });
     if (path === "/api/install-update") {
       if (!core.update) throw new Error("no update is ready");
       core.shell.installUpdate();
@@ -256,7 +305,15 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         .catch(() => {});
       return { ok: true };
     }
-    const m = /^\/api\/page\/(page\d+)\/(tex|redo|delete|move|check)$/.exec(path);
+    const vm = /^\/api\/page\/(page\d+)\/version\/(v\d+)\/(use|delete|preview)$/.exec(path);
+    if (vm) {
+      const [, id, vid, action] = vm;
+      if (action === "use") await core.useVersion(id, vid);
+      else if (action === "delete") await core.deleteVersion(id, vid);
+      else void core.versionPreview(id, vid);
+      return { ok: true };
+    }
+    const m = /^\/api\/page\/(page\d+)\/(tex|redo|delete|move|check|seen)$/.exec(path);
     if (m) {
       const [, id, action] = m;
       const p = lib.get(id);
@@ -278,6 +335,8 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         lib.pages.splice(j, 0, lib.pages.splice(i, 1)[0]);
       } else if (action === "check") {
         p.checked = Boolean(body.checked ?? true);
+      } else if (action === "seen") {
+        p.fresh = undefined; // its trial version was looked at
       }
       lib.changed();
       return { ok: true };
@@ -319,6 +378,17 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       }
       const pm = /^\/api\/page\/(page\d+)$/.exec(path);
       if (pm) return send(res, 200, { tex: await core.lib.body(pm[1]) });
+      // a version's text (LaTeX, or the Typst shown), and the instructions it was read with
+      const vg = /^\/api\/page\/(page\d+)\/version\/(v\d+)$/.exec(path);
+      if (vg) {
+        const p = core.lib.get(vg[1]);
+        const v = p?.versions?.find((x) => x.id === vg[2]);
+        if (!p || !v) return send(res, 404, { error: "no such version" });
+        const typst = (p.format ?? "latex") === "typst";
+        const latex = await core.lib.versionText(p, v.id);
+        const tex = typst ? (await core.lib.versionText(p, v.id, "typ")) || latexToTypst(latex) : latex;
+        return send(res, 200, { tex, prompt: core.lib.prompts[v.prompt] ?? "" });
+      }
       if (path.startsWith("/files/")) {
         const f = dataFile(path.slice("/files/".length));
         if (!f) return send(res, 404, { error: "not found" });

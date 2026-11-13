@@ -107,6 +107,16 @@ msgid "<b>Languages:</b> English by default; French, Arabic (right to left), Ger
 msgstr "<b>Langues :</b> anglais par défaut ; français, arabe (de droite à gauche), allemand, espagnol, italien, portugais, turc ou toute autre langue pour le texte. Les pages qui mêlent le français ou l'anglais à l'arabe fonctionnent aussi, chaque mot dans son sens. Rien n'est traduit."
 
 #. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featVersions"
+msgid "<b>Every reading kept:</b> read a page again, with your own instructions or another model, and compare the two versions side by side before keeping one. Your corrections are never lost."
+msgstr "<b>Chaque lecture gardée :</b> relisez une page, avec vos propres instructions ou un autre modèle, et comparez les deux versions côte à côte avant d'en garder une. Vos corrections ne sont jamais perdues."
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featModels"
+msgid "<b>Any model, on your machines:</b> the built-in one, any vision model llama.cpp runs, or a model server on your own network (Ollama, LM Studio, vLLM). Never a cloud service."
+msgstr "<b>N'importe quel modèle, sur vos machines :</b> celui intégré, tout modèle de vision que llama.cpp fait tourner, ou un serveur de modèles sur votre propre réseau (Ollama, LM Studio, vLLM). Jamais un service dans le cloud."
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
 msgctxt "featAppLanguages"
 msgid "<b>In your language:</b> the app speaks English, French and Arabic, and anyone can <a href=\"https://github.com/sigmaSd/inktyset/blob/main/docs/translating.md\">add a language</a>."
 msgstr "<b>Dans votre langue :</b> l'application parle anglais, français et arabe, et chacun peut <a href=\"https://github.com/sigmaSd/inktyset/blob/main/docs/translating.md\">ajouter une langue</a>."
