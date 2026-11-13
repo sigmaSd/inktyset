@@ -9,6 +9,7 @@ import { join } from "node:path";
 import { dirOf, findFile, install, supported } from "./components.ts";
 import { type Family, familyFor, pageDocument } from "./pipeline.ts";
 import { run, which } from "./run.ts";
+import { arabicInLatin } from "./scripts.ts";
 
 export type TexMode = "auto" | "system" | "builtin";
 
@@ -89,8 +90,8 @@ export class Tex {
   }
 
   /** The installed program to use for this language: pdflatex where it fits, else xelatex. */
-  #systemProgram(lang: string): { program: string; family: Family } | null {
-    const want = familyFor(lang);
+  #systemProgram(lang: string, mixed: boolean): { program: string; family: Family } | null {
+    const want = familyFor(lang, mixed);
     if (want === "pdftex" && this.#system.pdflatex)
       return { program: this.#system.pdflatex, family: "pdftex" };
     if (this.#system.xelatex) return { program: this.#system.xelatex, family: "xetex" };
@@ -116,8 +117,14 @@ export class Tex {
   }
 
   /** Does this program work for this language at all? (Checked once, on a tiny page.) */
-  async #works(program: string, isTectonic: boolean, family: Family, lang: string): Promise<boolean> {
-    const key = `${program}|${lang}`;
+  async #works(
+    program: string,
+    isTectonic: boolean,
+    family: Family,
+    lang: string,
+    mixed: boolean,
+  ): Promise<boolean> {
+    const key = `${program}|${lang}|${mixed}`;
     const known = this.#tested.get(key);
     if (known !== undefined) return known;
     const dir = join(this.#base, "tex-test", String(this.#tested.size));
@@ -125,7 +132,12 @@ export class Tex {
     await mkdir(dir, { recursive: true });
     await writeFile(
       join(dir, "doc.tex"),
-      pageDocument("Test $x^2 + \\frac{1}{2}$.\n\\begin{theorem}x\\end{theorem}", lang, family),
+      // with an Arabic word when the page has some: the Arabic setup is tested too
+      pageDocument(
+        `Test $x^2 + \\frac{1}{2}$${mixed ? " تجربة" : ""}.\n\\begin{theorem}x\\end{theorem}`,
+        lang,
+        family,
+      ),
     );
     const r = await this.#runTex(program, isTectonic, dir);
     await rm(dir, { recursive: true, force: true });
@@ -157,9 +169,11 @@ export class Tex {
   async compile(dir: string, body: string, lang: string): Promise<CompileResult> {
     await rm(dir, { recursive: true, force: true });
     await mkdir(dir, { recursive: true });
-    const sys = this.mode !== "builtin" ? this.#systemProgram(lang) : null;
+    const mixed = arabicInLatin(body, lang);
+    const sys = this.mode !== "builtin" ? this.#systemProgram(lang, mixed) : null;
     if (sys) {
-      const usable = this.mode === "system" || (await this.#works(sys.program, false, sys.family, lang));
+      const usable =
+        this.mode === "system" || (await this.#works(sys.program, false, sys.family, lang, mixed));
       if (usable) {
         await writeFile(join(dir, "doc.tex"), pageDocument(body, lang, sys.family));
         this.using = "system";

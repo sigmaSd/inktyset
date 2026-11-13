@@ -112,6 +112,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       },
       machine: core.settings,
       update: core.update,
+      appVersion: core.appVersion,
       hardware: core.hardware,
       tex: {
         mode: core.tex.mode,

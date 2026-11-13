@@ -145,6 +145,7 @@ async function main() {
     notify,
     installUpdate: installNow,
   };
+  core.appVersion = app.getVersion();
   await core.init();
   watchUpdates((version) => {
     core.update = version; // offered in the window: "Restart to update"

@@ -40,3 +40,7 @@ test("convert: a table", () => {
     "#table(columns: 2, [$x$], [1])\n",
   );
 });
+
+test("convert: \\label is dropped, not shown as text", () => {
+  expect(latexToTypst("est continue.\\label{def:cont}").trim()).toBe("est continue.");
+});

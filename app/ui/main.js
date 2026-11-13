@@ -121,6 +121,8 @@ function renderHeader() {
     $("#langOther").hidden = known;
     if (!known) $("#langOther").value = cur;
   }
+  $("#version").textContent = S.appVersion ? S.appVersion : "";
+  $("#version").title = S.appVersion ? `Inktyset ${S.appVersion}` : "";
   $("#updateBtn").hidden = !S.update;
   if (S.update) $("#updateBtn").title = `Inktyset ${S.update} is downloaded: restart to use it`;
   const fmt = S.settings.format ?? "latex";
@@ -389,6 +391,16 @@ function renderSettings() {
   <section class="set">
     <h3>Your pages</h3>
     <p class="note">Saved in ${esc(S.folder)}</p>
+  </section>
+  <section class="set">
+    <h3>About</h3>
+    <p class="note">Inktyset ${esc(S.appVersion)}${S.update ? ` · version ${esc(S.update)} is downloaded, restart to use it` : ""}.
+      Free software under the GPL-3.0.</p>
+    <p class="note"><a href="https://sigmasd.github.io/inktyset/" target="_blank">Website</a> ·
+      <a href="https://github.com/sigmaSd/inktyset" target="_blank">Source</a> ·
+      <a href="https://github.com/sigmaSd/inktyset/releases" target="_blank">What's new</a> ·
+      <a href="https://github.com/sigmaSd/inktyset/blob/main/THIRD_PARTY_NOTICES.md" target="_blank">Licenses</a> ·
+      <a href="https://github.com/sigmaSd/inktyset/issues" target="_blank">Report a problem</a></p>
   </section>`;
   if (body.dataset.html !== html) {
     body.innerHTML = html;

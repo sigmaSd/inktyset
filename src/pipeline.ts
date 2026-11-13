@@ -1,10 +1,13 @@
 // What the model is asked, how its answer is cleaned, and the LaTeX around a page for the preview.
 // (Ported from the first, Python version, when the app was still called hand2tex.)
 
+import { arabicInLatin, isArabicLang, markScripts } from "./scripts.ts";
+
 // Math first (docs/scope.md): the math rules lead; other handwriting (prose, notes, lists, tables) is read too.
 export const PROMPT = String.raw`Transcribe this handwritten page into LaTeX body content. It is usually mathematics, but it may also be prose, notes, lists or tables.
 Rules:
 - Transcribe exactly what is written. Do NOT fix, complete, simplify or add steps, even if the math looks wrong. Do not correct spelling either.
+- If the page mixes languages or scripts (for example French with Arabic words), keep every word in its own language and script. Never translate anything.
 - Ordinary text stays plain text: no $...$ around words. Use $...$ only for mathematics.
 - Lists: itemize or enumerate. Tables: tabular.
 - Use \begin{theorem}, \begin{lemma}, \begin{proposition}, \begin{corollary}, \begin{definition}, \begin{remark}, \begin{example}, \begin{proof} where the page clearly uses them.
@@ -50,8 +53,9 @@ export function langPrompt(lang: string): string {
 export type Family = "pdftex" | "xetex";
 
 /** pdflatex is kept where it works (English, French: what most theses use); the rest needs XeTeX. */
-export function familyFor(lang: string): Family {
+export function familyFor(lang: string, mixed = false): Family {
   const key = (lang || "english").trim().toLowerCase();
+  if (mixed) return "xetex"; // Arabic words in the page: pdflatex can't set them (src/scripts.ts)
   return key === "english" || key === "french" || !LANGS[key] ? "pdftex" : "xetex";
 }
 
@@ -175,7 +179,8 @@ function definitions(lang: string): string {
 `;
 }
 
-export function preamble(lang: string, family: Family): string {
+/** `mixed`: the page's main language is written in Latin letters but it has Arabic words (src/scripts.ts). */
+export function preamble(lang: string, family: Family, mixed = false): string {
   const info = langInfo(lang);
   let setup: string;
   if (family === "pdftex") {
@@ -183,9 +188,13 @@ export function preamble(lang: string, family: Family): string {
     if (info.babel) setup += `\\usepackage[${info.babel}]{babel}\n`;
   } else {
     setup = "\\usepackage{fontspec}\n" + PACKAGES;
-    if (info.polyglossia && info.polyglossia !== "english") {
-      setup += `\\usepackage{polyglossia}\n\\setmainlanguage{${info.polyglossia}}\n\\setotherlanguage{english}\n`;
-      if (info.polyglossia === "arabic") {
+    const main = info.polyglossia || "english";
+    if (main !== "english" || mixed) {
+      const others = new Set(["english", ...(mixed ? ["arabic"] : [])]);
+      others.delete(main);
+      setup += `\\usepackage{polyglossia}\n\\setmainlanguage{${main}}\n`;
+      for (const o of others) setup += `\\setotherlanguage{${o}}\n`;
+      if (main === "arabic" || mixed) {
         setup +=
           ARABIC_FONTS.map(
             (f) => `\\IfFontExistsTF{${f}}{\\newfontfamily\\arabicfont[Script=Arabic]{${f}}}{`,
@@ -211,13 +220,17 @@ export function cleanLatex(t: string): string {
 
 /** One page, alone: no page number, since its preview is cropped to the content. */
 export function pageDocument(body: string, lang: string, family: Family): string {
-  return `${preamble(lang, family)}\\pagestyle{empty}\n\\begin{document}\n${body}\n\\end{document}\n`;
+  const mixed = arabicInLatin(body, lang);
+  const text = mixed || isArabicLang(lang) ? markScripts(body, isArabicLang(lang)) : body;
+  return `${preamble(lang, family, mixed)}\\pagestyle{empty}\n\\begin{document}\n${text}\n\\end{document}\n`;
 }
 
 /** Every finished page in one file, each on its own page. */
 export function fullDocument(bodies: string[], lang: string): string {
-  const pages = bodies.map((b, i) => `% ---- page ${i + 1}\n${b.trim()}\n`).join("\\clearpage\n");
-  return `${preamble(lang, familyFor(lang))}\\begin{document}\n\n${pages}\n\\end{document}\n`;
+  const mixed = bodies.some((b) => arabicInLatin(b, lang));
+  const mark = (b: string) => (mixed || isArabicLang(lang) ? markScripts(b, isArabicLang(lang)) : b);
+  const pages = bodies.map((b, i) => `% ---- page ${i + 1}\n${mark(b.trim())}\n`).join("\\clearpage\n");
+  return `${preamble(lang, familyFor(lang, mixed), mixed)}\\begin{document}\n\n${pages}\n\\end{document}\n`;
 }
 
 /** What "Copy all LaTeX" copies: the bodies only, to paste into your own document. */

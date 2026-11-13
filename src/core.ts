@@ -72,6 +72,8 @@ export class Core {
   hardware: Hardware | null = null;
   /** A downloaded, verified update waiting for a restart (its version), or null. */
   update: string | null = null;
+  /** This copy's version (Electron's, from package.json), shown in the window. */
+  appVersion = "";
   readonly #userData: string;
   renderer!: Renderer;
   shell!: Shell;

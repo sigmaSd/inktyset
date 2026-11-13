@@ -34,6 +34,8 @@ A chat model reads one photo. Inktyset is built for the whole stack of pages:
   environments (`\fr` → `\frac{}{}`, `\begin{align*}` … `\end{align*}`).
 - **Languages:** English by default; French, Arabic (right to left), German, Spanish, Italian, Portuguese,
   Turkish, or any other language for the prose. The math is unaffected and nothing is translated.
+  Pages that mix scripts work too, French or English with Arabic words or the other way round: each word
+  stays in its own language and direction.
 - **LaTeX or Typst:** choose the output in the header. Pages are converted to [Typst](https://typst.app)
   from the model's LaTeX, instantly, and switch back just as fast. The preview uses the LaTeX or Typst
   installed on your computer when it works, otherwise a built-in one

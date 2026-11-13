@@ -25,10 +25,9 @@ export function typstPreamble(lang: string): string {
   const key = (lang || "english").trim().toLowerCase();
   const n = theoremNames(lang);
   const code = CODES[key];
-  const fonts =
-    key === "arabic"
-      ? `#set text(font: ("Libertinus Serif", "Amiri", "Noto Naskh Arabic", "PakType Naskh Basic", "Noto Sans Arabic"))\n`
-      : "";
+  // Arabic fonts after the main one, for every language: Arabic words in a French page get one too (Typst
+  // handles the right-to-left runs by itself; src/scripts.ts is for LaTeX)
+  const fonts = `#set text(font: ("Libertinus Serif", "Amiri", "Noto Naskh Arabic", "PakType Naskh Basic", "Noto Sans Arabic", "Vazirmatn"))\n`;
   return `#set page(paper: "a4", margin: 2.5cm)
 #set text(size: 11pt${code ? `, lang: "${code}"` : ""})
 ${fonts}#set par(justify: true)

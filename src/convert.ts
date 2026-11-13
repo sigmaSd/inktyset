@@ -102,6 +102,8 @@ function text(s: string): string {
     if (wrap[name] && arg) {
       out += wrap[name](arg[0]);
       i = arg[1];
+    } else if (["label", "index", "vspace", "hspace"].includes(name) && arg) {
+      i = arg[1]; // names and spacing, not text: dropped (a Typst label couldn't go on plain text anyway)
     } else if (["noindent", "medskip", "bigskip", "smallskip", "par", "newline", "indent"].includes(name)) {
       out += name === "newline" ? " \\\n" : name.endsWith("skip") ? "\n" : "";
     } else if (arg) {

@@ -161,6 +161,13 @@ header :is(button, input, select, textarea, a, label) {
   width: 30px;
   height: 30px;
 }
+.brand .version {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  align-self: flex-end;
+  margin: 0 0 4px -4px;
+}
 .pill {
   display: inline-flex;
   align-items: center;
@@ -936,4 +943,7 @@ button.icon svg {
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 13px;
+}
+.set a {
+  color: var(--accent);
 }
