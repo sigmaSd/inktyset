@@ -12,6 +12,7 @@ import { Library } from "./library.ts";
 import { Model, type ModelKind } from "./model.ts";
 import { Phone } from "./phone.ts";
 import { pagesFolderIn } from "./folders.ts";
+import { type Chat, chatInstructions, fitHistory, imageTokens, proposalIn, textTokens } from "./chat.ts";
 import { isNoEdit, type PictureEdit, sanitizeEdit } from "./picture.ts";
 import { cleanLatex, type Format, langPrompt, PROMPT } from "./pipeline.ts";
 import { Scanner } from "./scanner.ts";
@@ -24,6 +25,9 @@ import type { Translations } from "./po.ts";
 
 const MAX_SIDE = 1600; // the long side of what the model sees
 const BASE_SIDE = 3200; // the picture edits start from: sharper than what the model sees, for crops
+const CHAT_SIDE = 1024; // the scan and the preview in the page chat: enough to see, cheaper than reading size
+const CHAT_CONTEXT = 12288; // the engine's context (src/model.ts -c)
+const CHAT_ANSWER = 4096; // room for the answer (a whole page rewritten, and a few sentences)
 
 /** Image and PDF work, done by Chromium (shell/electron/render.ts). Paths are relative to the data folder. */
 export interface Renderer {
@@ -408,7 +412,11 @@ export class Core {
 
   async #loop() {
     for (;;) {
-      // pages to read first, then trial readings (other instructions or model, never replacing the text)
+      // a question in the page chat first (someone is waiting for it), then pages, then trial readings
+      if (this.#asked.length && !this.missing.engine && !this.missing.model) {
+        await this.#answer(this.#asked.shift()!);
+        continue;
+      }
       const page = this.lib.pages.find((p) => p.status === "queued");
       const trial = page
         ? undefined
@@ -556,8 +564,10 @@ export class Core {
       await this.compile(id);
     } catch (e) {
       const p = this.lib.get(id);
-      if (p && trial) Object.assign(p, { trial: "failed", trialErr: (e as Error).message });
-      else if (p && p.status === "working") Object.assign(p, { status: "failed", err: (e as Error).message });
+      if (p && trial) {
+        if (p.trial === "working") Object.assign(p, { trial: "failed", trialErr: (e as Error).message });
+      } else if (p && p.status === "working")
+        Object.assign(p, { status: "failed", err: (e as Error).message });
       // (otherwise stopped by the user while it was read: it stays as Stop left it)
       if (p) this.lib.changed();
     } finally {
@@ -630,6 +640,224 @@ export class Core {
     this.wake();
   }
 
+  // ------------------------------------------------------------------ the page chat (src/chat.ts)
+
+  /** Pages whose last question waits for its answer, in the order asked. */
+  #asked: string[] = [];
+  #chatAbort: AbortController | null = null;
+  /** The answer being written: its page, and the thinking and text so far (the window shows them as they come). */
+  chatLive: { page: string; thinking: string; text: string; started: number } | null = null;
+
+  #chatPath = (id: string) => join(this.lib.dir, "chats", `${id}.json`);
+
+  async chat(id: string): Promise<Chat> {
+    try {
+      return JSON.parse(await readFile(this.#chatPath(id), "utf8")) as Chat;
+    } catch {
+      return { page: id, messages: [] };
+    }
+  }
+
+  async #saveChat(c: Chat) {
+    await mkdir(join(this.lib.dir, "chats"), { recursive: true });
+    await writeFile(this.#chatPath(c.page), JSON.stringify(c, null, 1));
+  }
+
+  /** Where a page's chat stands: waiting its turn, being answered, or neither. */
+  chatState(id: string) {
+    return {
+      waiting: this.#asked.includes(id),
+      live: this.chatLive?.page === id ? this.chatLive : null,
+      reading: this.lib.pages.find((p) => p.status === "working" || p.trial === "working")?.id ?? null,
+    };
+  }
+
+  /**
+   * A question about a page: its text, parts of the scan or preview the user picked (JPEG, base64), and the
+   * whole preview if asked. Answered before the next page is read.
+   */
+  async ask(
+    id: string,
+    text: string,
+    regions: { data: string; w: number; h: number; from: string }[],
+    preview: boolean,
+  ) {
+    const p = this.lib.get(id);
+    if (!p || p.status !== "done") throw Object.assign(new Error("page is not ready"), { code: 409 });
+    if (this.missing.engine || this.missing.model) throw new Error(msg("notDownloaded"));
+    if (this.#asked.includes(id) || this.chatLive?.page === id)
+      throw Object.assign(new Error("already asked"), { code: 409 });
+    const c = await this.chat(id);
+    const dir = join(this.lib.dir, "chats", id);
+    await mkdir(dir, { recursive: true });
+    let n = c.messages.reduce((k, m) => k + (m.attach?.length ?? 0), 0);
+    const attach: Chat["messages"][number]["attach"] = [];
+    const keep = async (jpeg: Buffer, from: "scan" | "preview", w: number, h: number) => {
+      const file = join(dir, `a${++n}.jpg`);
+      await writeFile(file, jpeg);
+      attach.push({ file: this.rel(file), from, w, h });
+    };
+    for (const r of regions.slice(0, 4))
+      await keep(Buffer.from(r.data, "base64"), r.from === "preview" ? "preview" : "scan", r.w, r.h);
+    if (preview)
+      for (const png of p.pngs.slice(0, 2)) {
+        const jpeg = await this.renderer.image(png, CHAT_SIDE);
+        const { w, h } = jpegSize(jpeg);
+        await keep(jpeg, "preview", w, h);
+      }
+    c.messages.push({
+      role: "user",
+      text: text.trim(),
+      at: Date.now() / 1000,
+      ...(attach.length ? { attach } : {}),
+    });
+    await this.#saveChat(c);
+    this.#asked.push(id);
+    this.lib.changed();
+    this.wake();
+  }
+
+  /** Don't wait for the page being read: it goes back in the queue (read again after), the question goes now. */
+  answerNow(id: string) {
+    if (!this.#asked.includes(id)) return;
+    this.#asked = [id, ...this.#asked.filter((x) => x !== id)];
+    const p = this.lib.pages.find((x) => x.status === "working" || x.trial === "working");
+    if (!p) return;
+    if (p.status === "working") p.status = "queued";
+    else p.trial = "queued";
+    this.#reading?.abort();
+    this.lib.changed();
+  }
+
+  /** Stop a question: not asked any more if it waits, cut short if it's being answered. */
+  stopChat(id: string) {
+    this.#asked = this.#asked.filter((x) => x !== id);
+    if (this.chatLive?.page === id) this.#chatAbort?.abort();
+    this.lib.changed();
+  }
+
+  async clearChat(id: string) {
+    this.stopChat(id);
+    await rm(this.#chatPath(id), { force: true });
+    await rm(join(this.lib.dir, "chats", id), { recursive: true, force: true });
+    this.lib.changed();
+  }
+
+  /** An answer's rewrite becomes the page's text: a new version (the text it replaces stays in its own). */
+  async applyProposal(id: string, n: number) {
+    const p = this.lib.get(id);
+    const c = await this.chat(id);
+    const m = c.messages[n];
+    if (!p || p.status !== "done" || !m?.proposal || m.applied) throw new Error("nothing to apply");
+    m.applied = await this.lib.addVersion(p, m.proposal, {
+      prompt: this.lib.promptKey(chatInstructions(p.format ?? "latex")),
+      model: this.model.label(),
+      secs: m.secs ?? null,
+      truncated: false,
+      from: "chat",
+    });
+    await this.#saveChat(c);
+    this.lib.changed();
+    await this.compile(id);
+  }
+
+  async dismissProposal(id: string, n: number) {
+    const c = await this.chat(id);
+    if (c.messages[n]) c.messages[n].dismissed = true;
+    await this.#saveChat(c);
+    this.lib.changed();
+  }
+
+  async #answer(id: string) {
+    const p = this.lib.get(id);
+    const c = await this.chat(id);
+    if (!p || c.messages.at(-1)?.role !== "user") return;
+    const format = p.format ?? "latex";
+    const name = format === "typst" ? "Typst" : "LaTeX";
+    const abort = new AbortController();
+    this.#chatAbort = abort;
+    this.chatLive = { page: id, thinking: "", text: "", started: Date.now() / 1000 };
+    this.lib.changed();
+    const t0 = Date.now();
+    const answer: Chat["messages"][number] = { role: "assistant", text: "", at: 0 };
+    try {
+      // what the model always sees: the instructions, the scan, the text as it is now
+      const scan = await this.renderer.image(this.rel(this.lib.scanPath(id)), CHAT_SIDE);
+      const size = jpegSize(scan);
+      const body = await this.lib.body(id);
+      const intro = `The page's current ${name} text:\n\`\`\`${format === "typst" ? "typst" : "latex"}\n${body}\n\`\`\``;
+      const instructions = chatInstructions(format);
+      const fixed = textTokens(instructions) + textTokens(intro) + imageTokens(size.w, size.h);
+      const history = fitHistory(c.messages, CHAT_CONTEXT - CHAT_ANSWER - fixed - 200);
+      const image = (jpeg: Buffer) => ({
+        type: "image_url",
+        image_url: { url: `data:image/jpeg;base64,${jpeg.toString("base64")}` },
+      });
+      const messages: unknown[] = [
+        { role: "system", content: instructions },
+        { role: "user", content: [image(scan), { type: "text", text: intro }] },
+      ];
+      for (const h of history) {
+        if (h.message.role === "assistant") {
+          messages.push({ role: "assistant", content: h.text });
+          continue;
+        }
+        const pics = h.images
+          ? await Promise.all(
+              (h.message.attach ?? []).map(async (a) => image(await readFile(join(this.lib.dir, a.file)))),
+            )
+          : [];
+        const named =
+          !h.images && h.message.attach?.length
+            ? `[${h.message.attach.length} picture(s) not shown again]\n`
+            : "";
+        messages.push({
+          role: "user",
+          content: [...pics, { type: "text", text: named + (h.text || "(see the picture)") }],
+        });
+      }
+      let last = 0;
+      const r = await this.model.chat(
+        messages,
+        {
+          // no thinking: on this kind of machine it ran for minutes before answering (the owner's call, 2026-11-13)
+          think: false,
+          maxTokens: CHAT_ANSWER,
+          onDelta: (d) => {
+            Object.assign(this.chatLive!, d);
+            if (Date.now() - last > 300) {
+              last = Date.now();
+              this.lib.changed();
+            }
+          },
+        },
+        abort.signal,
+      );
+      Object.assign(answer, { text: r.text.trim(), thinking: r.thinking.trim(), cut: r.finish === "length" });
+      const proposal = proposalIn(answer.text);
+      if (proposal !== undefined && proposal.trim() !== body.trim()) answer.proposal = proposal;
+    } catch (e) {
+      if (abort.signal.aborted)
+        Object.assign(answer, {
+          text: this.chatLive?.text ?? "",
+          thinking: this.chatLive?.thinking ?? "",
+          stopped: true,
+        });
+      else answer.err = (e as Error).message;
+    } finally {
+      this.#chatAbort = null;
+      this.chatLive = null;
+    }
+    answer.at = Date.now() / 1000;
+    answer.secs = (Date.now() - t0) / 1000;
+    const now = await this.chat(id); // (cleared meanwhile: the answer goes nowhere)
+    if (now.messages.length) {
+      now.messages.push(answer);
+      await this.#saveChat(now);
+    }
+    this.lib.changed();
+  }
+
   /** Stopped pages go back in the queue. */
   readStopped(ids: string[]) {
     for (const id of ids) {
@@ -700,4 +928,20 @@ export class Core {
     this.model.stop();
     void this.phone.stop();
   }
+}
+
+/** A JPEG's width and height, from its header (the start-of-frame marker). */
+export function jpegSize(jpeg: Buffer): { w: number; h: number } {
+  let i = 2;
+  while (i + 9 < jpeg.length) {
+    if (jpeg[i] !== 0xff) {
+      i++;
+      continue;
+    }
+    const marker = jpeg[i + 1];
+    if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker))
+      return { h: jpeg.readUInt16BE(i + 5), w: jpeg.readUInt16BE(i + 7) };
+    i += 2 + jpeg.readUInt16BE(i + 2);
+  }
+  return { w: CHAT_SIDE, h: CHAT_SIDE };
 }

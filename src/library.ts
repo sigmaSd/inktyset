@@ -10,6 +10,7 @@
 //                      model is a new version, so nothing is ever lost and two can be compared.
 //   build/<id>/        the preview: doc.tex, doc.pdf, render-N.png
 //   originals/         files as they were added; phone/ what the phone sent
+//   chats/<id>.json    the page's chat (src/chat.ts), and chats/<id>/ the pictures attached to it
 
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
@@ -35,6 +36,8 @@ export interface Version {
   err?: string;
   pngs?: string[];
   rev?: number;
+  /** Made from an answer in the page chat (src/chat.ts), not by reading the page. */
+  from?: "chat";
 }
 
 export interface Page {
@@ -116,7 +119,7 @@ export class Library {
   }
 
   async init() {
-    for (const d of ["scans", "pages", "raw", "build", "originals", "phone", "versions"]) {
+    for (const d of ["scans", "pages", "raw", "build", "originals", "phone", "versions", "chats"]) {
       await mkdir(join(this.dir, d), { recursive: true });
     }
     await this.save();
@@ -235,6 +238,29 @@ export class Library {
   nextVersion(p: Page) {
     const n = Math.max(0, ...(p.versions ?? []).map((v) => Number(v.id.slice(1)) || 0));
     return `v${n + 1}`;
+  }
+
+  /**
+   * A new version from a text the user accepted (a rewrite from the page chat), shown at once; the text shown
+   * until then is kept in its own version. A Typst page keeps the LaTeX it was made from.
+   */
+  async addVersion(p: Page, body: string, meta: Omit<Version, "id" | "at">) {
+    await this.ensureVersions(p);
+    await this.saveCurrent(p);
+    const vid = this.nextVersion(p);
+    await mkdir(join(this.dir, "versions", p.id), { recursive: true });
+    if ((p.format ?? "latex") === "typst") {
+      await copyFile(this.texPath(p.id), this.versionPath(p.id, vid)).catch(() => {});
+      await writeFile(this.versionPath(p.id, vid, "typ"), body);
+      await writeFile(this.typPath(p.id), body);
+    } else {
+      await writeFile(this.versionPath(p.id, vid), body);
+      await writeFile(this.texPath(p.id), body);
+      await rm(this.typPath(p.id), { force: true });
+    }
+    (p.versions ??= []).push({ id: vid, at: Date.now() / 1000, ...meta });
+    Object.assign(p, { current: vid, ok: null, checked: false });
+    return vid;
   }
 
   /** Show another version: the current text is kept in its version first. */

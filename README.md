@@ -47,6 +47,11 @@ A chat model reads one photo. Inktyset is built for the whole stack of pages:
   read again goes back to the text it had.
 - **Fix a picture:** turn it, straighten it or crop it (Edit picture on the page), from the file as it was
   added, so it can always be changed back. A page already read can be read again with it, as a new version.
+- **Ask about a page:** in the Compare view, ask the model about the page (C): what a symbol is, why the
+  preview looks wrong, or to write something another way. It sees the scan and the text; pick a part of either
+  to point at something, or send the preview. A rewrite is shown against the text, and Apply makes it a new
+  version. Chats are kept with the pages; a question goes before the next page is read, or at once with
+  *Answer now*. Local like the rest.
 - **Your pages where you want them:** in Documents/Inktyset, or any folder you choose in Settings (a private
   one, another drive). Switch between folders whenever you like; each keeps its own pages, and Inktyset keeps
   no list of them. `inktyset --folder=<path>` opens a folder for that run only: a launcher of its own for a

@@ -154,7 +154,10 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
   const dataFile = (rel: string) => {
     const root = resolve(core.lib.dir);
     const f = resolve(root, normalize(decodeURIComponent(rel)));
-    if (!f.startsWith(root + sep) || !/^(scans|build|originals|phone)[\\/]/.test(f.slice(root.length + 1)))
+    if (
+      !f.startsWith(root + sep) ||
+      !/^(scans|build|originals|phone|chats)[\\/]/.test(f.slice(root.length + 1))
+    )
       return null;
     return existsSync(f) && statSync(f).isFile() ? f : null;
   };
@@ -330,6 +333,28 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       await core.editPicture(pic[1], body.edit, body.readAgain === true);
       return { ok: true };
     }
+    const ch = /^\/api\/chat\/(page\d+)\/(ask|now|stop|apply|dismiss|clear)$/.exec(path);
+    if (ch) {
+      const [, id, action] = ch;
+      if (action === "ask") {
+        const regions = (Array.isArray(body.regions) ? body.regions : []).map(
+          (r: Record<string, unknown>) => ({
+            data: String(r.data ?? ""),
+            w: Number(r.w) || 0,
+            h: Number(r.h) || 0,
+            from: String(r.from ?? "scan"),
+          }),
+        );
+        const text = String(body.text ?? "").slice(0, 8000);
+        if (!text.trim() && !regions.length && body.preview !== true) throw new Error("nothing asked");
+        await core.ask(id, text, regions, body.preview === true);
+      } else if (action === "now") core.answerNow(id);
+      else if (action === "stop") core.stopChat(id);
+      else if (action === "apply") await core.applyProposal(id, Number(body.n));
+      else if (action === "dismiss") await core.dismissProposal(id, Number(body.n));
+      else await core.clearChat(id);
+      return { ok: true };
+    }
     if (path === "/api/read-stopped") {
       core.readStopped(lib.pages.map((p) => p.id));
       return { ok: true };
@@ -401,6 +426,14 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         const text = core.lib.settings.format === "typst" ? typstBodies(bodies) : allBodies(bodies);
         return send(res, 200, text, "text/plain; charset=utf-8");
       }
+      const cm = /^\/api\/chat\/(page\d+)$/.exec(path);
+      // (with the page's text, which a rewrite is compared with)
+      if (cm)
+        return send(res, 200, {
+          ...(await core.chat(cm[1])),
+          ...core.chatState(cm[1]),
+          text: await core.lib.body(cm[1]),
+        });
       const pm = /^\/api\/page\/(page\d+)$/.exec(path);
       if (pm) return send(res, 200, { tex: await core.lib.body(pm[1]) });
       // a version's text (LaTeX, or the Typst shown), and the instructions it was read with

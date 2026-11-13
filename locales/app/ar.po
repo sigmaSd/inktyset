@@ -1201,6 +1201,126 @@ msgctxt "promptChanged"
 msgid "changed"
 msgstr "معدّلة"
 
+msgctxt "chat"
+msgid "Ask"
+msgstr "اسأل"
+
+msgctxt "chatTitle"
+msgid "Ask about this page (C)"
+msgstr "اسأل عن هذه الصفحة (C)"
+
+msgctxt "chatAbout"
+msgid "Ask about this page"
+msgstr "أسئلة عن هذه الصفحة"
+
+msgctxt "newChat"
+msgid "New chat"
+msgstr "محادثة جديدة"
+
+msgctxt "confirmNewChat"
+msgid "Start a new chat? This one is deleted."
+msgstr "بدء محادثة جديدة؟ ستُحذف هذه المحادثة."
+
+msgctxt "chatPh"
+msgid "Ask about this page, or how to write something differently…"
+msgstr "اسأل عن هذه الصفحة، أو اطلب كتابة شيء بطريقة أخرى…"
+
+msgctxt "chatEmpty"
+msgid "Ask anything about this page: what a symbol is, why the preview looks wrong, or to write something another way. The model sees the scan and the text; pick a part of either to point at something."
+msgstr "اسأل عن أي شيء في هذه الصفحة: ما هذا الرمز، أو لماذا تبدو المعاينة خاطئة، أو اطلب كتابة شيء بطريقة أخرى. يرى النموذج المسح الضوئي والنص؛ اختر جزءًا من أحدهما للإشارة إلى شيء ما."
+
+msgctxt "chatModelNote"
+msgid "The answers come from the model on this computer: check them before you rely on them."
+msgstr "الإجابات من النموذج على هذا الحاسوب: تحقّق منها قبل الاعتماد عليها."
+
+msgctxt "pickPart"
+msgid "Pick a part…"
+msgstr "اختيار جزء…"
+
+msgctxt "pickPartTitle"
+msgid "Drag on the scan or the preview to send that part"
+msgstr "اسحب على المسح الضوئي أو المعاينة لإرسال ذلك الجزء"
+
+msgctxt "pickingHint"
+msgid "Drag on the scan or the preview to pick a part (Esc to cancel)."
+msgstr "اسحب على المسح الضوئي أو المعاينة لاختيار جزء (Esc للإلغاء)."
+
+msgctxt "withPreview"
+msgid "Send the preview"
+msgstr "إرسال المعاينة"
+
+msgctxt "send"
+msgid "Send"
+msgstr "إرسال"
+
+msgctxt "chatWaiting"
+msgid "Waiting for page {n} to be read…"
+msgstr "في انتظار قراءة الصفحة {n}…"
+
+msgctxt "chatStarting"
+msgid "Starting…"
+msgstr "جارٍ البدء…"
+
+msgctxt "answerNow"
+msgid "Answer now"
+msgstr "أجب الآن"
+
+msgctxt "answerNowTitle"
+msgid "Stop reading that page now: it's read again after the answer"
+msgstr "إيقاف قراءة تلك الصفحة الآن: ستُقرأ من جديد بعد الإجابة"
+
+msgctxt "chatThinking"
+msgid "Thinking…"
+msgstr "يفكّر…"
+
+msgctxt "chatAnswering"
+msgid "Answering…"
+msgstr "يجيب…"
+
+msgctxt "howItThought"
+msgid "How it thought"
+msgstr "طريقة تفكيره"
+
+msgctxt "proposalTitle"
+msgid "The page's text, with the changes"
+msgstr "نص الصفحة مع التغييرات"
+
+msgctxt "applyProposal"
+msgid "Apply"
+msgstr "تطبيق"
+
+msgctxt "applyTitle"
+msgid "Make this the page's text: a new version, the current one is kept"
+msgstr "اجعل هذا نص الصفحة: نسخة جديدة، وتبقى النسخة الحالية محفوظة"
+
+msgctxt "dismiss"
+msgid "Dismiss"
+msgstr "تجاهل"
+
+msgctxt "appliedAs"
+msgid "Applied as {v}."
+msgstr "طُبّق بوصفه {v}."
+
+msgctxt "dismissed"
+msgid "Dismissed."
+msgstr "تم التجاهل."
+
+msgctxt "answerCut"
+msgid "The answer was cut off: it was too long."
+msgstr "قُطعت الإجابة: كانت طويلة جدًا."
+
+msgctxt "answerStopped"
+msgid "Stopped."
+msgstr "أُوقفت."
+
+msgctxt "removeAttach"
+msgid "Remove"
+msgstr "إزالة"
+
+msgctxt "fromChat"
+msgid "from the chat"
+msgstr "من المحادثة"
+
 msgctxt "expand"
 msgid "Expand"
 msgstr "توسيع"

@@ -4,6 +4,8 @@ import { createLatexEditor } from "./editor.ts";
 import { diffWords } from "../../src/diff.ts";
 import { MAX_ANGLE, turnCrop } from "../../src/picture.ts";
 import { drawFrame } from "./picture.ts";
+import katex from "katex";
+import "katex/dist/katex.min.css";
 import { bytes, isRtl, languageName, ltr, num, setUiLang, t, uiLang, websiteUrl } from "./i18n.ts";
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -1407,6 +1409,7 @@ function renderCompare() {
   }
   sel.value = cmp.other ?? "";
   $("#cmpEditor").hidden = !cmp.editor || !!ov;
+  void renderChat();
   $("#cmpEditorBtn").classList.toggle("on", cmp.editor);
   $("#cmpEditorBtn").disabled = !!ov;
   $("#paneOther").hidden = !ov;
@@ -1465,7 +1468,7 @@ function versionName(v) {
     dateStyle: "short",
     timeStyle: "short",
   });
-  return `${v.id} · ${date} · ${v.model || t("earlierReading")}`;
+  return `${v.id} · ${date} · ${v.from === "chat" ? t("fromChat") : v.model || t("earlierReading")}`;
 }
 
 /** The other version's preview: built when first compared. */
@@ -1539,7 +1542,7 @@ async function cmpCheckAndNext() {
   else toast(t("allChecked"));
 }
 
-async function cmpAction(act) {
+async function cmpAction(act, btn) {
   const p = S.pages.find((x) => x.id === cmp.id),
     done = donePages();
   const i = done.findIndex((x) => x.id === cmp.id);
@@ -1556,6 +1559,13 @@ async function cmpAction(act) {
     cmp.editor = !cmp.editor;
     store.set("cmpEditor", cmp.editor);
     renderCompare();
+  } else if (act === "chat") {
+    chat.open = !chat.open;
+    store.set("cmpChat", chat.open);
+    renderCompare();
+    if (chat.open) $("#chatText").focus();
+  } else if (act.startsWith("chat")) {
+    await chatAction(act, p, btn);
   } else if (act === "check") {
     if (p.checked) await api(`/api/page/${p.id}/check`, { checked: false });
     else await cmpCheckAndNext();
@@ -1586,9 +1596,16 @@ $("#cmpOther").addEventListener("change", (e) => {
 
 $("#compare").addEventListener("click", (e) => {
   const b = e.target.closest("[data-cmp]");
-  if (b && !b.disabled) cmpAction(b.dataset.cmp).catch((err) => toast(err.message));
+  if (b && !b.disabled) cmpAction(b.dataset.cmp, b).catch((err) => toast(err.message));
   // after a mouse click, give the keys back to the view (a keyboard press keeps focus on the button)
-  if (b && e.detail > 0 && b.dataset.cmp !== "nextUnk") $("#compare").focus();
+  if (
+    b &&
+    e.detail > 0 &&
+    b.dataset.cmp !== "nextUnk" &&
+    !b.dataset.cmp.startsWith("chat") &&
+    b.dataset.cmp !== "chat"
+  )
+    $("#compare").focus();
 });
 $("#compare").addEventListener("keydown", (e) => {
   if (e.defaultPrevented) return; // the editor handled it (Ctrl+Enter, completion, search…)
@@ -1612,6 +1629,8 @@ $("#compare").addEventListener("keydown", (e) => {
     L: "layout",
     e: "editor",
     E: "editor",
+    c: "chat",
+    C: "chat",
   };
   if (map[e.key]) {
     e.preventDefault();
@@ -1648,7 +1667,297 @@ for (const a of ["#paneScan", "#panePrev", "#paneOther"]) {
 }
 $("#compare").addEventListener("close", () => {
   cmp.id = null;
+  stopPicking();
 });
+
+// ---------------------------------------------------------------- the page chat (src/chat.ts)
+// Questions about the page in the Compare view, answered by the local model: it sees the scan and the text,
+// and what the user attaches (parts picked on the scan or the preview, or the whole preview). An answer that
+// rewrites the page is shown word by word against the text; Apply makes it a new version.
+const chat = { open: store.get("cmpChat", false), regions: [], picking: false, html: "", pending: false };
+const openThoughts = new Set(); // thinking the user unfolded (kept open as the log is drawn again)
+
+/** Text with math ($…$, $$…$$, \(…\), \[…\]), code and a little Markdown, as safe HTML. */
+function richText(text) {
+  const parts = text.split(
+    /(```[\s\S]*?```|\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\$[^$\n]+?\$)/g,
+  );
+  return parts
+    .map((s, i) => {
+      if (i % 2 === 0)
+        return esc(s)
+          .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+          .replace(/`([^`\n]+)`/g, "<code>$1</code>")
+          .replace(/\n/g, "<br>");
+      if (s.startsWith("```"))
+        return `<pre class="code-block">${esc(s.replace(/^```\w*\n?|```$/g, ""))}</pre>`;
+      const display = s.startsWith("$$") || s.startsWith("\\[");
+      const tex = s.slice(
+        display ? 2 : s.startsWith("$") ? 1 : 2,
+        display ? -2 : s.startsWith("$") ? -1 : -2,
+      );
+      return katex.renderToString(tex, { displayMode: display, throwOnError: false, output: "html" });
+    })
+    .join("");
+}
+
+/**
+ * A rewrite against the page's text: the words that change, with a little of what's around them. Spaces the
+ * model put elsewhere (`{ \\partial }` or `{\\partial}`) change nothing typeset: shown as the rewrite has them.
+ */
+function proposalDiff(current, proposal) {
+  return diffWords(current, proposal)
+    .map((d) => {
+      const space = !d.text.trim();
+      if (d.op === "del") return space ? "" : `<del>${esc(d.text)}</del>`;
+      if (d.op === "add") return space ? esc(d.text) : `<ins>${esc(d.text)}</ins>`;
+      return esc(d.text.length > 160 ? `${d.text.slice(0, 70)} … ${d.text.slice(-70)}` : d.text);
+    })
+    .join("");
+}
+
+async function renderChat() {
+  const box = $("#cmpChat");
+  box.hidden = !chat.open || !cmp.id;
+  $("#cmpChatBtn").classList.toggle("on", chat.open);
+  if (box.hidden) return;
+  if (chat.pending) {
+    chat.again = true; // drawn once more when the one under way is done: the latest state is never missed
+    return;
+  }
+  const id = cmp.id;
+  chat.pending = true;
+  let c;
+  try {
+    c = await (await fetch(`/api/chat/${id}`)).json();
+  } finally {
+    chat.pending = false;
+  }
+  if (chat.again) {
+    chat.again = false;
+    return renderChat();
+  }
+  if (id !== cmp.id) return;
+  const current = c.text ?? ""; // the page's saved text (the editor may not have it yet)
+  let html = c.messages.length
+    ? ""
+    : `<p class="note">${t("chatEmpty")}</p><p class="note">${t("chatModelNote")}</p>`;
+  c.messages.forEach((m, n) => {
+    if (m.role === "user") {
+      const pics = (m.attach ?? []).map((a) => `<img src="/files/${esc(a.file)}" alt="">`).join("");
+      html += `<div class="msg user">${pics ? `<div class="pics">${pics}</div>` : ""}${m.text ? richText(m.text) : ""}</div>`;
+      return;
+    }
+    html += `<div class="msg bot">`;
+    if (m.thinking)
+      html += `<details class="think" data-n="${n}" ${openThoughts.has(n) ? "open" : ""}><summary>${t("howItThought")}</summary><div>${esc(m.thinking)}</div></details>`;
+    const text = m.proposal !== undefined ? m.text.replace(/```[\s\S]*?```/g, "").trim() : m.text;
+    if (text) html += `<div>${richText(text)}</div>`;
+    if (m.proposal !== undefined) {
+      // (once applied or dismissed, the comparison with today's text says nothing any more)
+      if (!m.applied && !m.dismissed)
+        html += `<div class="proposal" title="${t("proposalTitle")}">${proposalDiff(current, m.proposal)}</div>`;
+      if (m.applied) html += `<p class="note">${t("appliedAs", { v: m.applied })}</p>`;
+      else if (m.dismissed) html += `<p class="note">${t("dismissed")}</p>`;
+      else
+        html += `<div class="prop-actions"><button class="primary small" data-cmp="chatApply" data-n="${n}" title="${t("applyTitle")}">${t("applyProposal")}</button>
+          <button class="ghost small" data-cmp="chatDismiss" data-n="${n}">${t("dismiss")}</button></div>`;
+    }
+    if (m.cut) html += `<p class="note">${t("answerCut")}</p>`;
+    if (m.stopped) html += `<p class="note">${t("answerStopped")}</p>`;
+    if (m.err) html += `<p class="err">${esc(m.err)}</p>`;
+    html += `</div>`;
+  });
+  if (c.live) {
+    // the answer as it's written: the end of the thinking, then the text
+    html += `<div class="msg bot live">`;
+    if (c.live.thinking && !c.live.text)
+      html += `<div class="think-live">${esc(c.live.thinking.slice(-600))}</div>`;
+    if (c.live.text) html += `<div>${richText(c.live.text)}</div>`;
+    html += `</div>`;
+  }
+  const log = $("#chatLog");
+  if (html !== chat.html) {
+    const atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+    log.innerHTML = html;
+    chat.html = html;
+    if (atEnd) log.scrollTop = log.scrollHeight;
+  }
+  // where the question stands
+  const reading = c.reading ? S.pages.find((p) => p.id === c.reading) : null;
+  let status = "";
+  if (c.waiting && reading)
+    status = `${t("chatWaiting", { n: pageNumber(reading.id) })} <button class="small" data-cmp="chatNow" title="${t("answerNowTitle")}">${t("answerNow")}</button>
+      <button class="ghost small" data-cmp="chatStop">${t("stopPage")}</button>`;
+  else if (c.waiting) status = t("chatStarting");
+  else if (c.live)
+    status = `<span class="spinner small"></span> ${c.live.thinking && !c.live.text ? t("chatThinking") : t("chatAnswering")}
+      <button class="ghost small" data-cmp="chatStop">${t("stopPage")}</button>`;
+  $("#chatStatus").innerHTML = status;
+  const busy = c.waiting || !!c.live;
+  $("#chatSend").disabled = busy;
+  chat.busy = busy;
+  $("#chatAttach").innerHTML = chat.regions
+    .map(
+      (r, i) =>
+        `<span class="att"><img src="${r.thumb}" alt=""><button class="ghost small" data-cmp="chatUnattach" data-n="${i}" title="${t("removeAttach")}">✕</button></span>`,
+    )
+    .join("");
+}
+$("#chatLog").addEventListener(
+  "toggle",
+  (e) => {
+    const n = Number(e.target.dataset?.n);
+    if (Number.isNaN(n)) return;
+    if (e.target.open) openThoughts.add(n);
+    else openThoughts.delete(n);
+  },
+  true,
+);
+
+async function chatAction(act, p, btn) {
+  const n = Number(btn?.dataset.n);
+  if (act === "chatSend") {
+    const text = $("#chatText").value.trim();
+    const preview = $("#chatPreview").checked;
+    if ((!text && !chat.regions.length && !preview) || chat.busy) return;
+    await api(`/api/chat/${p.id}/ask`, {
+      text,
+      preview,
+      regions: chat.regions.map(({ data, w, h, from }) => ({ data, w, h, from })),
+    });
+    $("#chatText").value = "";
+    $("#chatPreview").checked = false;
+    chat.regions = [];
+  } else if (act === "chatNow") await api(`/api/chat/${p.id}/now`);
+  else if (act === "chatStop") await api(`/api/chat/${p.id}/stop`);
+  else if (act === "chatApply") {
+    if (dirty.has(p.id)) await new Promise((r) => setTimeout(r, 950)); // the last edit is saved first
+    await api(`/api/chat/${p.id}/apply`, { n });
+    texCache.delete(p.id);
+    cmpEd.load(p.id, "", fmtOf(p)); // filled again with the new version
+    toast(t("nowShowing", { v: S.pages.find((x) => x.id === p.id)?.current ?? "" }));
+  } else if (act === "chatDismiss") await api(`/api/chat/${p.id}/dismiss`, { n });
+  else if (act === "chatClear") {
+    if (!confirm(t("confirmNewChat"))) return;
+    await api(`/api/chat/${p.id}/clear`);
+    openThoughts.clear();
+  } else if (act === "chatUnattach") chat.regions.splice(n, 1);
+  else if (act === "chatPick") {
+    if (chat.picking) stopPicking();
+    else startPicking();
+  }
+  chat.html = "";
+  await renderChat();
+}
+
+$("#chatText").addEventListener("keydown", (e) => {
+  // Enter sends, Shift+Enter starts a new line (and Enter isn't "checked, next page" here)
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+    e.preventDefault();
+    if (cmp.id)
+      chatAction(
+        "chatSend",
+        S.pages.find((x) => x.id === cmp.id),
+      ).catch((err) => toast(err.message));
+  }
+});
+
+// Picking a part of the scan or the preview: drag a rectangle on either, it's cut from the picture itself.
+function startPicking() {
+  chat.picking = true;
+  $("#cmpImages").classList.add("picking");
+  $("#chatPickBtn").classList.add("on");
+  toast(t("pickingHint"));
+}
+function stopPicking() {
+  chat.picking = false;
+  $("#cmpImages").classList.remove("picking");
+  $("#chatPickBtn")?.classList.remove("on");
+  $("#pickBox")?.remove();
+}
+let pickFrom = null;
+$("#cmpImages").addEventListener(
+  "pointerdown",
+  (e) => {
+    if (!chat.picking) return;
+    const img = e.target.closest?.("img");
+    if (!img || !img.closest("#paneScan, #panePrev")) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const r = img.getBoundingClientRect();
+    pickFrom = { img, x: e.clientX - r.left, y: e.clientY - r.top };
+    const box = document.createElement("div");
+    box.id = "pickBox";
+    img.parentElement.style.position ||= "relative";
+    img.parentElement.append(box);
+    img.setPointerCapture?.(e.pointerId);
+  },
+  true,
+);
+$("#cmpImages").addEventListener("pointermove", (e) => {
+  if (!pickFrom) return;
+  const { img, x, y } = pickFrom;
+  const r = img.getBoundingClientRect(),
+    pr = img.parentElement.getBoundingClientRect();
+  const x2 = Math.min(r.width, Math.max(0, e.clientX - r.left)),
+    y2 = Math.min(r.height, Math.max(0, e.clientY - r.top));
+  Object.assign($("#pickBox").style, {
+    left: `${r.left - pr.left + img.parentElement.scrollLeft + Math.min(x, x2)}px`,
+    top: `${r.top - pr.top + img.parentElement.scrollTop + Math.min(y, y2)}px`,
+    width: `${Math.abs(x2 - x)}px`,
+    height: `${Math.abs(y2 - y)}px`,
+  });
+  pickFrom.x2 = x2;
+  pickFrom.y2 = y2;
+});
+$("#cmpImages").addEventListener("pointerup", () => {
+  const f = pickFrom;
+  pickFrom = null;
+  if (!f) return;
+  stopPicking();
+  if (f.x2 === undefined || Math.abs(f.x2 - f.x) < 8 || Math.abs(f.y2 - f.y) < 8) return; // a click, not a part
+  // from the picture's own pixels, at most 1024 on the long side
+  const k = f.img.naturalWidth / f.img.getBoundingClientRect().width;
+  const sx = Math.min(f.x, f.x2) * k,
+    sy = Math.min(f.y, f.y2) * k,
+    sw = Math.abs(f.x2 - f.x) * k,
+    sh = Math.abs(f.y2 - f.y) * k;
+  const s = Math.min(1, 1024 / Math.max(sw, sh));
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(sw * s));
+  c.height = Math.max(1, Math.round(sh * s));
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, c.width, c.height);
+  ctx.drawImage(f.img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  const url = c.toDataURL("image/jpeg", 0.9);
+  chat.regions.push({
+    data: url.slice(url.indexOf(",") + 1),
+    w: c.width,
+    h: c.height,
+    from: f.img.closest("#panePrev") ? "preview" : "scan",
+    thumb: url,
+  });
+  if (!chat.open) {
+    chat.open = true;
+    store.set("cmpChat", true);
+  }
+  chat.html = "";
+  void renderChat();
+  $("#chatText").focus();
+});
+$("#compare").addEventListener(
+  "keydown",
+  (e) => {
+    if (e.key === "Escape" && chat.picking) {
+      e.preventDefault();
+      e.stopPropagation();
+      stopPicking();
+    }
+  },
+  true,
+);
 
 $("#pick").onclick = () => $("#files").click();
 $("#files").onchange = (e) => {

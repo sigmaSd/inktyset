@@ -1173,6 +1173,126 @@ msgctxt "promptChanged"
 msgid "changed"
 msgstr "modifiées"
 
+msgctxt "chat"
+msgid "Ask"
+msgstr "Demander"
+
+msgctxt "chatTitle"
+msgid "Ask about this page (C)"
+msgstr "Poser une question sur cette page (C)"
+
+msgctxt "chatAbout"
+msgid "Ask about this page"
+msgstr "Questions sur cette page"
+
+msgctxt "newChat"
+msgid "New chat"
+msgstr "Nouvelle discussion"
+
+msgctxt "confirmNewChat"
+msgid "Start a new chat? This one is deleted."
+msgstr "Commencer une nouvelle discussion ? Celle-ci sera supprimée."
+
+msgctxt "chatPh"
+msgid "Ask about this page, or how to write something differently…"
+msgstr "Posez une question sur cette page, ou demandez d'écrire quelque chose autrement…"
+
+msgctxt "chatEmpty"
+msgid "Ask anything about this page: what a symbol is, why the preview looks wrong, or to write something another way. The model sees the scan and the text; pick a part of either to point at something."
+msgstr "Demandez ce que vous voulez sur cette page : ce qu'est un symbole, pourquoi l'aperçu est faux, ou d'écrire quelque chose autrement. Le modèle voit le scan et le texte ; choisissez une partie de l'un ou de l'autre pour montrer quelque chose."
+
+msgctxt "chatModelNote"
+msgid "The answers come from the model on this computer: check them before you rely on them."
+msgstr "Les réponses viennent du modèle de cet ordinateur : vérifiez-les avant de vous y fier."
+
+msgctxt "pickPart"
+msgid "Pick a part…"
+msgstr "Choisir une partie…"
+
+msgctxt "pickPartTitle"
+msgid "Drag on the scan or the preview to send that part"
+msgstr "Faites glisser sur le scan ou l'aperçu pour envoyer cette partie"
+
+msgctxt "pickingHint"
+msgid "Drag on the scan or the preview to pick a part (Esc to cancel)."
+msgstr "Faites glisser sur le scan ou l'aperçu pour choisir une partie (Échap pour annuler)."
+
+msgctxt "withPreview"
+msgid "Send the preview"
+msgstr "Envoyer l'aperçu"
+
+msgctxt "send"
+msgid "Send"
+msgstr "Envoyer"
+
+msgctxt "chatWaiting"
+msgid "Waiting for page {n} to be read…"
+msgstr "En attente de la lecture de la page {n}…"
+
+msgctxt "chatStarting"
+msgid "Starting…"
+msgstr "Démarrage…"
+
+msgctxt "answerNow"
+msgid "Answer now"
+msgstr "Répondre maintenant"
+
+msgctxt "answerNowTitle"
+msgid "Stop reading that page now: it's read again after the answer"
+msgstr "Arrêter maintenant la lecture de cette page : elle sera relue après la réponse"
+
+msgctxt "chatThinking"
+msgid "Thinking…"
+msgstr "Réflexion…"
+
+msgctxt "chatAnswering"
+msgid "Answering…"
+msgstr "Réponse en cours…"
+
+msgctxt "howItThought"
+msgid "How it thought"
+msgstr "Sa réflexion"
+
+msgctxt "proposalTitle"
+msgid "The page's text, with the changes"
+msgstr "Le texte de la page, avec les changements"
+
+msgctxt "applyProposal"
+msgid "Apply"
+msgstr "Appliquer"
+
+msgctxt "applyTitle"
+msgid "Make this the page's text: a new version, the current one is kept"
+msgstr "En faire le texte de la page : une nouvelle version, l'actuelle est conservée"
+
+msgctxt "dismiss"
+msgid "Dismiss"
+msgstr "Ignorer"
+
+msgctxt "appliedAs"
+msgid "Applied as {v}."
+msgstr "Appliqué comme {v}."
+
+msgctxt "dismissed"
+msgid "Dismissed."
+msgstr "Ignoré."
+
+msgctxt "answerCut"
+msgid "The answer was cut off: it was too long."
+msgstr "La réponse a été coupée : elle était trop longue."
+
+msgctxt "answerStopped"
+msgid "Stopped."
+msgstr "Arrêtée."
+
+msgctxt "removeAttach"
+msgid "Remove"
+msgstr "Retirer"
+
+msgctxt "fromChat"
+msgid "from the chat"
+msgstr "depuis la discussion"
+
 msgctxt "expand"
 msgid "Expand"
 msgstr "Agrandir"

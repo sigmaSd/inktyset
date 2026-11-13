@@ -167,8 +167,7 @@ export class Model {
       "--port",
       String(port),
       "--jinja",
-      "--reasoning-budget",
-      "0",
+      // (thinking is chosen per request: off to read a page, on in the page chat)
       "--no-webui",
       "--api-key",
       this.#key,
@@ -319,6 +318,70 @@ export class Model {
     return { text: resp.choices[0]?.message.content ?? "", finish: resp.choices[0]?.finish_reason ?? "" };
   }
 
+  /**
+   * A chat answer (src/chat.ts), streamed: `onDelta` gets the thinking and the answer so far. Thinking is on
+   * for our own engine; another program's server gets only the standard fields and decides.
+   */
+  async chat(
+    messages: unknown[],
+    opts: { think: boolean; maxTokens: number; onDelta: (d: { text: string; thinking: string }) => void },
+    signal: AbortSignal,
+  ) {
+    const url = await this.ensure();
+    const server = this.kind === "server";
+    if (server) await checkLocalUrl(this.config.url ?? "");
+    const body = server
+      ? {
+          ...(this.config.name ? { model: this.config.name } : {}),
+          messages,
+          stream: true,
+          max_tokens: opts.maxTokens,
+          temperature: 0.6,
+        }
+      : {
+          messages,
+          stream: true,
+          max_tokens: opts.maxTokens,
+          // Qwen's advice: these with thinking, a little more varied without
+          temperature: opts.think ? 0.6 : 0.7,
+          top_p: opts.think ? 0.95 : 0.8,
+          top_k: 20,
+          chat_template_kwargs: { enable_thinking: opts.think },
+        };
+    const r = await fetch(`${url}/chat/completions`, {
+      method: "POST",
+      headers: this.#headers(),
+      body: JSON.stringify(body),
+      signal,
+    });
+    if (!r.ok || !r.body)
+      throw new Error(msg("engineAnswered", { status: r.status, text: (await r.text()).slice(0, 200) }));
+    let raw = "",
+      thinking = "",
+      finish = "",
+      rest = "";
+    const decoder = new TextDecoder();
+    for await (const chunk of r.body as unknown as AsyncIterable<Uint8Array>) {
+      rest += decoder.decode(chunk, { stream: true });
+      const lines = rest.split("\n");
+      rest = lines.pop() ?? "";
+      for (const line of lines) {
+        const data = line.startsWith("data:") ? line.slice(5).trim() : "";
+        if (!data || data === "[DONE]") continue;
+        try {
+          const c = (JSON.parse(data) as { choices?: StreamChoice[] }).choices?.[0];
+          raw += c?.delta?.content ?? "";
+          thinking += c?.delta?.reasoning_content ?? c?.delta?.reasoning ?? "";
+          if (c?.finish_reason) finish = c.finish_reason;
+        } catch {
+          /* a line that isn't an event: not worth failing for */
+        }
+      }
+      opts.onDelta(splitThinking(raw, thinking));
+    }
+    return { ...splitThinking(raw, thinking), finish };
+  }
+
   stop() {
     const p = this.#proc;
     this.#proc = null;
@@ -327,4 +390,16 @@ export class Model {
     this.#url = "";
     this.status = "stopped";
   }
+}
+
+interface StreamChoice {
+  delta?: { content?: string; reasoning_content?: string; reasoning?: string };
+  finish_reason?: string | null;
+}
+
+/** Servers that don't separate the thinking send it in the answer, between <think> tags: taken out. */
+export function splitThinking(raw: string, thinking: string): { text: string; thinking: string } {
+  const m = /^\s*<think>([\s\S]*?)(?:<\/think>|$)/.exec(raw);
+  if (!m) return { text: raw, thinking };
+  return { text: raw.slice(m[0].length).trimStart(), thinking: thinking + m[1] };
 }

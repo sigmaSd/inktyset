@@ -14,6 +14,7 @@ files ship inside every installer (`LICENSE`, `LICENSES.chromium.html`).
 | Package | License |
 |---|---|
 | [CodeMirror](https://codemirror.net) 6: `@codemirror/autocomplete`, `commands`, `language`, `legacy-modes`, `search`, `state`, `streamparser`, `view` | MIT, © Marijn Haverbeke and others |
+| [KaTeX](https://katex.org) 0.19, and its fonts: math in the page chat's answers | MIT, © Khan Academy and other contributors |
 | [Lezer](https://lezer.codemirror.net): `@lezer/common`, `highlight`, `lr`; `style-mod`, `w3c-keyname`, `crelt`, `@marijn/find-cluster-break` | MIT, © Marijn Haverbeke |
 | [PDF.js](https://mozilla.github.io/pdf.js/) (`pdfjs-dist`) | Apache-2.0, © Mozilla Foundation |
 

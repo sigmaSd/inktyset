@@ -175,6 +175,16 @@
         </button>
         <button
           class="ghost"
+          data-cmp="chat"
+          id="cmpChatBtn"
+          title="Ask about this page (C)"
+          data-i18n-title="chatTitle"
+          data-i18n="chat"
+        >
+          Ask
+        </button>
+        <button
+          class="ghost"
           data-cmp="editor"
           id="cmpEditorBtn"
           title="Show or hide the text (E)"
@@ -215,6 +225,35 @@
               Next unclear spot
             </button>
             <button class="primary" data-cmp="copy">Copy LaTeX</button>
+          </div>
+        </div>
+        <!-- the page chat (src/chat.ts): questions about this page, answered by the local model -->
+        <div class="cmp-chat" id="cmpChat" hidden>
+          <div class="chat-head">
+            <strong data-i18n="chatAbout">Ask about this page</strong><span class="grow"></span>
+            <button class="ghost small" data-cmp="chatClear" data-i18n="newChat">New chat</button>
+          </div>
+          <div class="chat-log" id="chatLog"></div>
+          <div class="chat-status" id="chatStatus"></div>
+          <div class="chat-attach" id="chatAttach"></div>
+          <textarea id="chatText" rows="3" placeholder="Ask…" data-i18n-ph="chatPh"></textarea>
+          <div class="chat-tools">
+            <button
+              class="ghost small"
+              data-cmp="chatPick"
+              id="chatPickBtn"
+              title="Drag on the scan or the preview to send that part"
+              data-i18n-title="pickPartTitle"
+              data-i18n="pickPart"
+            >
+              Pick a part…
+            </button>
+            <label class="chat-preview"
+              ><input type="checkbox" id="chatPreview" />
+              <span data-i18n="withPreview">Send the preview</span></label
+            >
+            <span class="grow"></span>
+            <button class="primary" data-cmp="chatSend" id="chatSend" data-i18n="send">Send</button>
           </div>
         </div>
       </div>
