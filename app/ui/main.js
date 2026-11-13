@@ -1703,6 +1703,22 @@ function richText(text) {
 }
 
 /**
+ * An answer as it's written. A change (or a code block) still being written is shown as it comes, raw, under
+ * "Writing the change…": when the answer is done it becomes the comparison with Apply.
+ */
+function liveText(text) {
+  const s = withoutEdits(text);
+  const fences = [...s.matchAll(/```/g)];
+  let cut = fences.length % 2 ? fences.at(-1).index : -1; // a code block not closed yet
+  const marker = s.search(/<{5,}/);
+  if (marker >= 0 && (cut < 0 || marker < cut)) cut = marker;
+  if (cut < 0) return richText(s) || "…";
+  const before = s.slice(0, cut).trim();
+  const rest = s.slice(cut).replace(/^```\w*[ \t]*\n?/, "");
+  return `${before ? richText(before) : ""}<p class="note">${t("writingChange")}</p><pre class="code-block live-code">${esc(rest)}</pre>`;
+}
+
+/**
  * A rewrite against the page's text: the words that change, with a little of what's around them. Spaces the
  * model put elsewhere (`{ \\partial }` or `{\\partial}`) change nothing typeset: shown as the rewrite has them.
  */
@@ -1776,13 +1792,7 @@ async function renderChat() {
     html += `<div class="msg bot live">`;
     if (c.live.thinking && !c.live.text)
       html += `<div class="think-live">${esc(c.live.thinking.slice(-600))}</div>`;
-    // (a change block still being written isn't shown: it becomes the comparison when the answer is done)
-    if (c.live.text)
-      html += `<div>${richText(
-        withoutEdits(c.live.text)
-          .replace(/<{3,}[\s\S]*$/, "")
-          .trim() || "…",
-      )}</div>`;
+    if (c.live.text) html += `<div>${liveText(c.live.text)}</div>`;
     html += `</div>`;
   }
   const log = $("#chatLog");
@@ -1802,7 +1812,11 @@ async function renderChat() {
   else if (c.live)
     status = `<span class="spinner small"></span> ${c.live.thinking && !c.live.text ? t("chatThinking") : t("chatAnswering")}
       <button class="ghost small" data-cmp="chatStop">${t("stopPage")}</button>`;
-  $("#chatStatus").innerHTML = status;
+  // (only when it changes: drawn again, the spinner would start its turn over, every update)
+  if ($("#chatStatus").dataset.html !== status) {
+    $("#chatStatus").innerHTML = status;
+    $("#chatStatus").dataset.html = status;
+  }
   const busy = c.waiting || !!c.live;
   $("#chatSend").disabled = busy;
   chat.busy = busy;

@@ -286,6 +286,7 @@ export const UI_SOURCE = {
   answerNowTitle: "Stop reading that page now: it's read again after the answer",
   chatThinking: "Thinking…",
   chatAnswering: "Answering…",
+  writingChange: "Writing the change…",
   howItThought: "How it thought",
   proposalTitle: "The page's text, with the changes",
   applyProposal: "Apply",

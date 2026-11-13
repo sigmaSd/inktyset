@@ -1277,6 +1277,10 @@ msgctxt "chatAnswering"
 msgid "Answering…"
 msgstr "يجيب…"
 
+msgctxt "writingChange"
+msgid "Writing the change…"
+msgstr "جارٍ كتابة التغيير…"
+
 msgctxt "howItThought"
 msgid "How it thought"
 msgstr "طريقة تفكيره"
