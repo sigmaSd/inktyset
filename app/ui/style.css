@@ -20,6 +20,12 @@
   --shadow: 0 1px 2px rgba(20, 20, 30, 0.06), 0 4px 16px rgba(20, 20, 30, 0.05);
   --mono: ui-monospace, "JetBrains Mono", "Cascadia Code", "DejaVu Sans Mono", monospace;
   --radius: 12px;
+  /* LaTeX highlighting (app/ui/editor.ts) */
+  --hl-command: #2f5bd3;
+  --hl-math: #b5527a;
+  --hl-env: #1f8a6c;
+  --hl-bracket: #6b6f78;
+  --hl-number: #a86a00;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -39,6 +45,11 @@
     --bad: #ff7b70;
     --bad-soft: #3d2120;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --hl-command: #8fb0ff;
+    --hl-math: #f08fb7;
+    --hl-env: #6fd3b2;
+    --hl-bracket: #9aa0ab;
+    --hl-number: #f0b54a;
   }
 }
 * {
@@ -898,4 +909,16 @@ button.icon svg {
   border-radius: 8px;
   background: var(--surface-2);
   color: var(--ink);
+}
+
+/* the Compare view's LaTeX editor (CodeMirror, app/ui/editor.ts) */
+.cmp-editor .code {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.cmp-editor .code:focus-within {
+  border-color: var(--accent);
 }

@@ -1,5 +1,7 @@
 // The hand2tex window. It talks to src/server.ts: /api/state for everything shown, /api/events for change
 // notices, POSTs (with the X-Hand2tex header) for every action.
+import { createLatexEditor } from "./editor.ts";
+
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) =>
   String(s ?? "").replace(
@@ -615,13 +617,13 @@ async function copyText(text, what, btn) {
 }
 
 const pendingTex = new Map(); // id -> text waiting to be saved (the editor may show another page by then)
-function save(id, ta) {
+/** Save a page's text a moment after the last keystroke; `el` shows "Saving…/Saved" while `shown()`. */
+function save(id, text, el, shown = () => true) {
   clearTimeout(dirty.get(id));
-  pendingTex.set(id, ta.value);
-  const el = $(".saved", ta.closest(".card, #compare"));
+  pendingTex.set(id, text);
   // the compare editor may show another page by the time this save finishes
   const label = (t) => {
-    if (el && (!ta.closest("#compare") || ta.dataset.id === id)) el.textContent = t;
+    if (el && shown()) el.textContent = t;
   };
   label("Saving…");
   dirty.set(
@@ -643,8 +645,8 @@ function save(id, ta) {
 
 document.addEventListener("input", (e) => {
   if (e.target.tagName !== "TEXTAREA") return;
-  const id = e.target.closest("#compare") ? cmp.id : e.target.closest(".card")?.dataset.id;
-  if (id) save(id, e.target);
+  const card = e.target.closest(".card");
+  if (card) save(card.dataset.id, e.target.value, $(".saved", card));
 });
 
 // Big images shrink to fit the window; small ones (a single formula) are enlarged up to 2.5x.
@@ -755,7 +757,7 @@ function openCompare(id) {
   renderCompare();
   $("#paneScan").scrollTo(0, 0);
   $("#panePrev").scrollTo(0, 0);
-  if (document.activeElement?.tagName !== "TEXTAREA") d.focus(); // so Enter means "checked", not a button
+  if (!cmpEd.hasFocus()) d.focus(); // keys to the view (Enter = checked), unless typing in the editor
 }
 
 function applyLayout() {
@@ -833,27 +835,29 @@ function renderCompare() {
     $("#prevInner").innerHTML = prev;
     if (first) setZoom(1);
   }
-  const ta = $("#cmpEditor textarea");
-  if (ta.dataset.id !== p.id) {
-    ta.dataset.id = p.id;
-    ta.value = "";
+  if (cmpEd.pageId !== p.id) {
+    cmpEd.load(p.id, ""); // another page: empty until its text arrives (fresh undo history)
     $(".saved", d).textContent = "";
   }
   // fill the editor unless you are typing in it (an empty editor, right after a page switch, is always filled)
-  const mayFill = () =>
-    ta.dataset.id === p.id && !dirty.has(p.id) && (document.activeElement !== ta || ta.value === "");
+  const mayFill = () => cmpEd.pageId === p.id && !dirty.has(p.id) && (!cmpEd.hasFocus() || cmpEd.text === "");
   if (mayFill()) {
     const c = texCache.get(p.id);
-    if (c && c.rev === p.rev) ta.value = c.tex;
+    if (c && c.rev === p.rev) cmpEd.load(p.id, c.tex);
     else
       fetch(`/api/page/${p.id}`)
         .then((r) => r.json())
         .then((r) => {
           texCache.set(p.id, { rev: p.rev, tex: r.tex });
-          if (mayFill()) ta.value = r.tex;
+          if (mayFill()) cmpEd.load(p.id, r.tex);
         });
   }
 }
+
+const cmpEd = createLatexEditor($("#cmpCode"), {
+  onChange: (id, text) => save(id, text, $("#compare .saved"), () => cmpEd.pageId === id),
+  onCheck: () => cmpCheckAndNext().catch((err) => toast(err.message)),
+});
 
 async function cmpCheckAndNext() {
   const p = S.pages.find((x) => x.id === cmp.id);
@@ -868,8 +872,7 @@ async function cmpCheckAndNext() {
 async function cmpAction(act) {
   const p = S.pages.find((x) => x.id === cmp.id),
     done = donePages();
-  const i = done.findIndex((x) => x.id === cmp.id),
-    ta = $("#cmpEditor textarea");
+  const i = done.findIndex((x) => x.id === cmp.id);
   if (act === "prev" && i > 0) openCompare(done[i - 1].id);
   else if (act === "next" && i < done.length - 1) openCompare(done[i + 1].id);
   else if (act === "close") $("#compare").close();
@@ -886,18 +889,8 @@ async function cmpAction(act) {
   } else if (act === "check") {
     if (p.checked) await api(`/api/page/${p.id}/check`, { checked: false });
     else await cmpCheckAndNext();
-  } else if (act === "copy") copyText(ta.value, `Page ${pageNumber(cmp.id)}`, $("[data-cmp=copy]"));
-  else if (act === "nextUnk") {
-    const from = ta.selectionEnd || 0;
-    let k = ta.value.indexOf("[??]", from);
-    if (k < 0) k = ta.value.indexOf("[??]");
-    if (k >= 0) {
-      ta.focus();
-      ta.setSelectionRange(k, k + 4);
-      const line = ta.value.slice(0, k).split("\n").length;
-      ta.scrollTop = Math.max(0, (line - 4) * 19.5);
-    }
-  }
+  } else if (act === "copy") copyText(cmpEd.text, `Page ${pageNumber(cmp.id)}`, $("[data-cmp=copy]"));
+  else if (act === "nextUnk") cmpEd.nextUnclear();
 }
 
 $("#compare").addEventListener("click", (e) => {
@@ -907,7 +900,9 @@ $("#compare").addEventListener("click", (e) => {
   if (b && e.detail > 0 && b.dataset.cmp !== "nextUnk") $("#compare").focus();
 });
 $("#compare").addEventListener("keydown", (e) => {
-  const typing = e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT";
+  if (e.defaultPrevented) return; // the editor handled it (Ctrl+Enter, completion, search…)
+  const typing =
+    e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT" || !!e.target.closest?.(".cm-editor");
   if (e.key === "Enter" && (e.ctrlKey || !typing) && !e.target.closest("button")) {
     e.preventDefault();
     cmpCheckAndNext().catch((err) => toast(err.message));
