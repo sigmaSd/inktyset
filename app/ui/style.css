@@ -2,6 +2,7 @@
   display: none !important;
 } /* tiles and panels styled display:flex still hide */
 :root {
+  color-scheme: light dark; /* the browser's own controls (checkboxes, scrollbars, lists) follow the theme */
   --bg: #f5f3ee;
   --surface: #ffffff;
   --surface-2: #faf8f4;

@@ -78,8 +78,32 @@ const theme = EditorView.theme({
   },
   ".cm-completionDetail": { color: "var(--muted)", fontStyle: "normal", marginLeft: "8px" },
   ".cm-panels": { background: "var(--surface)", color: "var(--ink)", borderColor: "var(--line)" },
+  // the search panel: CodeMirror's own fields and buttons are light grey, unreadable with the dark theme's text
   ".cm-panel input, .cm-panel button": { font: "inherit", color: "var(--ink)" },
-  ".cm-searchMatch": { background: "var(--warn-soft)" },
+  ".cm-panel .cm-textfield": {
+    background: "var(--surface-2)",
+    border: "1px solid var(--line)",
+    borderRadius: "6px",
+    padding: "3px 8px",
+  },
+  ".cm-panel .cm-textfield:focus": { outline: "2px solid var(--accent)", outlineOffset: "-1px" },
+  ".cm-panel .cm-textfield::placeholder": { color: "var(--muted)", opacity: "1" },
+  ".cm-panel .cm-button": {
+    backgroundImage: "none",
+    background: "var(--surface-2)",
+    border: "1px solid var(--line)",
+    borderRadius: "6px",
+    padding: "3px 10px",
+  },
+  ".cm-panel .cm-button:hover": { background: "var(--accent-soft)" },
+  ".cm-panel .cm-button:active": { backgroundImage: "none", background: "var(--accent-soft)" },
+  ".cm-panel label": { color: "var(--ink)" },
+  ".cm-panel input[type=checkbox]": { accentColor: "var(--accent)" },
+  ".cm-panel button[name=close]": { color: "var(--muted)" },
+  ".cm-searchMatch": { background: "var(--warn-soft)", outline: "1px solid var(--warn)" },
+  ".cm-searchMatch.cm-searchMatch-selected": {
+    background: "color-mix(in srgb, var(--warn) 45%, transparent)",
+  },
 });
 
 /** The model's [??]: what it could not read, to fix first. */
