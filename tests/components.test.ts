@@ -1,4 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { expect, test } from "vite-plus/test";
 import { scratch } from "./_env.ts";
 import { findFile, MODEL_FILES, sizeOf, verifyModelDir } from "../src/components.ts";
@@ -7,7 +8,7 @@ test("downloads: a program is found wherever its archive nested it", async () =>
   const dir = scratch("find");
   mkdirSync(`${dir}/llama-b1/bin`, { recursive: true });
   writeFileSync(`${dir}/llama-b1/bin/llama-server`, "");
-  expect(await findFile(dir, "llama-server")).toBe(`${dir}/llama-b1/bin/llama-server`);
+  expect(await findFile(dir, "llama-server")).toBe(join(dir, "llama-b1", "bin", "llama-server"));
   expect(await findFile(dir, "tectonic")).toBeNull();
   expect(await findFile(`${dir}/missing`, "x")).toBeNull();
 });

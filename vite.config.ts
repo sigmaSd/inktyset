@@ -6,9 +6,11 @@
 //   vp test    the tests (Vitest), tests/*.test.ts
 //   vp run dev the app from this checkout (builds, then starts Electron)
 
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite-plus";
 
-const ui = new URL("./app/ui/", import.meta.url).pathname;
+// fileURLToPath, not .pathname: on Windows that gives "/D:/…"
+const ui = fileURLToPath(new URL("./app/ui/", import.meta.url));
 const pages = ["index", "worker"]; // the window, and the hidden page that renders images and PDFs
 
 export default defineConfig({
@@ -38,7 +40,7 @@ export default defineConfig({
   },
   staged: { "*": "vp check --fix" },
   test: {
-    root: new URL(".", import.meta.url).pathname,
+    root: fileURLToPath(new URL(".", import.meta.url)),
     include: ["tests/*.test.ts"],
   },
   pack: {

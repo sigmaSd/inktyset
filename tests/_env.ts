@@ -2,8 +2,10 @@
 // so tests never read or write the real pages (~/Documents/Inktyset) or the app's own files.
 
 import { mkdirSync, rmSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
-const base = new URL("../node_modules/.cache/inktyset-tests/", import.meta.url).pathname;
+// fileURLToPath, not .pathname: on Windows that gives "/D:/…"
+const base = fileURLToPath(new URL("../node_modules/.cache/inktyset-tests/", import.meta.url));
 export const TMP = `${base}worker-${process.env.VITEST_POOL_ID ?? 0}`;
 
 /** A fresh, empty folder for one test. */
