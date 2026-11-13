@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>hand2tex</title>
+<link rel="icon" href="/icon.svg">
+<style>
+:root {
+  --bg: #f5f3ee; --surface: #ffffff; --surface-2: #faf8f4; --ink: #1d1f24; --muted: #6b6f78;
+  --line: #e3dfd6; --accent: #2f5bd3; --accent-ink: #ffffff; --accent-soft: #e8eefc;
+  --ok: #1f8a4c; --ok-soft: #e4f4ea; --warn: #a86a00; --warn-soft: #fff3d6;
+  --bad: #c0362c; --bad-soft: #fde8e6; --shadow: 0 1px 2px rgba(20,20,30,.06), 0 4px 16px rgba(20,20,30,.05);
+  --mono: ui-monospace, "JetBrains Mono", "Cascadia Code", "DejaVu Sans Mono", monospace;
+  --radius: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171c; --surface: #1d2027; --surface-2: #232730; --ink: #e8e9ec; --muted: #9aa0ab;
+    --line: #313642; --accent: #7b9cff; --accent-ink: #0f1320; --accent-soft: #263255;
+    --ok: #5cc98a; --ok-soft: #1c3527; --warn: #f0b54a; --warn-soft: #3a2f17;
+    --bad: #ff7b70; --bad-soft: #3d2120; --shadow: 0 1px 2px rgba(0,0,0,.3);
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Cantarell, "Noto Sans", sans-serif; }
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; border: 1px solid var(--line); background: var(--surface); border-radius: 8px;
+  padding: 6px 12px; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: .5; cursor: default; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+button.ghost { border-color: transparent; background: transparent; color: var(--muted); padding: 4px 8px; }
+button.ghost:hover:not(:disabled) { color: var(--ink); background: var(--surface-2); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 14px;
+  padding: 10px 20px; background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+.brand img { width: 30px; height: 30px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted);
+  padding: 3px 10px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); animation: pulse 1.2s infinite; }
+.dot.bad { background: var(--bad); }
+@keyframes pulse { 50% { opacity: .35; } }
+.spacer { flex: 1; }
+label.lang { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); }
+select { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 8px; }
+#langOther { width: 9em; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 8px; }
+
+main { max-width: 1500px; margin: 0 auto; padding: 18px 20px 80px; }
+.add { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 16px 18px; display: flex; gap: 14px; align-items: center; text-align: left; width: 100%; }
+button.tile:hover:not(:disabled) { border-color: var(--accent); }
+.tile svg { flex: none; width: 34px; height: 34px; color: var(--accent); }
+.tile b { display: block; font-size: 16px; }
+.tile small { color: var(--muted); font-size: 13px; }
+.tile .tile-row { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
+
+.status-line { margin: 18px 2px 10px; display: flex; gap: 12px; align-items: center; color: var(--muted); min-height: 32px; flex-wrap: wrap; }
+.status-line strong { color: var(--ink); }
+.bar { flex: 1 1 200px; max-width: 320px; height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .4s; }
+
+.empty { text-align: center; padding: 70px 20px; color: var(--muted); border: 2px dashed var(--line);
+  border-radius: var(--radius); margin-top: 10px; }
+.empty b { color: var(--ink); font-size: 18px; display: block; margin-bottom: 6px; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; border-left: 5px solid var(--line); }
+.card.done { border-left-color: var(--ok); } .card.unclear { border-left-color: var(--warn); }
+.card.failed, .card.broken { border-left-color: var(--bad); } .card.working { border-left-color: var(--accent); }
+.card-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.card-head h2 { margin: 0; font-size: 16px; }
+.card-head .src { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40ch; }
+.chip { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px; background: var(--surface-2); color: var(--muted); }
+.chip.ok { background: var(--ok-soft); color: var(--ok); } .chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); } .chip.busy { background: var(--accent-soft); color: var(--accent); }
+.card-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr); }
+.col { padding: 12px 14px; min-width: 0; }
+.col + .col { border-left: 1px solid var(--line); }
+.col h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+.scan img { width: 100%; border-radius: 6px; border: 1px solid var(--line); cursor: zoom-in; background: #fff; display: block; }
+.preview img { width: 100%; border-radius: 6px; border: 1px solid var(--line); background: #fff; display: block; margin-bottom: 8px; }
+textarea { width: 100%; min-height: 360px; resize: vertical; font: 13px/1.5 var(--mono); color: var(--ink);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px; tab-size: 2; }
+textarea:focus { outline: none; border-color: var(--accent); }
+.editor-foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.editor-foot .grow { flex: 1; }
+.err { background: var(--bad-soft); color: var(--bad); border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+.err pre { white-space: pre-wrap; margin: 6px 0 0; font: 12px/1.4 var(--mono); }
+.waiting { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  min-height: 220px; color: var(--muted); text-align: center; }
+.spinner { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--accent-soft); border-top-color: var(--accent); animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.note { color: var(--muted); font-size: 13px; }
+
+dialog { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink);
+  padding: 22px 24px; max-width: 560px; width: calc(100% - 32px); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+dialog::backdrop { background: rgba(10,12,20,.45); }
+dialog h2 { margin: 0 0 6px; }
+.qr { background: #fff; padding: 12px; border-radius: 12px; width: 260px; height: 260px; margin: 14px auto; }
+.qr svg { width: 100%; height: 100%; display: block; }
+ol.steps { padding-left: 20px; margin: 8px 0 12px; } ol.steps li { margin: 4px 0; }
+.devices { list-style: none; padding: 0; margin: 8px 0; }
+.devices li { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); }
+.dialog-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+#zoom { max-width: 96vw; width: auto; padding: 8px; }
+#zoom img { max-width: 92vw; max-height: 88vh; display: block; }
+
+.drop { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--accent) 18%, transparent); border: 4px dashed var(--accent);
+  font-size: 24px; font-weight: 700; color: var(--accent); pointer-events: none; }
+body.dragging .drop { display: flex; }
+.toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg);
+  padding: 10px 18px; border-radius: 10px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 30; }
+.toast.show { opacity: 1; }
+
+@media (max-width: 1000px) {
+  .add { grid-template-columns: 1fr; }
+  .card-body { grid-template-columns: 1fr; }
+  .col + .col { border-left: 0; border-top: 1px solid var(--line); }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><img src="/icon.svg" alt="">hand2tex</div>
+  <span class="pill" id="engine"><span class="dot"></span><span>Starting…</span></span>
+  <div class="spacer"></div>
+  <label class="lang">Writing language
+    <select id="lang"></select>
+    <input id="langOther" placeholder="e.g. Dutch" hidden>
+  </label>
+  <button id="copyAll" title="Copy the LaTeX of every finished page">Copy all LaTeX</button>
+  <button id="saveTex" title="Save one .tex file with every finished page">Save .tex file</button>
+</header>
+
+<main>
+  <section class="add">
+    <button class="tile" id="pick">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+      <span><b>Add photos or PDF</b><small>Or drag files anywhere onto this window</small></span>
+    </button>
+    <div class="tile" id="scanTile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="8" rx="2"/><path d="M6 11V5h12v6M7 15h2"/></svg>
+      <span style="flex:1;min-width:0"><b>Scanner</b><small id="scanInfo">Looking for scanners…</small>
+        <span class="tile-row" id="scanRow"></span></span>
+    </div>
+    <button class="tile" id="phoneTile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><circle cx="12" cy="11" r="3"/><path d="M11 18.5h2"/></svg>
+      <span><b>Phone</b><small id="phoneInfo">Starting…</small></span>
+    </button>
+  </section>
+  <input type="file" id="files" multiple accept="image/*,.pdf,application/pdf" hidden>
+
+  <div class="status-line" id="statusLine"></div>
+  <div id="pages"></div>
+  <div class="empty" id="empty" hidden>
+    <b>No pages yet</b>
+    Add photos or a PDF, scan a page, or take photos with your phone.<br>
+    Each page is read on this computer and turned into LaTeX you can copy.
+  </div>
+</main>
+
+<dialog id="phoneDialog">
+  <h2>Send photos from your phone</h2>
+  <div class="note">The phone and this computer need to be on the same Wi-Fi.</div>
+  <div id="phoneBody"></div>
+  <div class="dialog-foot"><button id="phoneClose" class="primary">Done</button></div>
+</dialog>
+<dialog id="zoom"><img alt=""></dialog>
+<div class="drop">Drop photos or PDFs to add them</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let S = null;                 // last state from the server
+const texCache = new Map();   // id -> {rev, tex}
+const dirty = new Map();      // id -> timer for unsaved edits
+const cards = new Map();      // id -> {el, key}
+
+async function api(path, body, raw) {
+  const opt = { method: "POST", headers: { "X-Hand2tex": "1" } };
+  if (raw) { opt.body = raw; Object.assign(opt.headers, body); }
+  else { opt.body = JSON.stringify(body || {}); opt.headers["Content-Type"] = "application/json"; }
+  const r = await fetch(path, opt);
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
+  refresh();  // show the result now, without waiting for the event stream
+  return r.json();
+}
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 2200);
+}
+const mmss = (s) => { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+const about = (s) => s < 60 ? "less than a minute" : s < 5400 ? `about ${Math.round(s / 60)} min` : `about ${(s / 3600).toFixed(1)} h`;
+
+// ---------------------------------------------------------------- live updates
+let refreshing = false, again = false;
+async function refresh() {
+  if (refreshing) { again = true; return; }
+  refreshing = true;
+  try {
+    const r = await fetch("/api/state");
+    S = await r.json();
+    render();
+  } catch { /* server going away */ }
+  refreshing = false;
+  if (again) { again = false; refresh(); }
+}
+function connect() {
+  const es = new EventSource("/api/events");
+  es.onmessage = refresh;
+  es.onerror = () => { es.close(); $("#engine").innerHTML = '<span class="dot bad"></span><span>App closed — reopen hand2tex</span>'; setTimeout(connect, 3000); };
+}
+
+// ---------------------------------------------------------------- header + tiles
+function renderHeader() {
+  const m = S.model;
+  const map = { ready: ["ok", "Reading engine ready"], starting: ["warn", "Reading engine starting…"],
+                stopped: ["", "Reading engine off"], error: ["bad", "Reading engine stopped"] };
+  const [cls, text] = map[m.status] || ["", m.status];
+  $("#engine").innerHTML = `<span class="dot ${cls}"></span><span>${esc(text)}</span>`;
+  $("#engine").title = m.detail || "";
+
+  const sel = $("#lang");
+  if (!sel.options.length) {
+    for (const l of S.languages) sel.add(new Option(l.name, l.id));
+    sel.add(new Option("Other…", "__other"));
+  }
+  const cur = S.settings.language;
+  if (document.activeElement !== sel && document.activeElement !== $("#langOther")) {
+    const known = S.languages.some((l) => l.id === cur);
+    sel.value = known ? cur : "__other";
+    $("#langOther").hidden = known;
+    if (!known) $("#langOther").value = cur;
+  }
+  const done = S.pages.filter((p) => p.status === "done").length;
+  $("#copyAll").disabled = $("#saveTex").disabled = !done;
+}
+
+function renderScanner() {
+  const sc = S.scanner, info = $("#scanInfo"), row = $("#scanRow");
+  if (!sc.available) { info.textContent = "Scanner support is not installed."; row.innerHTML = ""; return; }
+  let html = "";
+  if (sc.scanning) { info.textContent = "Scanning… keep the lid closed."; }
+  else if (sc.looking) { info.textContent = "Looking for scanners…"; }
+  else if (!sc.devices.length) { info.textContent = "No scanner found. Plug it in and turn it on."; html = `<button data-act="find">Look again</button>`; }
+  else {
+    info.textContent = sc.error || (sc.devices.length === 1 ? sc.devices[0].name : "Choose a scanner:");
+    if (sc.devices.length > 1) html += `<select id="scanDev">${sc.devices.map((d) => `<option value="${esc(d.id)}">${esc(d.name)}</option>`).join("")}</select>`;
+    html += `<button class="primary" data-act="scan">Scan a page</button><button class="ghost" data-act="find">Refresh</button>`;
+  }
+  const key = html + sc.devices.map((d) => d.id).join();
+  if (row.dataset.key !== key) { const v = $("#scanDev")?.value; row.innerHTML = html; row.dataset.key = key; if (v && $("#scanDev")) $("#scanDev").value = v; }
+  row.querySelectorAll("button").forEach((b) => (b.disabled = sc.scanning || sc.looking));
+}
+
+function renderPhone() {
+  const ph = S.phone || {}, n = (ph.devices || []).length;
+  $("#phoneInfo").textContent =
+    ph.status === "unavailable" || ph.status === "error" ? (ph.error || "Phone sending is not available.") :
+    ph.status !== "ready" ? "Starting…" :
+    n ? `${n} phone${n > 1 ? "s" : ""} connected · photos appear here by themselves` : "Connect your phone to send photos";
+  if ($("#phoneDialog").open) renderPhoneDialog();
+}
+
+function renderPhoneDialog() {
+  const ph = S.phone || {}, body = $("#phoneBody");
+  const devs = ph.devices || [];
+  let html = "";
+  if (ph.status !== "ready") {
+    html = `<p class="err">${esc(ph.error || "The phone receiver is still starting. Try again in a moment.")}</p>`;
+  } else {
+    const left = ph.pairingExpiresAt ? (ph.pairingExpiresAt - Date.now()) / 1000 : 0;
+    html += `<ol class="steps">
+      <li>Install <b>Folder Camera</b> on the phone (free on F-Droid).</li>
+      <li>In Folder Camera, open <b>Settings</b> and tap <b>Scan PC pairing QR</b>.</li>
+      <li>Point the phone at this code.</li>
+      <li>Take photos of your pages. They appear here by themselves.</li></ol>`;
+    if (ph.qr && left > 0) {
+      html += `<div class="qr">${ph.qr}</div>
+        <div class="note" style="text-align:center">This code works once and expires in ${mmss(left)}.
+        <button class="ghost" data-act="pair">New code</button></div>`;
+    } else {
+      html += `<div style="text-align:center;margin:16px"><button class="primary" data-act="pair">Show a pairing code</button></div>`;
+    }
+    if (devs.length) {
+      html += `<h3 style="margin:14px 0 0;font-size:14px">Connected phones</h3><ul class="devices">` +
+        devs.map((d) => `<li><span>${esc(d.name)}</span><button class="ghost" data-act="revoke" data-id="${esc(d.id)}">Remove</button></li>`).join("") + "</ul>";
+    }
+  }
+  if (body.dataset.html !== html) { body.innerHTML = html; body.dataset.html = html; }
+}
+
+// ---------------------------------------------------------------- pages
+function statusOf(p) {
+  if (p.status === "queued") return ["", "Waiting"];
+  if (p.status === "working") return ["busy", "Reading…"];
+  if (p.status === "failed") return ["bad", "Failed"];
+  if (p.ok === false) return ["bad", "LaTeX error"];
+  if (p.truncated) return ["warn", "May be cut off"];
+  if (p.unk) return ["warn", `${p.unk} unclear spot${p.unk > 1 ? "s" : ""}`];
+  if (p.ok === null) return ["busy", "Checking…"];
+  return ["ok", "Done"];
+}
+
+function renderStatusLine() {
+  const pages = S.pages, queued = pages.filter((p) => p.status === "queued").length;
+  const working = pages.find((p) => p.status === "working");
+  const done = pages.filter((p) => p.status === "done").length;
+  const el = $("#statusLine");
+  if (!pages.length && !S.intake) { el.innerHTML = ""; return; }
+  let html = `<span><strong>${done}</strong> of ${pages.length} page${pages.length === 1 ? "" : "s"} done</span>`;
+  if (working || queued || S.intake) {
+    const elapsed = working ? (Date.now() / 1000 - working.started) : 0;
+    const left = Math.max(0, S.avgSecs - elapsed) + queued * S.avgSecs;
+    html += `<span class="bar"><i style="width:${(100 * done / Math.max(1, pages.length)).toFixed(1)}%"></i></span>`;
+    html += `<span>${S.intake ? "Adding files… · " : ""}${working || queued ? about(left) + " left" : ""}</span>`;
+    html += `<span class="note">You can close this window: waiting pages are still finished.</span>`;
+  }
+  el.innerHTML = html;
+}
+
+function pageNumber(id) { return S.pages.findIndex((p) => p.id === id) + 1; }
+
+function cardKey(p) { return [p.status, p.rev, p.ok, p.unk, p.err, p.truncated, p.pngs.join()].join("|"); }
+
+function buildCard(p) {
+  const [cls, label] = statusOf(p);
+  const el = document.createElement("article");
+  el.className = "card " + ({ queued: "queued", working: "working", failed: "failed" }[p.status] ||
+    (p.ok === false ? "broken" : (p.unk || p.truncated) ? "unclear" : "done"));
+  el.dataset.id = p.id;
+  const scan = `<div class="col scan"><h3>Scan</h3><img loading="lazy" src="/files/scans/${p.id}.jpg?r=${p.id}" alt="Scan of the page"></div>`;
+  let mid = "", right = "";
+  if (p.status === "queued") {
+    mid = `<div class="col" style="grid-column: span 2"><div class="waiting">Waiting its turn…</div></div>`;
+  } else if (p.status === "working") {
+    mid = `<div class="col" style="grid-column: span 2"><div class="waiting"><div class="spinner"></div>
+      <div>Reading the handwriting… <b class="elapsed"></b></div><div class="note">A page usually takes ${about(S.avgSecs)}.</div></div></div>`;
+  } else if (p.status === "failed") {
+    mid = `<div class="col" style="grid-column: span 2"><div class="err">${esc(p.err || "Something went wrong.")}</div>
+      <p><button class="primary" data-act="redo">Try again</button></p></div>`;
+  } else {
+    mid = `<div class="col"><h3>LaTeX</h3><textarea spellcheck="false" aria-label="LaTeX of this page"></textarea>
+      <div class="editor-foot">
+        <span class="saved"></span><span class="grow"></span>
+        ${p.unk ? `<button data-act="nextUnk" title="Jump to the next [??] the model could not read">Next unclear spot</button>` : ""}
+        <button class="primary" data-act="copy">Copy LaTeX</button>
+      </div></div>`;
+    let prev = "";
+    if (p.truncated) prev += `<div class="err" style="margin-bottom:8px">The page was very long and may be cut off at the end. Check the last lines.</div>`;
+    if (p.ok === false) prev += `<div class="err">This LaTeX does not compile yet. Fix the text, and the preview updates by itself.<pre>${esc(p.err)}</pre></div>`;
+    if (p.ok === null) prev += `<div class="waiting"><div class="spinner"></div>Building the preview…</div>`;
+    prev += p.pngs.map((src) => `<img src="/files/${esc(src)}?r=${p.rev}" alt="Rendered page">`).join("");
+    right = `<div class="col preview"><h3>Preview</h3>${prev}</div>`;
+  }
+  el.innerHTML = `<div class="card-head">
+      <h2>Page ${pageNumber(p.id)}</h2><span class="chip ${cls}">${esc(label)}</span>
+      <span class="src" title="${esc(p.label)}">${esc(p.label)}</span><span class="spacer"></span>
+      <button class="ghost" data-act="up" title="Move up">↑</button>
+      <button class="ghost" data-act="down" title="Move down">↓</button>
+      ${p.status === "done" ? `<button class="ghost" data-act="redo" title="Read this page again">Read again</button>` : ""}
+      <button class="ghost" data-act="delete" title="Remove this page">Remove</button>
+    </div><div class="card-body">${scan}${mid}${right}</div>`;
+  return el;
+}
+
+async function loadTex(p, el) {
+  const ta = $("textarea", el);
+  if (!ta) return;
+  const c = texCache.get(p.id);
+  if (c && c.rev === p.rev) { if (!dirty.has(p.id) && document.activeElement !== ta) ta.value = c.tex; return; }
+  const r = await fetch(`/api/page/${p.id}`).then((r) => r.json());
+  texCache.set(p.id, { rev: p.rev, tex: r.tex });
+  if (!dirty.has(p.id) && document.activeElement !== ta) ta.value = r.tex;
+}
+
+function renderPages() {
+  const box = $("#pages");
+  $("#empty").hidden = S.pages.length > 0 || S.intake > 0;
+  const ids = new Set(S.pages.map((p) => p.id));
+  for (const [id, c] of cards) if (!ids.has(id)) { c.el.remove(); cards.delete(id); }
+  let prev = null;
+  for (const p of S.pages) {
+    let c = cards.get(p.id);
+    const key = cardKey(p) + "|" + pageNumber(p.id);
+    const editing = c && document.activeElement && c.el.contains(document.activeElement) && document.activeElement.tagName === "TEXTAREA";
+    if (!c || (c.key !== key && !editing)) {
+      const keep = c && $("textarea", c.el);
+      const el = buildCard(p);
+      if (keep && dirty.has(p.id)) $("textarea", el).value = keep.value;
+      if (c) c.el.replaceWith(el); else box.append(el);
+      c = { el, key }; cards.set(p.id, c);
+    } else if (editing) {
+      // keep the editor; refresh only the preview column
+      const [cls, label] = statusOf(p);
+      const chip = $(".chip", c.el); chip.className = "chip " + cls; chip.textContent = label;
+      const fresh = buildCard(p), oldPrev = $(".preview", c.el), newPrev = $(".preview", fresh);
+      if (oldPrev && newPrev) oldPrev.replaceWith(newPrev);
+      c.key = key;
+    }
+    if ((prev ? prev.nextSibling : box.firstChild) !== c.el) (prev ? prev.after(c.el) : box.prepend(c.el));
+    prev = c.el;
+    if (p.status === "done") loadTex(p, c.el);
+  }
+}
+
+function tick() {
+  if (!S) return;
+  for (const p of S.pages) if (p.status === "working") {
+    const el = cards.get(p.id)?.el, b = el && $(".elapsed", el);
+    if (b) b.textContent = mmss(Date.now() / 1000 - p.started);
+  }
+  if (S.pages.some((p) => p.status === "working")) renderStatusLine();
+  if ($("#phoneDialog").open) renderPhoneDialog();
+}
+
+function render() {
+  renderHeader(); renderScanner(); renderPhone(); renderStatusLine(); renderPages(); tick();
+}
+
+// ---------------------------------------------------------------- actions
+async function copyText(text, what) {
+  try { await navigator.clipboard.writeText(text); toast(`${what} copied`); }
+  catch { toast("Could not copy: select the text and press Ctrl+C"); }
+}
+
+function save(id, ta) {
+  clearTimeout(dirty.get(id));
+  const saved = $(".saved", ta.closest(".card"));
+  if (saved) saved.textContent = "Saving…";
+  dirty.set(id, setTimeout(async () => {
+    try {
+      await api(`/api/page/${id}/tex`, { tex: ta.value });
+      texCache.set(id, { rev: -1, tex: ta.value });
+      dirty.delete(id);
+      if (saved) saved.textContent = "Saved";
+    } catch (e) { if (saved) saved.textContent = "Not saved: " + e.message; }
+  }, 900));
+}
+
+document.addEventListener("input", (e) => {
+  if (e.target.tagName === "TEXTAREA") save(e.target.closest(".card").dataset.id, e.target);
+});
+
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-act]");
+  if (e.target.matches(".scan img")) { const z = $("#zoom"); $("img", z).src = e.target.src; z.showModal(); return; }
+  if (!b) return;
+  const act = b.dataset.act, card = b.closest(".card"), id = card?.dataset.id;
+  try {
+    if (act === "copy") copyText($("textarea", card).value, `Page ${pageNumber(id)}`);
+    else if (act === "nextUnk") {
+      const ta = $("textarea", card), from = ta.selectionEnd || 0;
+      let i = ta.value.indexOf("[??]", from); if (i < 0) i = ta.value.indexOf("[??]");
+      if (i >= 0) { ta.focus(); ta.setSelectionRange(i, i + 4);
+        const line = ta.value.slice(0, i).split("\n").length; ta.scrollTop = Math.max(0, (line - 4) * 19.5); }
+    }
+    else if (act === "redo") { if (p_done(id) && !confirm("Read this page again? Your corrections on this page will be replaced.")) return;
+      await api(`/api/page/${id}/redo`); }
+    else if (act === "delete") { if (confirm(`Remove page ${pageNumber(id)} from the list?`)) await api(`/api/page/${id}/delete`); }
+    else if (act === "up" || act === "down") await api(`/api/page/${id}/move`, { by: act === "up" ? -1 : 1 });
+    else if (act === "find") await api("/api/scanner/find");
+    else if (act === "scan") await api("/api/scanner/scan", { device: $("#scanDev")?.value || S.scanner.devices[0].id });
+    else if (act === "pair") await api("/api/phone/pair");
+    else if (act === "revoke") { if (confirm("Remove this phone? It will need a new code to send photos again.")) await api("/api/phone/revoke", { id: b.dataset.id }); }
+  } catch (err) { toast(err.message); }
+});
+const p_done = (id) => S.pages.find((p) => p.id === id)?.status === "done";
+
+$("#pick").onclick = () => $("#files").click();
+$("#files").onchange = (e) => { upload([...e.target.files]); e.target.value = ""; };
+async function upload(files) {
+  files = files.filter((f) => /^image\//.test(f.type) || /\.pdf$/i.test(f.name) || f.type === "application/pdf");
+  if (!files.length) { toast("Only photos and PDFs can be added"); return; }
+  toast(`Adding ${files.length} file${files.length > 1 ? "s" : ""}…`);
+  for (const f of files) {
+    try { await api("/api/upload", { "X-Filename": encodeURIComponent(f.name) }, f); }
+    catch (e) { toast(`${f.name}: ${e.message}`); }
+  }
+}
+let dragDepth = 0;
+addEventListener("dragenter", (e) => { if (e.dataTransfer?.types.includes("Files")) { dragDepth++; document.body.classList.add("dragging"); } });
+addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove("dragging"); } });
+addEventListener("dragover", (e) => e.preventDefault());
+addEventListener("drop", (e) => { e.preventDefault(); dragDepth = 0; document.body.classList.remove("dragging"); upload([...e.dataTransfer.files]); });
+addEventListener("paste", (e) => {
+  if (e.target.tagName === "TEXTAREA") return;
+  const files = [...(e.clipboardData?.files || [])]; if (files.length) upload(files);
+});
+
+$("#phoneTile").onclick = async () => {
+  const ph = S?.phone || {};
+  renderPhoneDialog(); $("#phoneDialog").showModal();
+  if (ph.status === "ready" && !(ph.qr && ph.pairingExpiresAt > Date.now()) && !(ph.devices || []).length) {
+    try { await api("/api/phone/pair"); } catch (e) { toast(e.message); }
+  }
+};
+$("#phoneClose").onclick = () => $("#phoneDialog").close();
+$("#zoom").onclick = () => $("#zoom").close();
+
+$("#lang").onchange = async (e) => {
+  const v = e.target.value;
+  if (v === "__other") { $("#langOther").hidden = false; $("#langOther").focus(); return; }
+  $("#langOther").hidden = true;
+  try { await api("/api/settings", { language: v }); toast("Language changed. New pages are read in " + e.target.selectedOptions[0].text + "."); }
+  catch (err) { toast(err.message); }
+};
+$("#langOther").onchange = async (e) => {
+  const v = e.target.value.trim(); if (!v) return;
+  try { await api("/api/settings", { language: v }); toast(`Language changed to ${v}.`); } catch (err) { toast(err.message); }
+};
+$("#copyAll").onclick = async () => copyText(await fetch("/api/all.tex").then((r) => r.text()), "All pages");
+$("#saveTex").onclick = () => { location.href = "/api/document.tex"; };
+
+setInterval(tick, 1000);
+// safety net in case an event is ever missed: the state is small and local
+setInterval(async () => {
+  try { const v = (await (await fetch("/api/version")).json()).version; if (!S || v !== S.version) refresh(); } catch { }
+}, 5000);
+refresh();
+connect();
+</script>
+</body>
+</html>

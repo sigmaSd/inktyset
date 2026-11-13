@@ -2,7 +2,7 @@
 """hand2tex: handwritten math scans -> LaTeX, using a local llama-server vision model.
 
 Usage:
-    hand2tex.py INPUT OUTDIR [--french] [--max-side 1600] [--force]
+    hand2tex.py INPUT OUTDIR [--lang french|arabic|...] [--max-side 1600] [--force]
 
 INPUT can be a single image, a folder of images, or a PDF (or a folder mixing them).
 Requires a running llama-server (see start-server.sh). Nothing leaves 127.0.0.1.
@@ -45,14 +45,47 @@ Rules:
 - Diagrams/figures: write \textbf{[FIGURE: short description]}.
 - Output ONLY the LaTeX body. No preamble, no \documentclass, no \begin{document}, no markdown fences, no comments to me."""
 
-PROMPT_FR = "\n- The prose is in French: keep it in French exactly as written, with accents."
+# Language of the prose: the prompt hint, and how the preview compiles.
+# Latin-script languages that have a babel file use pdflatex; others use xelatex + polyglossia.
+LANGS = {
+    "english":    dict(name="English",    engine="pdflatex", setup=""),
+    "french":     dict(name="French",     engine="pdflatex", setup=r"\usepackage[french]{babel}"),
+    "arabic":     dict(name="Arabic",     engine="xelatex",  setup="arabic"),
+    "german":     dict(name="German",     engine="xelatex",  setup="german"),
+    "spanish":    dict(name="Spanish",    engine="xelatex",  setup="spanish"),
+    "italian":    dict(name="Italian",    engine="xelatex",  setup="italian"),
+    "portuguese": dict(name="Portuguese", engine="xelatex",  setup="portuguese"),
+    "turkish":    dict(name="Turkish",    engine="xelatex",  setup="turkish"),
+}
+# installed fonts xdvipdfmx accepts (the Noto Arabic ones are variable fonts and crash it)
+ARABIC_FONTS = ["Amiri", "PakType Naskh Basic", "Droid Arabic Kufi", "Vazirmatn"]
+
+
+def lang_info(lang):
+    """lang: a LANGS key, any other language name (prompt hint only), or a bool (old --french)."""
+    if lang is True:
+        lang = "french"
+    if not lang:
+        lang = "english"
+    key = str(lang).strip().lower()
+    if key in LANGS:
+        return LANGS[key]
+    return dict(name=str(lang).strip(), engine="pdflatex", setup="")
+
+
+def lang_prompt(lang) -> str:
+    name = lang_info(lang)["name"]
+    if name == "English":
+        return ""
+    return (f"\n- The prose is in {name}: keep it in {name} exactly as written (same script, accents and "
+            "spelling). Do not translate it.")
+
+
+PROMPT_FR = lang_prompt("french")  # kept for older callers
 
 
 PREAMBLE = r"""\documentclass[11pt,a4paper]{article}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
-%BABEL%
+%LANG%
 \usepackage{amsmath,amssymb,amsthm,mathtools}
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{xcolor}
@@ -152,19 +185,31 @@ def clean_latex(t: str) -> str:
     return t.strip() + "\n"
 
 
-def preamble(french: bool) -> str:
-    return PREAMBLE.replace("%BABEL%", r"\usepackage[french]{babel}" if french else "")
+def preamble(lang) -> str:
+    info = lang_info(lang)
+    if info["engine"] == "pdflatex":
+        setup = "\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n\\usepackage{lmodern}\n" + info["setup"]
+    else:
+        setup = ("\\usepackage{fontspec}\n\\usepackage{polyglossia}\n"
+                 f"\\setmainlanguage{{{info['setup']}}}\n\\setotherlanguage{{english}}\n")
+        if info["setup"] == "arabic":
+            font = "".join(f"\\IfFontExistsTF{{{f}}}{{\\newfontfamily\\arabicfont[Script=Arabic]{{{f}}}}}{{"
+                           for f in ARABIC_FONTS) + "}" * len(ARABIC_FONTS)
+            setup += font + "\n"
+    return PREAMBLE.replace("%LANG%", setup.rstrip())
 
 
-def compile_page(out: Path, name: str, french: bool):
+def compile_page(out: Path, name: str, lang, dpi: int = 80):
     """Compile one page standalone. Returns (ok, first_error, [png paths])."""
     bdir = out / "build" / name
     if bdir.exists():
         shutil.rmtree(bdir)
     bdir.mkdir(parents=True)
     tex = bdir / "doc.tex"
-    tex.write_text(preamble(french) + "\\begin{document}\n\\input{../../pages/" + name + "}\n\\end{document}\n")
-    r = subprocess.run(["pdflatex", "-interaction=nonstopmode", "-halt-on-error", "doc.tex"],
+    # no page number: the preview is one page and gets cropped to its content
+    tex.write_text(preamble(lang) + "\\pagestyle{empty}\n\\begin{document}\n\\input{../../pages/" + name
+                   + "}\n\\end{document}\n")
+    r = subprocess.run([lang_info(lang)["engine"], "-interaction=nonstopmode", "-halt-on-error", "doc.tex"],
                        cwd=bdir, capture_output=True, text=True, timeout=120)
     logtxt = (bdir / "doc.log").read_text(errors="replace") if (bdir / "doc.log").exists() else r.stdout
     pdf = bdir / "doc.pdf"
@@ -175,14 +220,14 @@ def compile_page(out: Path, name: str, french: bool):
         err = m.group(0) if m else "compile failed (see build/%s/doc.log)" % name
     pngs = []
     if pdf.exists():
-        subprocess.run(["pdftoppm", "-r", "80", "-png", "doc.pdf", "render"], cwd=bdir, capture_output=True)
+        subprocess.run(["pdftoppm", "-r", str(dpi), "-png", "doc.pdf", "render"], cwd=bdir, capture_output=True)
         pngs = sorted(bdir.glob("render*.png"), key=natural_key)
     return ok, err, pngs
 
 
-def write_main(out: Path, names, french: bool):
+def write_main(out: Path, names, lang):
     body = "\n".join(f"% ---- {n}\n\\input{{pages/{n}}}\n\\clearpage" for n in names)
-    (out / "main.tex").write_text(preamble(french) + "\\begin{document}\n" + body + "\n\\end{document}\n")
+    (out / "main.tex").write_text(preamble(lang) + "\\begin{document}\n" + body + "\n\\end{document}\n")
 
 
 def write_review(out: Path, rows):
@@ -210,7 +255,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("input", type=Path)
     ap.add_argument("outdir", type=Path)
-    ap.add_argument("--french", action="store_true", help="French prose (babel french + prompt hint)")
+    ap.add_argument("--french", action="store_true", help="same as --lang french")
+    ap.add_argument("--lang", default="english",
+                    help="language of the prose: " + ", ".join(LANGS) + " or any other name (default english)")
     ap.add_argument("--server", default="http://127.0.0.1:8080")
     ap.add_argument("--max-side", type=int, default=1600, help="resize long side to this many px (default 1600)")
     ap.add_argument("--max-tokens", type=int, default=4096)
@@ -218,6 +265,7 @@ def main():
     ap.add_argument("--force", action="store_true", help="redo pages that already have a .tex")
     a = ap.parse_args()
 
+    lang = "french" if a.french else a.lang
     out = a.outdir.expanduser().resolve()
     for d in ("scans", "pages", "raw", "build", "_raster"):
         (out / d).mkdir(parents=True, exist_ok=True)
@@ -229,7 +277,7 @@ def main():
     images = collect_inputs(a.input.expanduser().resolve(), out / "_raster")
     if not images:
         sys.exit("no input images found")
-    prompt = PROMPT + (PROMPT_FR if a.french else "")
+    prompt = PROMPT + lang_prompt(lang)
     names, rows = [], []
     t_all = time.time()
     for i, src in enumerate(images, 1):
@@ -264,18 +312,18 @@ def main():
             log(f"   done in {secs:.0f}s  ({usage.get('prompt_tokens', '?')} in @ {pp or 0:.0f} t/s, "
                 f"{usage.get('completion_tokens', '?')} out @ {gen or 0:.1f} t/s)"
                 + ("  TRUNCATED" if finish == "length" else ""))
-        ok, err, pngs = compile_page(out, name, a.french)
+        ok, err, pngs = compile_page(out, name, lang)
         unk = texf.read_text().count("[??]")
         if not ok:
             log(f"   compile FAILED: {err.splitlines()[0] if err else ''}")
         rows.append(dict(name=name, src=src.name, ok=ok, err=err, unk=unk, secs=secs,
                          pngs=[str(p.relative_to(out)) for p in pngs]))
-        write_main(out, names, a.french)
+        write_main(out, names, lang)
         write_review(out, rows)
 
-    write_main(out, names, a.french)
+    write_main(out, names, lang)
     log("compiling main.pdf ...")
-    subprocess.run(["latexmk", "-pdf", "-interaction=nonstopmode", "-f", "main.tex"],
+    subprocess.run(["latexmk", "-xelatex" if lang_info(lang)["engine"] == "xelatex" else "-pdf", "-interaction=nonstopmode", "-f", "main.tex"],
                    cwd=out, capture_output=True, timeout=600)
     bad = [r["name"] for r in rows if not r["ok"]]
     unk = sum(r["unk"] for r in rows)

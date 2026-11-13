@@ -7,3 +7,5 @@ __pycache__/
 *.aux
 *.log
 *.pdf
+# installed by app.py on first start (npm ci)
+app/receiver/node_modules/
