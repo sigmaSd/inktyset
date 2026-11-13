@@ -83,14 +83,28 @@ const CODE = /```(?:latex|tex|typst|typ)?[ \t]*\n([\s\S]*?)\n?```/g;
 /** An answer's code block replaced by a short note (an older rewrite, in the history). */
 export const withoutCode = (text: string) => text.replace(CODE, PROPOSED);
 
-/** The whole new text of the page in an answer (its last code block), or undefined when it has none. */
+/** Lines of a change block (<<<<<<< / ======= / >>>>>>>). */
+const MARKERS = /^(?:<{5,}|={5,}|>{5,})/m;
+
+/**
+ * The whole new text of the page in an answer (its last code block), or undefined when it has none. A block
+ * holding change markers is a change, not a page (a malformed one: nothing to apply).
+ */
 export function proposalIn(answer: string): string | undefined {
-  const blocks = [...answer.matchAll(CODE)];
+  const blocks = [...answer.matchAll(CODE)].filter((m) => !MARKERS.test(m[1]));
   const body = blocks.at(-1)?.[1].trim();
   return body ? body : undefined;
 }
 
-const EDIT = /<{3,}\s*FIND[^\n]*\n([\s\S]*?)\n?={3,}[^\n]*\n([\s\S]*?)\n?>{3,}[^\n]*/g;
+/**
+ * Is this block the whole page rewritten, or only a piece of it (a line the model corrected)? A piece taken
+ * for the page would make Apply drop the rest: only a block at least 60% as long as the page counts.
+ */
+export const isWholePage = (block: string, page: string) =>
+  page.trim().length < 200 || block.length >= 0.6 * page.trim().length;
+
+// the model writes SEARCH (as code-editing tools taught it) or FIND (as asked before 0.9.2)
+const EDIT = /<{5,}[ \t]*(?:SEARCH|FIND)?[^\n]*\n([\s\S]*?)\n?={5,}[^\n]*\n([\s\S]*?)\n?>{5,}[^\n]*/g;
 
 /** The changes in an answer, as find-and-replace blocks (see chatInstructions). */
 export function editsIn(answer: string): { find: string; replace: string }[] {
@@ -137,16 +151,18 @@ export function chatInstructions(format: "latex" | "typst", language = "", notes
     "pictures of parts of the page or of how it typesets.",
     "When they say something is wrong, or ask for a change, make the change; don't ask whether they want it.",
     "Say in one sentence what you changed, then give each change as a block like this:",
-    "<<<<<<< FIND",
+    "<<<<<<< SEARCH",
     `the exact text to change, copied from the page's current ${name}`,
     "=======",
     "the new text",
     ">>>>>>> REPLACE",
-    "Copy the FIND text exactly, with a little around it so it is found; it is changed everywhere it appears.",
+    "Copy the SEARCH text exactly, with a little around it so it is found; it is changed everywhere it appears.",
+    "Never put a change block inside a code block, and never give only a part of the page in a code block.",
     "Use one block per change. Only when most of the page changes, give the whole new text in one",
     `\`\`\`${fence} block instead.`,
     "Otherwise answer briefly, in the language they write in, with math between $...$.",
     "Keep to what is written on the page: never add content that isn't there.",
+    "A word that was read as math is plain text: write it outside $...$.",
     ...(language && language !== "English" ? [`The prose on the page is in ${language}.`] : []),
     ...(notes.trim() ? ["Notes from the person who wrote the page, about their writing:", notes.trim()] : []),
   ].join("\n");

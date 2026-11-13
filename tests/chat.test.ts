@@ -5,6 +5,7 @@ import {
   editsIn,
   fitHistory,
   imageTokens,
+  isWholePage,
   PROPOSED,
   proposalIn,
   withoutEdits,
@@ -64,4 +65,15 @@ test("chat: a fix comes as find-and-replace blocks, applied with any spacing", (
   });
   expect(applyEdits(page, [{ find: "\\beta", replace: "b" }]).unplaced).toBe(1);
   expect(withoutEdits(answer)).toBe("I replaced it.\n\nand");
+});
+
+test("chat: SEARCH blocks too, and change markers or a piece of the page are never taken as the whole page", () => {
+  const fenced = "C'est corrigé.\n```latex\n<<<<<<< SEARCH\nI\\alpha_i,\n=======\nIc\n>>>>>>> REPLACE\n```";
+  expect(editsIn(fenced)).toEqual([{ find: "I\\alpha_i,", replace: "Ic" }]);
+  expect(proposalIn(fenced)).toBeUndefined(); // the markers' block is a change, not a new page
+  expect(withoutEdits(fenced)).toBe("C'est corrigé.");
+  const page = "x".repeat(1000);
+  expect(isWholePage("one corrected line", page)).toBe(false);
+  expect(isWholePage("y".repeat(900), page)).toBe(true);
+  expect(isWholePage("short", "a short page")).toBe(true);
 });

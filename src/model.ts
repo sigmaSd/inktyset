@@ -342,8 +342,9 @@ export class Model {
           messages,
           stream: true,
           max_tokens: opts.maxTokens,
-          // Qwen's advice: these with thinking, a little more varied without
-          temperature: opts.think ? 0.6 : 0.7,
+          // Qwen's advice with thinking; without, steadier than its advice (0.7): the chat's fixes must keep to
+          // the change format, and at 0.7 one try in three didn't (tested, 2026-11-13)
+          temperature: opts.think ? 0.6 : 0.3,
           top_p: opts.think ? 0.95 : 0.8,
           top_k: 20,
           chat_template_kwargs: { enable_thinking: opts.think },

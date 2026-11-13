@@ -18,6 +18,7 @@ import {
   chatInstructions,
   editsIn,
   fitHistory,
+  isWholePage,
   imageTokens,
   proposalIn,
   textTokens,
@@ -859,7 +860,7 @@ export class Core {
         const r = applyEdits(body, edits);
         proposal = r.text;
         if (r.unplaced) answer.unplaced = r.unplaced;
-      }
+      } else if (proposal !== undefined && !isWholePage(proposal, body)) proposal = undefined; // a piece, not the page
       if (proposal !== undefined && proposal.trim() !== body.trim()) answer.proposal = proposal;
     } catch (e) {
       if (abort.signal.aborted)
