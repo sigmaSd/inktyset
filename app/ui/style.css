@@ -1013,6 +1013,14 @@ button.icon svg {
   min-height: 0;
   margin-top: 4px;
 }
+/* the notes grow with their text (3 to 12 lines, then scroll): all of them in view, whatever the dialog redraws */
+#settingsBody textarea#setNotes {
+  field-sizing: content;
+  min-height: calc(3lh + 22px);
+  max-height: calc(12lh + 22px);
+  overflow-y: auto;
+  resize: none;
+}
 #settingsBody textarea.prompt {
   min-height: 260px;
   font-size: 12px;
