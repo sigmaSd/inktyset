@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# hand2tex from this checkout (what the menu entry runs): rebuilds first when the code changed since the last
+# Inktyset from this checkout (what the menu entry runs): rebuilds first when the code changed since the last
 # build, so the menu always starts the current code. Arguments go to the app (--dev, --no-window).
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/.."

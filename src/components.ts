@@ -1,4 +1,4 @@
-// What hand2tex downloads on first use, pinned and checksummed: the engine (llama.cpp's server, the
+// What Inktyset downloads on first use, pinned and checksummed: the engine (llama.cpp's server, the
 // build for this system), the model (two files), and Tectonic (a self-contained LaTeX, only when no working
 // TeX is installed). Downloads resume after an interruption and are checked (SHA-256) before use.
 

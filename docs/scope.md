@@ -1,11 +1,11 @@
-# What hand2tex is for (decided 2026-11-13)
+# What Inktyset is for (decided 2026-11-13)
 
 **Handwritten pages in, a typeset document you can trust out. Math first; other handwriting welcome.**
 
 ## Why not "photo in, text out"
 
-Any chat model or OCR tool turns one photo into text. On that alone hand2tex would lose: bigger models in the
-cloud read better. What they don't give, and what hand2tex is built around, is the path from a *stack* of
+Any chat model or OCR tool turns one photo into text. On that alone Inktyset would lose: bigger models in the
+cloud read better. What they don't give, and what Inktyset is built around, is the path from a *stack* of
 handwritten pages to a document you can rely on:
 
 - **Batch, private:** hundreds of pages read in order, overnight if needed, on your own computer.
@@ -18,7 +18,7 @@ handwritten pages to a document you can rely on:
 
 ## Inputs
 
-Mathematics is the hardest case and the reason to choose hand2tex, so it leads: the instructions, the
+Mathematics is the hardest case and the reason to choose Inktyset, so it leads: the instructions, the
 completion, the preamble are math-first. Other handwriting (prose, lecture notes, lists, tables) is read too,
 and should come out as clean LaTeX without math markup where there is no math.
 
@@ -35,6 +35,6 @@ Not plain text or HTML: nothing to check them against, and that is generic OCR.
 
 ## Name
 
-"hand2tex" no longer fits once Typst arrives. The name should say the outcome (a clean, typeset copy of your
-notes), not the input or one format. To pick before the first public release, when renaming is still cheap
-(package and product name, app ID, data folders with migration, menu entry, README, repository).
+**Inktyset** (from ink and typeset; chosen 2026-11-13). The app was first called hand2tex, which stopped fitting
+once Typst output was planned: the name says the outcome, not one format. Its folders move over on first start
+of Inktyset (`src/migrate.ts`).

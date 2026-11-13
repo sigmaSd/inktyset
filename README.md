@@ -1,12 +1,12 @@
-# hand2tex
+# Inktyset
 
 Turn handwritten pages into a typeset document you can trust, on your own computer. Math first; other
 handwriting (prose, lecture notes, lists, tables) works too.
 
-Add photos, scans or PDFs of your notes. hand2tex reads each page with a local vision model and shows the
+Add photos, scans or PDFs of your notes. Inktyset reads each page with a local vision model and shows the
 scan next to the LaTeX and a compiled preview, so you can proofread and fix it page by page, then copy the
 LaTeX into your document. Nothing you add leaves your computer. Typst output is planned; see
-[docs/scope.md](docs/scope.md) for what hand2tex is (and isn't) for.
+[docs/scope.md](docs/scope.md) for what Inktyset is (and isn't) for.
 
 - **Pages in:** drag in photos or PDFs, scan with a scanner (Linux, macOS), or send photos from your phone
   with [Folder Camera](https://github.com/sigmaSd/folder-camera) (optional, off by default).
@@ -23,10 +23,10 @@ LaTeX into your document. Nothing you add leaves your computer. Typst output is 
 - About 8 GB of free memory for the model.
 - A graphics chip with Vulkan (Linux, Windows) or Apple Silicon (Metal) for speed: a page then takes a minute
   or two. Without one, the processor reads it, much more slowly.
-- On first start hand2tex downloads the engine
+- On first start Inktyset downloads the engine
   ([llama.cpp](https://github.com/ggml-org/llama.cpp), about 36 MB) and the model
   ([Qwen3.5 9B](https://huggingface.co/unsloth/Qwen3.5-9B-GGUF), 6.6 GB; Apache-2.0). Downloads resume after
-  an interruption and are checked before use. If you already have the model files, point hand2tex to them.
+  an interruption and are checked before use. If you already have the model files, point Inktyset to them.
 
 ## Development
 
@@ -35,17 +35,17 @@ Electron, TypeScript and [Vite+](https://viteplus.dev) (`vp`), with pnpm.
 ```sh
 vp install          # dependencies
 vp run dev          # build and start, printing a link that opens the window in a normal browser
-bin/hand2tex        # start from this checkout, rebuilding first if the code changed
+bin/inktyset        # start from this checkout, rebuilding first if the code changed
 vp lint             # lint and type-check
 vp run dist         # installers for this system, into dist/packages/
 ```
 
-- `src/`: hand2tex itself (pages, queue, model, LaTeX, downloads, phone, scanner) and the local server the
+- `src/`: Inktyset itself (pages, queue, model, LaTeX, downloads, phone, scanner) and the local server the
   window talks to.
 - `shell/electron/`: the Electron shell (windows, dialogs, the hidden window that renders images and PDFs).
 - `app/ui/`: the window.
 
-`HAND2TEX_DATA` and `HAND2TEX_USERDATA` move the pages folder and the app's own files, for testing;
+`INKTYSET_DATA` and `INKTYSET_USERDATA` move the pages folder and the app's own files, for testing;
 `--no-window` starts without opening the window.
 
 ## License

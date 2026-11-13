@@ -1,7 +1,7 @@
 // The window's way in: a small HTTP server on 127.0.0.1 (a random port) serving the built pages (app/ui/dist),
-// the pages' images, a JSON API and a stream of change notices. Only hand2tex's own windows can use it: they
+// the pages' images, a JSON API and a stream of change notices. Only Inktyset's own windows can use it: they
 // carry a secret cookie that the shell sets (src/guard.ts; --dev prints a link that sets it in a normal browser).
-// Changes come only as POSTs with an X-Hand2tex header from the same origin, so no web page can make them.
+// Changes come only as POSTs with an X-Inktyset header from the same origin, so no web page can make them.
 
 import { randomBytes } from "node:crypto";
 import { createReadStream, existsSync, statSync } from "node:fs";
@@ -207,7 +207,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
     }
     if (path === "/api/save-document") {
       const text = fullDocument(await lib.doneBodies(), lib.settings.language);
-      const saved = await core.shell.saveFile("hand2tex.tex", text);
+      const saved = await core.shell.saveFile("inktyset.tex", text);
       return { path: saved };
     }
     if (path === "/api/phone/pair") return (await core.phone.pair(), { ok: true });
@@ -256,7 +256,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
     void (async () => {
       const url = new URL(req.url ?? "/", "http://x");
       const path = url.pathname;
-      const refused = guard(req, secret, port); // src/guard.ts: only hand2tex's own windows
+      const refused = guard(req, secret, port); // src/guard.ts: only Inktyset's own windows
       if (refused) {
         res.writeHead(refused.status, refused.headers);
         return void res.end(refused.body);
@@ -264,7 +264,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
 
       if (req.method === "POST") {
         // our own pages send this header: a plain form from elsewhere can't
-        if (req.headers["x-hand2tex"] !== "1") return send(res, 403, { error: "Access refused" });
+        if (req.headers["x-inktyset"] !== "1") return send(res, 403, { error: "Access refused" });
         try {
           return send(res, 200, await post(path, req));
         } catch (e) {

@@ -1,5 +1,5 @@
 // Photos from a phone running Folder Camera (optional, off unless turned on in Settings): Folder Camera's
-// receiver engine, inside hand2tex with its own pairing, so a Folder Camera receiver you run separately is never
+// receiver engine, inside Inktyset with its own pairing, so a Folder Camera receiver you run separately is never
 // touched. Photos arrive in <data>/phone/; each new one becomes a page.
 
 import { readdir, stat } from "node:fs/promises";

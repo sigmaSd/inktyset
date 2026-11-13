@@ -1,5 +1,5 @@
 // What the model is asked, how its answer is cleaned, and the LaTeX around a page for the preview.
-// (Ported from the first, Python version: hand2tex.py.)
+// (Ported from the first, Python version, when the app was still called hand2tex.)
 
 // Math first (docs/scope.md): the math rules lead; other handwriting (prose, notes, lists, tables) is read too.
 export const PROMPT = String.raw`Transcribe this handwritten page into LaTeX body content. It is usually mathematics, but it may also be prose, notes, lists or tables.

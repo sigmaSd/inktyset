@@ -1,4 +1,4 @@
-// hand2tex itself, without its window: the pages, the queue that reads them one at a time, previews, the
+// Inktyset itself, without its window: the pages, the queue that reads them one at a time, previews, the
 // downloads a first start needs, the settings, the phone and the scanner. The Electron shell gives it a
 // Renderer (Chromium's image and PDF decoding, in a hidden window) and its dialogs; the window talks to it
 // through server.ts.

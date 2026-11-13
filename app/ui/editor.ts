@@ -30,7 +30,7 @@ import {
 } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
 
-/** A change made by hand2tex (a page loaded), not by typing: not saved back. */
+/** A change made by Inktyset (a page loaded), not by typing: not saved back. */
 const external = Annotation.define<boolean>();
 
 /** Colours from style.css (--hl-*), so they follow light and dark mode. */

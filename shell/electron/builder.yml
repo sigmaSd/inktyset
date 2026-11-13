@@ -1,11 +1,11 @@
-# Packaging hand2tex (`vp run dist`, after `vp build` and `vp pack`): electron-builder, into dist/packages/.
+# Packaging Inktyset (`vp run dist`, after `vp build` and `vp pack`): electron-builder, into dist/packages/.
 # The package holds Electron, the bundled main process (dist/app/), the built window (app/ui/dist/) and the
 # icon — no node_modules: everything is bundled. The engine (llama.cpp), the model and Tectonic are not in it:
-# hand2tex downloads them on first start (src/components.ts), so the installers stay small.
+# Inktyset downloads them on first start (src/components.ts), so the installers stay small.
 # Linux packages are built on Linux; Windows and macOS ones on those systems (or in CI, one runner each).
 
-appId: io.github.sigmasd.hand2tex
-productName: hand2tex
+appId: io.github.sigmasd.inktyset
+productName: Inktyset
 copyright: Copyright © 2026 Bedis Nbiba — GPL-3.0-or-later
 directories:
   output: dist/packages
@@ -23,25 +23,25 @@ linux:
   target: [AppImage, deb, rpm]
   category: Office
   icon: app/icon.png
-  executableName: hand2tex
+  executableName: inktyset
   maintainer: Bedis Nbiba
   synopsis: Handwritten math to LaTeX, on your own computer
   description: Turn photos and scans of handwritten mathematics into LaTeX. Everything runs on your computer.
-  syncDesktopName: true # the windows belong to hand2tex.desktop (package.json desktopName)
+  syncDesktopName: true # the windows belong to inktyset.desktop (package.json desktopName)
   desktop:
     entry:
-      Name: hand2tex
+      Name: Inktyset
       Comment: Turn photos and scans of handwritten math into LaTeX
       Keywords: latex;math;handwriting;scan;ocr;
 appImage:
-  artifactName: hand2tex-${version}-${arch}.AppImage
+  artifactName: Inktyset-${version}-${arch}.AppImage
 # the current AppImage runtime (libfuse 3 built in), as in MedStation: the old default needs FUSE 2, gone from Fedora
 toolsets:
   appimage: "1.0.3"
 deb:
-  artifactName: hand2tex_${version}_${arch}.deb
+  artifactName: inktyset_${version}_${arch}.deb
 rpm:
-  artifactName: hand2tex-${version}.${arch}.rpm
+  artifactName: inktyset-${version}.${arch}.rpm
 
 win:
   target: nsis
@@ -50,7 +50,7 @@ nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
-  artifactName: hand2tex-${version}-setup.exe
+  artifactName: Inktyset-${version}-setup.exe
 
 mac:
   target: dmg
@@ -61,5 +61,5 @@ mac:
 #   publish:
 #     provider: github
 #     owner: sigmaSd
-#     repo: hand2tex
+#     repo: inktyset
 # and wire electron-updater (as MedStation's shell/electron/updates.ts does).

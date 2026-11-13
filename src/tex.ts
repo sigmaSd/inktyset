@@ -1,6 +1,6 @@
 // Compiling a page for its preview. "Automatic": the TeX installed on this computer when one is found and passes
 // a small test for the language in use (so the preview matches what you compile your thesis with), otherwise
-// Tectonic, a self-contained LaTeX that hand2tex downloads once (it fetches the packages a page needs, then works
+// Tectonic, a self-contained LaTeX that Inktyset downloads once (it fetches the packages a page needs, then works
 // offline). "Installed" and "Built-in" force one or the other.
 
 import { existsSync, readdirSync } from "node:fs";

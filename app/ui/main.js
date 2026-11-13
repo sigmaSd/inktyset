@@ -1,5 +1,5 @@
-// The hand2tex window. It talks to src/server.ts: /api/state for everything shown, /api/events for change
-// notices, POSTs (with the X-Hand2tex header) for every action.
+// The Inktyset window. It talks to src/server.ts: /api/state for everything shown, /api/events for change
+// notices, POSTs (with the X-Inktyset header) for every action.
 import { createLatexEditor } from "./editor.ts";
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -21,7 +21,7 @@ const dirty = new Map(); // id -> timer for unsaved edits
 const cards = new Map(); // id -> {el, key}
 
 async function api(path, body, raw) {
-  const opt = { method: "POST", headers: { "X-Hand2tex": "1" } };
+  const opt = { method: "POST", headers: { "X-Inktyset": "1" } };
   if (raw) {
     opt.body = raw;
     Object.assign(opt.headers, body);
@@ -82,7 +82,7 @@ function connect() {
   es.onmessage = refresh;
   es.onerror = () => {
     es.close();
-    $("#engine").innerHTML = '<span class="dot bad"></span><span>App closed — reopen hand2tex</span>';
+    $("#engine").innerHTML = '<span class="dot bad"></span><span>App closed — reopen Inktyset</span>';
     setTimeout(connect, 3000);
   };
 }
@@ -120,7 +120,7 @@ function renderHeader() {
     if (!known) $("#langOther").value = cur;
   }
   $("#updateBtn").hidden = !S.update;
-  if (S.update) $("#updateBtn").title = `hand2tex ${S.update} is downloaded: restart to use it`;
+  if (S.update) $("#updateBtn").title = `Inktyset ${S.update} is downloaded: restart to use it`;
   const done = S.pages.filter((p) => p.status === "done").length;
   $("#copyAll").disabled = $("#saveTex").disabled = !done;
 }
@@ -250,8 +250,8 @@ function renderSetup() {
   const anyRunning = running("engine") || running("model") || running("verify");
   const total = (su.missing.engine ? su.sizes.engine : 0) + (su.missing.model ? su.sizes.model : 0);
   let html = `<div class="setup-card">
-    <h2>Set up hand2tex</h2>
-    <p>hand2tex reads your pages on this computer, so it needs two downloads, once. Nothing you add ever leaves this computer.
+    <h2>Set up Inktyset</h2>
+    <p>Inktyset reads your pages on this computer, so it needs two downloads, once. Nothing you add ever leaves this computer.
     Pages you add now wait until it's ready.</p>
     ${row("engine", "Engine (llama.cpp)", su.missing.engine)}
     ${row("model", "Model (Qwen3.5 9B vision)", su.missing.model)}`;
@@ -348,7 +348,7 @@ function renderSettings() {
     <h3>Phone</h3>
     <label class="choice"><input type="checkbox" id="setPhone" ${m.phone ? "checked" : ""}>
       <span><b>Receive photos from a phone (Folder Camera)</b>
-      <small>Off by default. When on, hand2tex listens on your Wi-Fi for photos from phones you pair with a QR code.
+      <small>Off by default. When on, Inktyset listens on your Wi-Fi for photos from phones you pair with a QR code.
       ${navigator.userAgent.includes("Windows") ? "Windows will ask once to allow it through the firewall." : ""}</small></span></label>
     ${m.phone && ph.status === "error" ? `<p class="err">${esc(ph.error)}</p>` : ""}
   </section>
@@ -366,7 +366,7 @@ function renderSettings() {
     <p class="note">Model files: ${esc(su.modelDir)}</p>
     <div class="setup-actions">
       <button data-setup="folder">Use model files from another folder…</button>
-      ${su.custom.modelDir ? `<button class="ghost" data-setup="default-model">Use hand2tex's own copy</button>` : ""}
+      ${su.custom.modelDir ? `<button class="ghost" data-setup="default-model">Use Inktyset's own copy</button>` : ""}
     </div>
     ${su.jobs.verify.status === "running" || su.jobs.verify.status === "error" ? `<div class="setup-row"><span class="setup-name">Checking files</span>${jobHtml(su.jobs.verify)}</div>` : ""}
     <label class="field">Your own llama-server (optional)

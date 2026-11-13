@@ -1,10 +1,10 @@
-// hand2tex in Electron. The main process runs hand2tex itself (src/core.ts) and the small server its window
+// Inktyset in Electron. The main process runs Inktyset itself (src/core.ts) and the small server its window
 // talks to (src/server.ts); a hidden window does the image and PDF work with Chromium (render.ts). Closing the
-// window while pages are still waiting keeps hand2tex running until they're read, then it quits.
+// window while pages are still waiting keeps Inktyset running until they're read, then it quits.
 //
 //   --dev        print a link that opens the window's page in a normal browser (for testing)
 //   --no-window  start without opening the window (testing; stop it with Ctrl+C)
-// HAND2TEX_DATA and HAND2TEX_USERDATA move the pages folder and the app's own files (testing).
+// INKTYSET_DATA and INKTYSET_USERDATA move the pages folder and the app's own files (testing).
 
 import { app, type BrowserWindow, dialog, Menu, Notification, session } from "electron";
 import { createWriteStream, mkdirSync, statSync } from "node:fs";
@@ -12,6 +12,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Core } from "../../src/core.ts";
+import { migrateDir } from "../../src/migrate.ts";
 import { cookieName } from "../../src/guard.ts";
 import { type Served, serve } from "../../src/server.ts";
 import { appMenu } from "./menu.ts";
@@ -25,7 +26,7 @@ const DEV = process.argv.includes("--dev");
 const NO_WINDOW = process.argv.includes("--no-window");
 const ICON = join(APP_DIR, "app", "icon.png");
 
-if (process.env.HAND2TEX_USERDATA) app.setPath("userData", process.env.HAND2TEX_USERDATA);
+if (process.env.INKTYSET_USERDATA) app.setPath("userData", process.env.INKTYSET_USERDATA);
 if (app.isPackaged) app.commandLine.appendSwitch("log-level", "3");
 
 let mainWindow: BrowserWindow | null = null;
@@ -39,7 +40,7 @@ function createWindow(served: Served, core: Core) {
     e.preventDefault();
     win.hide();
     const n = core.lib.pages.filter((p) => p.status === "queued" || p.status === "working").length;
-    notify(`Finishing ${n} page${n === 1 ? "" : "s"} in the background. Open hand2tex to watch.`);
+    notify(`Finishing ${n} page${n === 1 ? "" : "s"} in the background. Open Inktyset to watch.`);
     const off = core.lib.onChange(() => {
       if (core.lib.busy() || win.isVisible()) return;
       off();
@@ -68,7 +69,7 @@ function journal() {
   }
   mkdirSync(app.getPath("userData"), { recursive: true });
   const out = createWriteStream(path, { flags: big ? "w" : "a" });
-  out.write(`\n--- ${new Date().toISOString()} hand2tex ${app.getVersion()}\n`);
+  out.write(`\n--- ${new Date().toISOString()} Inktyset ${app.getVersion()}\n`);
   for (const level of ["log", "warn", "error"] as const) {
     const print = console[level].bind(console);
     console[level] = (...args: unknown[]) => {
@@ -79,7 +80,24 @@ function journal() {
 }
 
 function notify(body: string) {
-  if (Notification.isSupported()) new Notification({ title: "hand2tex", body, icon: ICON }).show();
+  if (Notification.isSupported()) new Notification({ title: "Inktyset", body, icon: ICON }).show();
+}
+
+/** The folders of the app's earlier name (hand2tex) move over once (src/migrate.ts). */
+async function migrateFromHand2tex(dataDir: string) {
+  const moves: [string, string, string[]?][] = [];
+  if (!process.env.INKTYSET_DATA) moves.push([join(app.getPath("documents"), "hand2tex"), dataDir]);
+  if (!process.env.INKTYSET_USERDATA) {
+    // only hand2tex's own files: Chromium's caches stay behind
+    const ours = ["settings.json", "components", "phone", "window.json", "engine.log", "journal.log"];
+    moves.push([join(app.getPath("appData"), "hand2tex"), app.getPath("userData"), ours]);
+  }
+  for (const [from, to, only] of moves) {
+    const r = await migrateDir(from, to, only).catch((e: Error) => ({ moved: [], kept: [e.message] }));
+    if (r.moved.length) console.log(`Moved from ${from} to ${to}: ${r.moved.join(", ")}`);
+    if (r.kept.length)
+      console.warn(`Left in ${from} (already in ${to}, or could not move): ${r.kept.join(", ")}`);
+  }
 }
 
 async function main() {
@@ -90,7 +108,8 @@ async function main() {
   ses.setPermissionRequestHandler((_wc, permission, done) => done(allowed.has(permission)));
   ses.setPermissionCheckHandler((_wc, permission) => allowed.has(permission));
 
-  const dataDir = process.env.HAND2TEX_DATA ?? join(app.getPath("documents"), "hand2tex");
+  const dataDir = process.env.INKTYSET_DATA ?? join(app.getPath("documents"), "Inktyset");
+  await migrateFromHand2tex(dataDir);
   const core = new Core(dataDir, app.getPath("userData"));
   const served = await serve(core, join(APP_DIR, "app", "ui", "dist"));
   await ses.cookies.set({
@@ -141,11 +160,11 @@ async function main() {
     mainWindow.show();
     mainWindow.focus();
   });
-  if (DEV) console.log(`hand2tex: ${served.origin}/?k=${served.secret}`);
+  if (DEV) console.log(`Inktyset: ${served.origin}/?k=${served.secret}`);
   if (!NO_WINDOW) mainWindow = createWindow(served, core);
 }
 
-if (!app.requestSingleInstanceLock()) app.quit(); // one hand2tex: a second launch brings the first forward
+if (!app.requestSingleInstanceLock()) app.quit(); // one Inktyset: a second launch brings the first forward
 else {
   app.on("window-all-closed", () => {
     /* the hidden renderer window stays: quitting is decided above */
@@ -155,7 +174,7 @@ else {
     .then(main)
     .catch((e: Error) => {
       console.error(e);
-      dialog.showErrorBox("hand2tex", `hand2tex could not start: ${e.message}`);
+      dialog.showErrorBox("Inktyset", `Inktyset could not start: ${e.message}`);
       app.quit();
     });
 }

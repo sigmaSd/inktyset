@@ -1,4 +1,4 @@
-// hand2tex's window in Electron, as in MedStation's shell/electron/windows.ts: our own title bar (the page's
+// Inktyset's window in Electron, as in MedStation's shell/electron/windows.ts: our own title bar (the page's
 // header, with the window's buttons drawn over its right end), locked down (no Node in the page, Chromium's
 // sandbox, navigation only within the server, other links in the system browser), and its size and position
 // remembered (userData/window.json).
@@ -74,7 +74,7 @@ export function openWindow(origin: string, icon: string): BrowserWindow {
     ...(place ? { x: place.x, y: place.y, width: place.width, height: place.height } : {}),
     minWidth: 960, // the header (the title bar) keeps its controls on one line
     minHeight: 500,
-    title: "hand2tex",
+    title: "Inktyset",
     icon,
     show: false,
     backgroundColor: background(),

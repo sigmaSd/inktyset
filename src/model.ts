@@ -1,5 +1,5 @@
 // The engine that reads the pages: llama.cpp's server with the vision model, on a free port of 127.0.0.1, started by
-// hand2tex and stopped with it. Its program is the downloaded one (components/engine) unless a path is set in
+// Inktyset and stopped with it. Its program is the downloaded one (components/engine) unless a path is set in
 // the settings (someone with their own llama.cpp build); the model files likewise (components/model, or a
 // folder chosen in the settings).
 
@@ -37,7 +37,7 @@ export class Model {
   #proc: ChildProcess | null = null;
   #url = "";
   #starting: Promise<void> | null = null;
-  /** Only hand2tex may use the engine (a web page could otherwise reach 127.0.0.1). */
+  /** Only Inktyset may use the engine (a web page could otherwise reach 127.0.0.1). */
   readonly #key = randomBytes(24).toString("hex");
   readonly #base: string;
   readonly #changed: () => void;
@@ -155,7 +155,7 @@ export class Model {
     return join(this.#base, "engine.pid");
   }
 
-  /** A server left running by a hand2tex that crashed: stop it (only if it's the program we started). */
+  /** A server left running by a Inktyset that crashed: stop it (only if it's the program we started). */
   async #killStale() {
     try {
       const [pid, bin] = (await readFile(this.#pidFile(), "utf8")).split("\n");

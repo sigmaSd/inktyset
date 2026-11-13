@@ -1,10 +1,10 @@
 // Automatic updates (electron-updater), as in MedStation's shell/electron/updates.ts: checked at launch and once
 // a day, downloaded in the background and verified (sha512), then the window offers "Restart to update": never
-// a restart in the middle of proofreading; otherwise it's installed when hand2tex is closed. On Linux only the
+// a restart in the middle of proofreading; otherwise it's installed when Inktyset is closed. On Linux only the
 // AppImage replaces itself (no root); .deb and .rpm are updated by the system's package manager.
 //
 // Where updates come from: electron-builder's `publish` (shell/electron/builder.yml, still commented out until
-// the public repository has releases) writes app-update.yml into the package; or HAND2TEX_UPDATE_URL, a folder
+// the public repository has releases) writes app-update.yml into the package; or INKTYSET_UPDATE_URL, a folder
 // on a web server (the "generic" provider). Neither: no updates, nothing asked.
 
 import { app } from "electron";
@@ -19,8 +19,8 @@ const DAY = 24 * 60 * 60 * 1000;
 function updatable() {
   if (!app.isPackaged) return false;
   if (process.platform === "linux" && !process.env.APPIMAGE) return false; // .deb/.rpm: the package manager's job
-  if (process.env.HAND2TEX_UPDATE_URL) {
-    autoUpdater.setFeedURL({ provider: "generic", url: process.env.HAND2TEX_UPDATE_URL });
+  if (process.env.INKTYSET_UPDATE_URL) {
+    autoUpdater.setFeedURL({ provider: "generic", url: process.env.INKTYSET_UPDATE_URL });
     return true;
   }
   return existsSync(join(process.resourcesPath, "app-update.yml"));

@@ -1,6 +1,6 @@
 # Third-party notices
 
-hand2tex is free software under the GNU General Public License, version 3 or later ([LICENSE](LICENSE)). It
+Inktyset is free software under the GNU General Public License, version 3 or later ([LICENSE](LICENSE)). It
 is built on the work of others, listed here with their licenses. Each package's full license text is in its
 own distribution (and in `node_modules/<package>/` in a checkout).
 
@@ -33,7 +33,7 @@ files ship inside every installer (`LICENSE`, `LICENSES.chromium.html`).
 
 ## Downloaded on first use
 
-hand2tex downloads these from their publishers when it needs them (checked against pinned SHA-256 sums); they
+Inktyset downloads these from their publishers when it needs them (checked against pinned SHA-256 sums); they
 are not part of the installers.
 
 | Component | License | Source |
@@ -47,5 +47,5 @@ own licenses (mostly the LaTeX Project Public License; fonts such as Amiri under
 
 ## Not shipped
 
-Build tools (Vite+, TypeScript, electron-builder and their dependencies) are used to build hand2tex and are
+Build tools (Vite+, TypeScript, electron-builder and their dependencies) are used to build Inktyset and are
 not part of the app.

@@ -1,4 +1,4 @@
-// The hidden page that does hand2tex's image and PDF work (called from shell/electron/render.ts): files are
+// The hidden page that does Inktyset's image and PDF work (called from shell/electron/render.ts): files are
 // fetched from the data folder (/files/...), results returned as base64.
 
 import * as pdfjs from "pdfjs-dist";

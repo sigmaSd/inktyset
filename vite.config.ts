@@ -1,6 +1,6 @@
 // The whole toolchain, through Vite+ (`vp`):
 //   vp build   the window pages (app/ui/*.html and their scripts) → app/ui/dist/
-//   vp pack    Electron's main process (everything hand2tex does), one file → dist/app/electron.mjs
+//   vp pack    Electron's main process (everything Inktyset does), one file → dist/app/electron.mjs
 //   vp check   format (Oxfmt), lint (Oxlint) and type-check (TypeScript 7) — at commit (.vite-hooks/pre-commit)
 //   vp lint    lint and type-check, no formatting: while editing
 //   vp test    the tests (Vitest), tests/*.test.ts

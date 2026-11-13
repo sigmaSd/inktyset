@@ -1,4 +1,4 @@
-// Who may talk to the local server (src/server.ts): only hand2tex's own windows. As in MedStation's src/guard.ts,
+// Who may talk to the local server (src/server.ts): only Inktyset's own windows. As in MedStation's src/guard.ts,
 // for node:http's requests:
 // - Host: requests addressed to 127.0.0.1 / localhost on our port only — a website can't point a name of its
 //   own at this machine (DNS rebinding) and reach the server.
@@ -14,7 +14,7 @@ import type { IncomingMessage } from "node:http";
 export const newSecret = () => randomUUID().replaceAll("-", "");
 
 /** The cookie holding the secret: one per port (cookies ignore ports), so two launches don't overwrite each other. */
-export const cookieName = (port: number) => `hand2tex_${port}`;
+export const cookieName = (port: number) => `inktyset_${port}`;
 
 const HOSTS = ["127.0.0.1", "localhost", "[::1]"];
 const READS = ["GET", "HEAD"];
@@ -45,8 +45,8 @@ const refuse = (req: IncomingMessage, why: string): Refusal =>
         status: 403,
         headers: { "content-type": "text/html; charset=utf-8" },
         body:
-          `<!doctype html><meta charset="utf-8"><title>hand2tex</title>` +
-          `<p style="font:16px sans-serif;margin:3em">hand2tex only opens in its own window: start the app.</p>`,
+          `<!doctype html><meta charset="utf-8"><title>Inktyset</title>` +
+          `<p style="font:16px sans-serif;margin:3em">Inktyset only opens in its own window: start the app.</p>`,
       }
     : {
         status: 403,
