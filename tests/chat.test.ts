@@ -2,6 +2,7 @@ import { expect, test } from "vite-plus/test";
 import {
   applyEdits,
   type ChatMessage,
+  chatInstructions,
   editsIn,
   fitHistory,
   imageTokens,
@@ -87,4 +88,10 @@ test("chat: a change block missing its opening line, in a code block, is still a
   expect(withoutEdits(answer)).toBe(
     'The text "I\\alpha_i," was incorrect and should be the French word "Ic,".',
   );
+});
+
+test("chat: the model is told what the page is typeset with, so it doesn't refuse colour", () => {
+  expect(chatInstructions("latex")).toContain("\\textcolor{red}");
+  expect(chatInstructions("typst")).toContain("#text(fill: red)");
+  expect(chatInstructions("latex", "French")).toContain("language of their last message");
 });

@@ -170,7 +170,12 @@ export function chatInstructions(format: "latex" | "typst", language = "", notes
     "Never put a change block inside a code block, and never give only a part of the page in a code block.",
     "Use one block per change. Only when most of the page changes, give the whole new text in one",
     `\`\`\`${fence} block instead.`,
-    "Answer briefly, in the language they write in, with math between $...$.",
+    "Never say you changed something without giving its change block: only the blocks change the text.",
+    // (it refused colour, guessing the package wasn't there: it is, src/pipeline.ts PACKAGES)
+    format === "typst"
+      ? "The page is typeset with Typst: colour is #text(fill: red)[...]."
+      : "The page is typeset with amsmath, amssymb, amsthm, mathtools and xcolor loaded: \\textcolor{red}{...} works, in text and in math.",
+    "Answer briefly, in the language of their last message (not the page's), with math between $...$.",
     "Keep to what is written on the page: never add content that isn't there.",
     "A word that was read as math is plain text: write it outside $...$.",
     ...(language && language !== "English" ? [`The prose on the page is in ${language}.`] : []),

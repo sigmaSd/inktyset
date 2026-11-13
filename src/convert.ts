@@ -99,9 +99,14 @@ function text(s: string): string {
       text: (x) => text(x),
       mbox: (x) => text(x),
     };
+    const second = name === "textcolor" && arg ? group(s, arg[1]) : null;
     if (wrap[name] && arg) {
       out += wrap[name](arg[0]);
       i = arg[1];
+    } else if (second) {
+      // \textcolor{red}{…} (the page chat can colour text): Typst's #text(fill: …)[…]
+      out += `#text(fill: ${typstColor(arg![0])})[${text(second[0])}]`;
+      i = second[1];
     } else if (["label", "index", "vspace", "hspace"].includes(name) && arg) {
       i = arg[1]; // names and spacing, not text: dropped (a Typst label couldn't go on plain text anyway)
     } else if (["noindent", "medskip", "bigskip", "smallskip", "par", "newline", "indent"].includes(name)) {
@@ -219,4 +224,33 @@ export function latexToTypst(body: string): string {
     i = end;
   }
   return out.replace(/\n{3,}/g, "\n\n").trim() + "\n";
+}
+
+/** An xcolor colour name in Typst: the same name where Typst has it, else the colour itself, else black. */
+function typstColor(name: string): string {
+  const own = [
+    "red",
+    "blue",
+    "green",
+    "black",
+    "white",
+    "gray",
+    "orange",
+    "purple",
+    "yellow",
+    "olive",
+    "teal",
+    "lime",
+  ];
+  const rgb: Record<string, string> = {
+    brown: "#bf8040",
+    cyan: "#00ffff",
+    magenta: "#ff00ff",
+    darkgray: "#404040",
+    lightgray: "#bfbfbf",
+    pink: "#ffbfbf",
+    violet: "#800080",
+  };
+  const n = name.trim().toLowerCase();
+  return own.includes(n) ? n : rgb[n] ? `rgb("${rgb[n]}")` : "black";
 }

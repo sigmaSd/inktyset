@@ -44,3 +44,8 @@ test("convert: a table", () => {
 test("convert: \\label is dropped, not shown as text", () => {
   expect(latexToTypst("est continue.\\label{def:cont}").trim()).toBe("est continue.");
 });
+
+test("convert: coloured text keeps its colour", () => {
+  expect(latexToTypst("Il est \\textcolor{red}{rouge} ici.")).toBe("Il est #text(fill: red)[rouge] ici.\n");
+  expect(latexToTypst("\\textcolor{brown}{x}")).toBe('#text(fill: rgb("#bf8040"))[x]\n');
+});
