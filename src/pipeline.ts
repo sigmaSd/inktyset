@@ -1,9 +1,12 @@
 // What the model is asked, how its answer is cleaned, and the LaTeX around a page for the preview.
 // (Ported from the first, Python version: hand2tex.py.)
 
-export const PROMPT = String.raw`Transcribe this handwritten mathematics page into LaTeX body content.
+// Math first (docs/scope.md): the math rules lead; other handwriting (prose, notes, lists, tables) is read too.
+export const PROMPT = String.raw`Transcribe this handwritten page into LaTeX body content. It is usually mathematics, but it may also be prose, notes, lists or tables.
 Rules:
-- Transcribe exactly what is written. Do NOT fix, complete, simplify or add steps, even if the math looks wrong.
+- Transcribe exactly what is written. Do NOT fix, complete, simplify or add steps, even if the math looks wrong. Do not correct spelling either.
+- Ordinary text stays plain text: no $...$ around words. Use $...$ only for mathematics.
+- Lists: itemize or enumerate. Tables: tabular.
 - Use \begin{theorem}, \begin{lemma}, \begin{proposition}, \begin{corollary}, \begin{definition}, \begin{remark}, \begin{example}, \begin{proof} where the page clearly uses them.
 - Use \section*/\subsection* for headings, align* for multi-line computations, $...$ for inline math.
 - If a symbol or word is illegible, write \textbf{[??]} in its place. Never guess silently.

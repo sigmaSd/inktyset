@@ -1,10 +1,12 @@
 # hand2tex
 
-Turn photos and scans of handwritten mathematics into LaTeX, on your own computer.
+Turn handwritten pages into a typeset document you can trust, on your own computer. Math first; other
+handwriting (prose, lecture notes, lists, tables) works too.
 
-Add a photo, a scan or a PDF of your notes. hand2tex reads each page with a local vision model and shows the
-scan next to the LaTeX and a compiled preview, so you can proofread and fix it, then copy the LaTeX into your
-document. Nothing you add leaves your computer.
+Add photos, scans or PDFs of your notes. hand2tex reads each page with a local vision model and shows the
+scan next to the LaTeX and a compiled preview, so you can proofread and fix it page by page, then copy the
+LaTeX into your document. Nothing you add leaves your computer. Typst output is planned; see
+[docs/scope.md](docs/scope.md) for what hand2tex is (and isn't) for.
 
 - **Pages in:** drag in photos or PDFs, scan with a scanner (Linux, macOS), or send photos from your phone
   with [Folder Camera](https://github.com/sigmaSd/folder-camera) (optional, off by default).
