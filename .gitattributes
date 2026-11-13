@@ -1,0 +1,3 @@
+# Text files keep LF everywhere: Windows checkouts too (tests compare the translation templates byte for byte,
+# and the .po files are shared with Poedit/Weblate as they are).
+* text=auto eol=lf

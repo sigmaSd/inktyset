@@ -16,9 +16,11 @@ async function catalogs(dir: string) {
   );
 }
 
+const lf = (s: string) => s.replace(/\r\n/g, "\n"); // a Windows checkout without .gitattributes
+
 test("i18n: the templates match the English in the code (run node tools/i18n.ts)", async () => {
-  expect(await readFile(join(APP_LOCALES, "inktyset.pot"), "utf8")).toBe(writePo(appTemplate()));
-  expect(await readFile(join(SITE_LOCALES, "website.pot"), "utf8")).toBe(writePo(await siteTemplate()));
+  expect(lf(await readFile(join(APP_LOCALES, "inktyset.pot"), "utf8"))).toBe(writePo(appTemplate()));
+  expect(lf(await readFile(join(SITE_LOCALES, "website.pot"), "utf8"))).toBe(writePo(await siteTemplate()));
 });
 
 test("i18n: every catalog is merged with its template", async () => {
