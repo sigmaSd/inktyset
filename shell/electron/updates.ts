@@ -3,9 +3,9 @@
 // a restart in the middle of proofreading; otherwise it's installed when Inktyset is closed. On Linux only the
 // AppImage replaces itself (no root); .deb and .rpm are updated by the system's package manager.
 //
-// Where updates come from: electron-builder's `publish` (shell/electron/builder.yml, still commented out until
-// the public repository has releases) writes app-update.yml into the package; or INKTYSET_UPDATE_URL, a folder
-// on a web server (the "generic" provider). Neither: no updates, nothing asked.
+// Where updates come from: electron-builder's `publish` (shell/electron/builder.yml: the GitHub releases of
+// sigmaSd/inktyset) writes app-update.yml into the package; or INKTYSET_UPDATE_URL, a folder on a web server
+// (the "generic" provider), for testing. Neither: no updates, nothing asked.
 
 import { app } from "electron";
 import electronUpdater from "electron-updater";

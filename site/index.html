@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inktyset: handwritten math to LaTeX, on your computer</title>
+    <meta
+      name="description"
+      content="Turn handwritten pages into a typeset LaTeX document you can trust. Math first. Runs on your own computer: Linux, Windows, macOS. Free and open source."
+    />
+    <link rel="icon" href="icon.svg" />
+    <link rel="stylesheet" href="style.css" />
+    <meta property="og:title" content="Inktyset" />
+    <meta
+      property="og:description"
+      content="Handwritten pages in, a typeset document you can trust out. Math first, on your own computer."
+    />
+    <meta
+      property="og:image"
+      content="https://sigmasd.github.io/inktyset/screenshots/compare-formula-light.png"
+    />
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="#"><img src="icon.svg" alt="" width="32" height="32" />Inktyset</a>
+      <nav>
+        <a href="#why">Why</a><a href="#features">Features</a><a href="#download">Download</a
+        ><a href="https://github.com/sigmaSd/inktyset">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <img src="icon.svg" alt="" width="88" height="88" />
+        <h1>Handwritten pages in,<br />a typeset document you can trust out.</h1>
+        <p class="lead">
+          Inktyset reads photos, scans and PDFs of your handwritten math, turns each page into LaTeX, compiles
+          it, and puts the scan next to the result so you can proofread page by page. Everything runs on your
+          own computer.
+        </p>
+        <div class="cta">
+          <a class="button primary" id="primary" href="https://github.com/sigmaSd/inktyset/releases/latest"
+            >Download</a
+          >
+          <span class="note" id="primaryNote">Free and open source · Linux, Windows, macOS</span>
+        </div>
+      </section>
+
+      <figure class="shot">
+        <picture>
+          <source srcset="screenshots/compare-formula-dark.png" media="(prefers-color-scheme: dark)" />
+          <img
+            src="screenshots/compare-formula-light.png"
+            alt="The Compare view: a handwritten formula above its compiled LaTeX, the LaTeX editor on the right"
+            width="1440"
+            height="900"
+          />
+        </picture>
+      </figure>
+
+      <section id="why">
+        <h2>Why not just paste a photo into a chat?</h2>
+        <p>
+          A chat model reads one photo. Inktyset is built for the whole stack of pages, and for trusting the
+          result.
+        </p>
+        <div class="grid">
+          <div>
+            <h3>Batch and private</h3>
+            <p>Hundreds of pages read in order, overnight if needed. Nothing you add leaves your computer.</p>
+          </div>
+          <div>
+            <h3>Proven to compile</h3>
+            <p>Every page is compiled and shown rendered, not just text that looks right.</p>
+          </div>
+          <div>
+            <h3>Proofreading built in</h3>
+            <p>
+              Scan and rendered page side by side with linked zoom, <code>[??]</code> where the model couldn't
+              read, a “checked” mark per page.
+            </p>
+          </div>
+          <div>
+            <h3>Faithful</h3>
+            <p>
+              The model is told never to fix your math or complete steps. Chat models happily “correct” it.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <figure class="shot">
+        <picture>
+          <source srcset="screenshots/list-dark.png" media="(prefers-color-scheme: dark)" />
+          <img
+            src="screenshots/list-light.png"
+            alt="The page list: scans, their LaTeX in a highlighting editor, and compiled previews"
+            width="1440"
+            height="900"
+            loading="lazy"
+          />
+        </picture>
+      </figure>
+
+      <section id="features">
+        <h2>Features</h2>
+        <ul class="features">
+          <li>
+            <b>Pages in:</b> drag in photos or PDFs, scan with a scanner (Linux, macOS), or send photos from
+            your phone with <a href="https://github.com/sigmaSd/folder-camera">Folder Camera</a> (optional).
+          </li>
+          <li>
+            <b>A real LaTeX editor:</b> highlighting, matching brackets, search, completion of commands and
+            environments.
+          </li>
+          <li>
+            <b>Compare view:</b> one above the other for a formula, side by side for a full page; Enter marks
+            a page checked and moves on.
+          </li>
+          <li>
+            <b>Languages:</b> English by default; French, Arabic (right to left), German, Spanish, Italian,
+            Portuguese, Turkish or any other for the prose. Nothing is translated.
+          </li>
+          <li>
+            <b>Your LaTeX or ours:</b> the preview uses the TeX installed on your computer when it works,
+            otherwise a built-in one (Tectonic), downloaded once.
+          </li>
+          <li>
+            <b>Math first, not only math:</b> prose, lecture notes, lists and tables come out as clean LaTeX
+            too. Typst output is planned.
+          </li>
+        </ul>
+      </section>
+
+      <section id="download">
+        <h2>Download</h2>
+        <p class="note" id="version">
+          Latest release on <a href="https://github.com/sigmaSd/inktyset/releases/latest">GitHub</a>.
+        </p>
+        <div class="downloads">
+          <div class="os" data-os="linux">
+            <h3>Linux</h3>
+            <div class="links" id="dl-linux">
+              <a href="https://github.com/sigmaSd/inktyset/releases/latest">Releases page</a>
+            </div>
+          </div>
+          <div class="os" data-os="windows">
+            <h3>Windows</h3>
+            <div class="links" id="dl-windows">
+              <a href="https://github.com/sigmaSd/inktyset/releases/latest">Releases page</a>
+            </div>
+          </div>
+          <div class="os" data-os="mac">
+            <h3>macOS</h3>
+            <div class="links" id="dl-mac">
+              <a href="https://github.com/sigmaSd/inktyset/releases/latest">Releases page</a>
+            </div>
+          </div>
+        </div>
+
+        <h3>Requirements</h3>
+        <ul>
+          <li>About <b>8 GB of free memory</b> for the model.</li>
+          <li>
+            A <b>graphics chip</b> with Vulkan (Linux, Windows) or Apple Silicon for speed: a page then takes
+            a minute or two. Without one, the processor reads it, much more slowly. Inktyset checks your
+            computer and tells you what to expect.
+          </li>
+          <li>
+            On first start Inktyset downloads the engine (llama.cpp, 36 MB) and the model (Qwen3.5 9B, 6.6
+            GB), checked before use. Already have the model files? Point Inktyset to them.
+          </li>
+        </ul>
+
+        <h3>Opening it the first time</h3>
+        <p>The installers aren't signed with a paid certificate, so your system asks once:</p>
+        <ul>
+          <li>
+            <b>Windows:</b> if SmartScreen says “Windows protected your PC”, click <i>More info</i>, then
+            <i>Run anyway</i>.
+          </li>
+          <li>
+            <b>macOS:</b> open the .dmg and drag Inktyset to Applications. The first time, right-click it and
+            choose <i>Open</i> (or System Settings → Privacy &amp; Security → <i>Open Anyway</i>). If macOS
+            says the app “is damaged”, run
+            <code>xattr -dr com.apple.quarantine /Applications/Inktyset.app</code> in Terminal.
+          </li>
+          <li>
+            <b>Linux:</b> AppImage: make it executable (<code>chmod +x Inktyset-*.AppImage</code>) and run it;
+            it updates itself. Or install the .deb / .rpm with your package manager.
+          </li>
+        </ul>
+      </section>
+
+      <section id="privacy">
+        <h2>Privacy</h2>
+        <p>
+          Your pages are read on your computer and stay there. Inktyset only goes online to download its
+          engine and model (from GitHub and Hugging Face), Tectonic and the LaTeX packages it needs if you
+          have no LaTeX, and to check for updates (GitHub). No accounts, no tracking. Phone sending is off
+          unless you turn it on, and then works only on your own Wi-Fi.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Inktyset is free software under the
+        <a href="https://github.com/sigmaSd/inktyset/blob/main/LICENSE">GPL-3.0</a>. Built on llama.cpp, Qwen,
+        Tectonic, PDF.js, CodeMirror and Electron (<a
+          href="https://github.com/sigmaSd/inktyset/blob/main/THIRD_PARTY_NOTICES.md"
+          >notices</a
+        >). · <a href="https://github.com/sigmaSd/inktyset">Source</a> ·
+        <a href="https://github.com/sigmaSd/inktyset/issues">Report a problem</a>
+      </p>
+    </footer>
+    <script src="downloads.js"></script>
+  </body>
+</html>

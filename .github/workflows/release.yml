@@ -1,0 +1,72 @@
+# A v* tag: the installers for every system, attached to that tag's GitHub release, with the latest*.yml files
+# automatic updates read (shell/electron/builder.yml `publish`). Not signed (see builder.yml); macOS ad-hoc.
+name: Release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: The tag matches package.json's version
+        run: |
+          v=$(node -p "require('./package.json').version")
+          test "${GITHUB_REF_NAME}" = "v$v" || { echo "tag ${GITHUB_REF_NAME} ≠ package.json v$v"; exit 1; }
+      - name: Create the release (the build jobs upload into it)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Inktyset ${GITHUB_REF_NAME#v}" --generate-notes
+
+  build:
+    needs: release
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: linux-x64, os: ubuntu-24.04, args: "--linux AppImage deb rpm --x64" }
+          - { name: windows-x64, os: windows-2025, args: "--win nsis --x64" }
+          # both chips in one job: one latest-mac.yml listing both (two jobs would overwrite each other's)
+          - { name: macos, os: macos-15, args: "--mac dmg zip --arm64 --x64" }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: rpm tools (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y rpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec vp test
+      - run: pnpm exec vp build
+      - run: pnpm exec vp pack
+      - name: Package and upload
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: pnpm exec electron-builder --config shell/electron/builder.yml ${{ matrix.args }} --publish always
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: packages-${{ matrix.name }}
+          path: |
+            dist/packages/*.AppImage
+            dist/packages/*.deb
+            dist/packages/*.rpm
+            dist/packages/*.exe
+            dist/packages/*.dmg
+            dist/packages/*.zip
+            dist/packages/latest*.yml
+          retention-days: 14

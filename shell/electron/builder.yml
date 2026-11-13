@@ -53,13 +53,20 @@ nsis:
   artifactName: Inktyset-${version}-setup.exe
 
 mac:
-  target: dmg
+  target: [dmg, zip] # the zip is what automatic updates download
   category: public.app-category.education
   icon: app/icon.png
+  # Not signed with a developer certificate (users open it once with right-click → Open; the website says how).
+  # Ad-hoc signed ("-") because Apple Silicon refuses to run an app with no signature at all; without the
+  # hardened runtime, which with an ad-hoc signature rejects Electron's own frameworks (electron-builder's docs).
+  identity: "-"
+  hardenedRuntime: false
 
-# Automatic updates: once the public repository has releases, add
-#   publish:
-#     provider: github
-#     owner: sigmaSd
-#     repo: inktyset
-# and wire electron-updater (as MedStation's shell/electron/updates.ts does).
+# Automatic updates (shell/electron/updates.ts) and the website's download buttons read the GitHub releases.
+# CI (.github/workflows/release.yml) builds each system's packages for a v* tag and uploads them there, with
+# the latest*.yml files electron-updater reads.
+publish:
+  provider: github
+  owner: sigmaSd
+  repo: inktyset
+  releaseType: release
