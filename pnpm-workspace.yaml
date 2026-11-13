@@ -1,0 +1,63 @@
+# pnpm's settings (supply-chain safety, as in MedStation):
+# - a version published less than 3 days ago is not installed (time for a bad release to be caught);
+# - dependencies' install scripts don't run unless allowed here — none is needed (Electron fetches its
+#   runtime on first use).
+minimumReleaseAge: 4320
+allowBuilds:
+  electron-winstaller: false # Windows Squirrel installers: not used (NSIS)
+
+# Vite+ bundles Vite and Vitest: packages asking for them get those same copies (vp toolchain lists them)
+overrides:
+  vite@*: "catalog:"
+  vitest@*: "catalog:"
+catalog:
+  vite: npm:@voidzero-dev/vite-plus-core@1.4.0
+  vite-plus: 1.4.0
+  vitest: 5.0.5 # the one vite-plus bundles (vp toolchain vitest)
+peerDependencyRules:
+  allowAny:
+    - vite
+  allowedVersions:
+    vite: "*"
+minimumReleaseAgeExclude:
+  - vite-plus
+  - "@voidzero-dev/*"
+  - oxlint
+  - "@oxlint/*"
+  - oxlint-tsgolint
+  - "@oxlint-tsgolint/*"
+  - oxfmt
+  - "@oxfmt/*"
+  - vitest
+  - "@vitest/*"
+
+# `vp update --latest` takes every package to its latest major — except @types/node: it describes the Node
+# inside Electron (24 today) and moves only when Electron's does
+updateConfig:
+  ignoreDependencies:
+    - "@types/node"
+    # Vite+ and the Vite and Vitest it bundles move together, with `vp migrate` (one by one, the vite alias
+    # stayed behind)
+    - vite-plus
+    - vite
+    - vitest
+
+# Known and checked, muted so that anything new stands out (exact versions: a newer one would warn again).
+# Deprecated, not dangerous here: old dependencies of Electron's own packaging tools (via electron-builder:
+# @electron/get, @electron/asar, electron-winstaller), which only run while `vp run dist` builds a package —
+# and lodash.isequal, in electron-updater: unmaintained, not broken.
+allowedDeprecatedVersions:
+  boolean: 3.2.0
+  glob: 7.2.3
+  inflight: 1.0.6
+  lodash.isequal: 4.5.0
+  rimraf: 2.6.3
+auditConfig:
+  ignoreGhsas:
+    # sprintf-js (moderate, no fixed version): reached only through electron-builder's Electron downloader
+    # (@electron/get → global-agent → roarr), formatting its own log lines while a package is built — not in the app
+    - GHSA-hp3w-g68c-fv3c
+    # minimatch (moderate, fixed only in 11): reached only through electron-builder's packaging tools
+    # (app-builder-lib, @electron/asar, @electron/universal…), matching its own config's patterns while a package is
+    # built — not in the app
+    - GHSA-g3hv-75wg-m249

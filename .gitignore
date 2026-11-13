@@ -1,11 +1,14 @@
-# model weights (download again, see start-server.sh)
+# dependencies and build output
+node_modules/
+dist/
+app/ui/dist/
+# model weights for running from this checkout (the app downloads its own copy)
 models/
-# generated output
+# generated test output
 test/out/
 test/in/
-__pycache__/
-*.aux
-*.log
-*.pdf
-# installed by app.py on first start (npm ci)
-app/receiver/node_modules/
+.vitest/
+# LaTeX build leftovers next to test sources
+test/src/*.aux
+test/src/*.log
+test/src/*.pdf

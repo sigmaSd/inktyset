@@ -1,0 +1,51 @@
+# hand2tex
+
+Turn photos and scans of handwritten mathematics into LaTeX, on your own computer.
+
+Add a photo, a scan or a PDF of your notes. hand2tex reads each page with a local vision model and shows the
+scan next to the LaTeX and a compiled preview, so you can proofread and fix it, then copy the LaTeX into your
+document. Nothing you add leaves your computer.
+
+- **Pages in:** drag in photos or PDFs, scan with a scanner (Linux, macOS), or send photos from your phone
+  with [Folder Camera](https://github.com/sigmaSd/folder-camera) (optional, off by default).
+- **Proofreading:** a Compare view shows the scan and the preview together (stacked for single formulas,
+  side by side for full pages) with linked zoom and scrolling, the editor beside them, and a "checked" mark
+  per page with a counter.
+- **Languages:** English by default; French, Arabic, German, Spanish, Italian, Portuguese, Turkish, or any
+  other language for the prose. The math is unaffected and nothing is translated.
+- **LaTeX:** the preview uses the LaTeX installed on your computer when it works (TeX Live, MiKTeX, MacTeX),
+  otherwise a built-in one ([Tectonic](https://tectonic-typesetting.github.io)) downloaded once.
+
+## Requirements
+
+- About 8 GB of free memory for the model.
+- A graphics chip with Vulkan (Linux, Windows) or Apple Silicon (Metal) for speed: a page then takes a minute
+  or two. Without one, the processor reads it, much more slowly.
+- On first start hand2tex downloads the reading engine
+  ([llama.cpp](https://github.com/ggml-org/llama.cpp), about 36 MB) and the model
+  ([Qwen3.5 9B](https://huggingface.co/unsloth/Qwen3.5-9B-GGUF), 6.6 GB; Apache-2.0). Downloads resume after
+  an interruption and are checked before use. If you already have the model files, point hand2tex to them.
+
+## Development
+
+Electron, TypeScript and [Vite+](https://viteplus.dev) (`vp`), with pnpm.
+
+```sh
+vp install          # dependencies
+vp run dev          # build and start, printing a link that opens the window in a normal browser
+bin/hand2tex        # start from this checkout, rebuilding first if the code changed
+vp lint             # lint and type-check
+vp run dist         # installers for this system, into dist/packages/
+```
+
+- `src/`: hand2tex itself (pages, queue, model, LaTeX, downloads, phone, scanner) and the local server the
+  window talks to.
+- `shell/electron/`: the Electron shell (windows, dialogs, the hidden window that renders images and PDFs).
+- `app/ui/`: the window.
+
+`HAND2TEX_DATA` and `HAND2TEX_USERDATA` move the pages folder and the app's own files, for testing;
+`--no-window` starts without opening the window.
+
+## License
+
+GPL-3.0-or-later.

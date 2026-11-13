@@ -1,0 +1,18 @@
+{
+  // Type-checking only (nothing is emitted): Node runs the TypeScript as is (types stripped), Vite bundles the
+  // windows and `vp pack` the main process. Hence erasable syntax only, and imports written with .ts.
+  "compilerOptions": {
+    "target": "es2024",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["es2024", "dom", "dom.iterable", "dom.asynciterable"],
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true
+  },
+  "include": ["src", "shell", "app/ui/*.ts", "tests", "vite.config.ts"]
+}
