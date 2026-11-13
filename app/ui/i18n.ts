@@ -126,10 +126,10 @@ export const UI_SOURCE = {
   savedIn: "Saved in {p}",
   useOtherFolder: "Use another folder…",
   otherFolderHelp:
-    "Inktyset restarts in the folder you pick, with the pages already there, or none. The pages in this folder stay here: you can come back to them.",
-  otherFolders: "Folders used before:",
-  usualFolder: "the usual one",
-  openThisFolder: "Open",
+    "Inktyset restarts in the folder you pick, with the pages already there, or none. The pages in this folder stay here. Inktyset doesn't keep a list of the folders you used.",
+  useUsualFolder: "Back to the usual folder",
+  folderGiven:
+    "This folder was given when Inktyset was started (--folder), for this time only: the next start opens the folder in the settings.",
   folderWhileReading:
     "A page is being read. Inktyset restarts in the other folder now, and reads it when you come back to this one. Go on?",
   about: "About",

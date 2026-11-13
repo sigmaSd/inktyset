@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { expect, test } from "vite-plus/test";
 import { scratch } from "./_env.ts";
-import { pagesFolderIn, rememberFolder } from "../src/folders.ts";
+import { folderArg, pagesFolderIn } from "../src/folders.ts";
 
 test("folders: an empty folder or one with pages is used as it is, any other gets an Inktyset folder", async () => {
   const empty = scratch("folders-empty");
@@ -19,8 +19,15 @@ test("folders: an empty folder or one with pages is used as it is, any other get
   expect(await pagesFolderIn(documents)).toBe(join(resolve(documents), "Inktyset"));
 });
 
-test("folders: the one left comes first, the one opened is not offered, a few are kept", () => {
-  expect(rememberFolder(["/b", "/c"], "/a", "/c")).toEqual(["/a", "/b"]);
-  expect(rememberFolder(["/a", "/b"], "/b", "/z")).toEqual(["/b", "/a"]);
-  expect(rememberFolder(["/1", "/2", "/3", "/4", "/5", "/6"], "/0", "/x")).toHaveLength(6);
+test("folders: --folder opens a folder for one run; the other arguments are kept to start again without it", () => {
+  const cwd = resolve("/home/me");
+  expect(folderArg(["--dev", "--folder=private/pages"], cwd)).toEqual({
+    folder: resolve(cwd, "private/pages"),
+    rest: ["--dev"],
+  });
+  expect(folderArg(["--folder", "/srv/ink", "--no-window"], cwd)).toEqual({
+    folder: resolve("/srv/ink"),
+    rest: ["--no-window"],
+  });
+  expect(folderArg(["--dev"], cwd)).toEqual({ folder: undefined, rest: ["--dev"] });
 });

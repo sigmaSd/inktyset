@@ -4,6 +4,7 @@
 //
 //   --dev        print a link that opens the window's page in a normal browser (for testing)
 //   --no-window  start without opening the window (testing; stop it with Ctrl+C)
+//   --folder=<path>  keep the pages in this folder, for this run only (src/folders.ts)
 // INKTYSET_DATA and INKTYSET_USERDATA move the pages folder and the app's own files (testing). The pages folder
 // chosen in Settings (src/folders.ts) wins over INKTYSET_DATA only when INKTYSET_USERDATA is set too: a test
 // with its own pages folder never opens the folder chosen in the real settings.
@@ -15,6 +16,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Core } from "../../src/core.ts";
 import { msg } from "../../src/i18n.ts";
+import { folderArg } from "../../src/folders.ts";
 import { migrateDir } from "../../src/migrate.ts";
 import { cookieName } from "../../src/guard.ts";
 import { type Served, serve } from "../../src/server.ts";
@@ -28,6 +30,8 @@ const APP_DIR = fileURLToPath(new URL("../../", import.meta.url));
 const DEV = process.argv.includes("--dev");
 const NO_WINDOW = process.argv.includes("--no-window");
 const ICON = join(APP_DIR, "app", "icon.png");
+/** The arguments after the program (and, unpackaged, the app's folder), and a --folder among them. */
+const ARGS = folderArg(process.argv.slice(app.isPackaged ? 1 : 2), process.cwd());
 
 if (process.env.INKTYSET_USERDATA) app.setPath("userData", process.env.INKTYSET_USERDATA);
 if (app.isPackaged) app.commandLine.appendSwitch("log-level", "3");
@@ -87,10 +91,15 @@ function notify(body: string) {
 }
 
 /**
- * The pages folder chosen in Settings, when there is one and it can be opened (a removed drive can't): else the
- * usual one, and what went wrong, to tell the user.
+ * The pages folder: the one `given` with --folder; else the one chosen in Settings, when there is one and it can
+ * be opened (a removed drive can't); else the usual one, and what went wrong, to tell the user.
  */
-function pagesFolder(defaultDir: string): [string, { dir: string; error: string }?] {
+function pagesFolder(defaultDir: string, given?: string): [string, { dir: string; error: string }?] {
+  if (given) {
+    // asked for by name: never silently another folder (a failure stops the start, and says why)
+    mkdirSync(given, { recursive: true });
+    return [given];
+  }
   if (process.env.INKTYSET_DATA && !process.env.INKTYSET_USERDATA) return [defaultDir];
   let dir: string | undefined;
   try {
@@ -105,6 +114,12 @@ function pagesFolder(defaultDir: string): [string, { dir: string; error: string 
   } catch (e) {
     return [defaultDir, { dir, error: (e as Error).message }];
   }
+}
+
+/** Start Inktyset again with these arguments: the new one starts once this one has quit (one Inktyset). */
+function restart(args: string[]) {
+  app.relaunch({ args: app.isPackaged ? args : [APP_DIR, ...args] });
+  app.quit();
 }
 
 /** The folders of the app's earlier name (hand2tex) move over once (src/migrate.ts). */
@@ -133,10 +148,11 @@ async function main() {
   ses.setPermissionCheckHandler((_wc, permission) => allowed.has(permission));
 
   const defaultDir = process.env.INKTYSET_DATA ?? join(app.getPath("documents"), "Inktyset");
-  const [dataDir, unavailable] = pagesFolder(defaultDir);
+  const [dataDir, unavailable] = pagesFolder(defaultDir, ARGS.folder);
   if (dataDir === defaultDir) await migrateFromHand2tex(dataDir);
   const core = new Core(dataDir, app.getPath("userData"));
   core.defaultFolder = defaultDir;
+  core.folderGiven = !!ARGS.folder;
   const served = await serve(core, join(APP_DIR, "app", "ui", "dist"));
   await ses.cookies.set({
     url: served.origin,
@@ -179,8 +195,8 @@ async function main() {
     notify,
     installUpdate: installNow,
     relaunch() {
-      app.relaunch(); // the new Inktyset starts once this one has quit (single instance)
-      app.quit();
+      // the folder in the settings now: without the --folder this run was started with
+      restart(ARGS.rest);
     },
   };
   core.appVersion = app.getVersion();
@@ -199,7 +215,13 @@ async function main() {
     renderer.close();
     served.close();
   });
-  app.on("second-instance", () => {
+  app.on("second-instance", (_e, argv, cwd) => {
+    // started again for another folder (the other launcher): this one restarts there
+    // (all of argv: Chromium may put its own switches before the app's folder)
+    const again = folderArg(argv.slice(1), cwd);
+    const wanted = again.folder ?? pagesFolder(defaultDir)[0];
+    if (wanted !== core.lib.dir)
+      return restart(again.folder ? [...ARGS.rest, `--folder=${again.folder}`] : ARGS.rest);
     if (!mainWindow) mainWindow = createWindow(served, core);
     mainWindow.show();
     mainWindow.focus();

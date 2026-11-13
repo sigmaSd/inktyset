@@ -111,10 +111,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         error: core.scanner.error,
       },
       folder: core.lib.dir,
-      folders: {
-        default: core.defaultFolder,
-        recent: core.settings.recentFolders ?? [],
-      },
+      folders: { default: core.defaultFolder, given: core.folderGiven },
       setup: {
         missing: core.missing,
         jobs,
@@ -259,8 +256,8 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       return { ok: true };
     }
     if (path === "/api/folder") {
-      // a folder offered in the settings, or (none given) one the user picks
-      await core.useFolder(body.path === undefined ? undefined : String(body.path));
+      // one the user picks, or the usual one
+      await core.useFolder(body.usual === true);
       return { ok: true };
     }
     if (path === "/api/setup/model-folder") {

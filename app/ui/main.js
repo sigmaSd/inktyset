@@ -483,19 +483,19 @@ $("#settingsBtn").onclick = () => {
   renderSettings();
 };
 $("#settingsClose").onclick = () => $("#settingsDialog").close();
-// Settings → Your pages: the folder they're in, another one (Inktyset restarts there), the ones used before.
+// Settings → Your pages: the folder they're in, and another one (Inktyset restarts there). No list of the
+// folders used before: where private pages are kept stays the user's to remember.
 function foldersHtml() {
   const f = S.folders;
-  const others = [...new Set([...f.recent, f.default])].filter((d) => d && d !== S.folder);
-  const row = (d) => `<div class="file-row">
-      <span class="note"><bdi>${esc(d)}</bdi>${d === f.default ? ` · ${t("usualFolder")}` : ""}</span>
-      <button data-act="openFolder" data-path="${esc(d)}">${t("openThisFolder")}</button></div>`;
   return `<section class="set">
     <h3>${t("yourPages")}</h3>
     <p class="note">${t("savedIn", { p: `<bdi>${esc(S.folder)}</bdi>` })}</p>
-    <div class="setup-actions"><button data-act="pickFolder">${t("useOtherFolder")}</button></div>
+    ${f.given ? `<p class="note">${t("folderGiven")}</p>` : ""}
+    <div class="setup-actions">
+      <button data-act="pickFolder">${t("useOtherFolder")}</button>
+      ${S.folder !== f.default ? `<button data-act="usualFolder">${t("useUsualFolder")}</button>` : ""}
+    </div>
     <p class="note">${t("otherFolderHelp")}</p>
-    ${others.length ? `<p class="note">${t("otherFolders")}</p>${others.map(row).join("")}` : ""}
   </section>`;
 }
 
@@ -1005,10 +1005,10 @@ document.addEventListener("click", async (e) => {
     } else if (act === "versions") {
       const p = S.pages.find((x) => x.id === id);
       openCompare(id, { other: p?.versions?.filter((v) => v.id !== p.current).at(-1)?.id });
-    } else if (act === "pickFolder" || act === "openFolder") {
+    } else if (act === "pickFolder" || act === "usualFolder") {
       const busy = S.pages.some((p) => p.status === "working" || p.trial === "working");
       if (busy && !confirm(t("folderWhileReading"))) return;
-      await api("/api/folder", act === "openFolder" ? { path: b.dataset.path } : {});
+      await api("/api/folder", { usual: act === "usualFolder" });
     } else if (act === "tryOn") openTrial();
     else if (act === "stopTrials") await api("/api/trial/cancel");
     else if (act === "resetPrompt") {

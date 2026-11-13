@@ -44,7 +44,9 @@ A chat model reads one photo. Inktyset is built for the whole stack of pages:
   its `mmproj`), or a model server on your computer or local network (Ollama, LM Studio, llama-server,
   vLLM). Never a cloud service: Inktyset refuses addresses outside your own network.
 - **Your pages where you want them:** in Documents/Inktyset, or any folder you choose in Settings (a private
-  one, another drive). Switch between folders whenever you like; each keeps its own pages.
+  one, another drive). Switch between folders whenever you like; each keeps its own pages, and Inktyset keeps
+  no list of them. `inktyset --folder=<path>` opens a folder for that run only: a launcher of its own for a
+  private folder, say.
 - **The app in your language:** English, French or Arabic (right to left), following your computer's language
   or chosen in Settings. Other languages are welcome ([translating](docs/translating.md)).
 - **LaTeX or Typst:** choose the output in the header. Pages are converted to [Typst](https://typst.app)
