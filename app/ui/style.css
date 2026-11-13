@@ -1121,3 +1121,107 @@ button.fresh {
     border-top: 1px solid var(--line);
   }
 }
+
+/* Edit picture: the picture, the kept part outlined with corners to drag, the rest dimmed */
+.picture-dialog {
+  max-width: 900px;
+}
+.pic-stage {
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+  cursor: crosshair;
+  user-select: none;
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.pic-stage canvas {
+  display: block;
+  margin: 0 auto;
+}
+.pic-crop {
+  position: absolute;
+  outline: 2px solid var(--accent);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+  cursor: move;
+}
+.pic-crop.whole {
+  box-shadow: none;
+  cursor: crosshair;
+}
+.pic-crop i {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border: 2px solid #fff;
+  border-radius: 3px;
+}
+.pic-crop i[data-h="nw"] {
+  left: -8px;
+  top: -8px;
+  cursor: nwse-resize;
+}
+.pic-crop i[data-h="ne"] {
+  right: -8px;
+  top: -8px;
+  cursor: nesw-resize;
+}
+.pic-crop i[data-h="sw"] {
+  left: -8px;
+  bottom: -8px;
+  cursor: nesw-resize;
+}
+.pic-crop i[data-h="se"] {
+  right: -8px;
+  bottom: -8px;
+  cursor: nwse-resize;
+}
+/* lines to straighten against while the slider moves */
+.pic-stage.grid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(47, 91, 211, 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(47, 91, 211, 0.35) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.pic-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.pic-tools > button:not(.ghost) {
+  font-size: 18px;
+  line-height: 1;
+  padding: 6px 12px;
+}
+.pic-angle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pic-angle output {
+  min-width: 4.5ch;
+  font-variant-numeric: tabular-nums;
+}
+.pic-tools .grow {
+  flex: 1;
+}
+.col-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+button.small {
+  font-size: 12px;
+  padding: 2px 8px;
+}
+.waiting > button {
+  margin-top: 4px;
+}

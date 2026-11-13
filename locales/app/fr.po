@@ -816,6 +816,94 @@ msgctxt "dragToMove"
 msgid "Drag to move this page"
 msgstr "Faites glisser pour déplacer cette page"
 
+msgctxt "stopPage"
+msgid "Stop"
+msgstr "Arrêter"
+
+msgctxt "stopPageTitle"
+msgid "Don't read this page until you ask"
+msgstr "Ne pas lire cette page avant que vous le demandiez"
+
+msgctxt "stoppedChip"
+msgid "Stopped"
+msgstr "Arrêtée"
+
+msgctxt "stoppedText"
+msgid "Not read: stopped. It waits until you ask."
+msgstr "Pas lue : arrêtée. Elle attend que vous le demandiez."
+
+msgctxt "readPage"
+msgid "Read"
+msgstr "Lire"
+
+msgctxt "stopAll"
+msgid "Stop all"
+msgstr "Tout arrêter"
+
+msgctxt "stopAllTitle"
+msgid "Stop the page being read and the waiting ones"
+msgstr "Arrêter la page en cours de lecture et celles en attente"
+
+msgctxt "stoppedN"
+msgid "{n} page stopped"
+msgid_plural "{n} pages stopped"
+msgstr[0] "{n} page arrêtée"
+msgstr[1] "{n} pages arrêtées"
+
+msgctxt "readThem"
+msgid "Read it"
+msgid_plural "Read them"
+msgstr[0] "La lire"
+msgstr[1] "Les lire"
+
+msgctxt "editPicture"
+msgid "Edit picture"
+msgstr "Modifier l'image"
+
+msgctxt "editPictureTitle"
+msgid "Turn, straighten or crop this page's picture"
+msgstr "Tourner, redresser ou recadrer l'image de cette page"
+
+msgctxt "turnLeft"
+msgid "Turn left"
+msgstr "Tourner à gauche"
+
+msgctxt "turnRight"
+msgid "Turn right"
+msgstr "Tourner à droite"
+
+msgctxt "straighten"
+msgid "Straighten"
+msgstr "Redresser"
+
+msgctxt "wholePicture"
+msgid "Whole picture"
+msgstr "Image entière"
+
+msgctxt "undoPictureEdits"
+msgid "Undo all changes"
+msgstr "Annuler toutes les modifications"
+
+msgctxt "cropHint"
+msgid "Drag on the picture to keep only part of it; drag the corners to adjust."
+msgstr "Faites glisser sur l'image pour n'en garder qu'une partie ; faites glisser les coins pour ajuster."
+
+msgctxt "save"
+msgid "Save"
+msgstr "Enregistrer"
+
+msgctxt "saveReadAgain"
+msgid "Save and read again"
+msgstr "Enregistrer et relire"
+
+msgctxt "pictureWhileReading"
+msgid "This page is being read: saving starts its reading again with the new picture."
+msgstr "Cette page est en cours de lecture : enregistrer relance sa lecture avec la nouvelle image."
+
+msgctxt "pictureReadAgainInfo"
+msgid "Read again, the page gets a new version; your corrections stay in the current one."
+msgstr "Relue, la page reçoit une nouvelle version ; vos corrections restent dans la version actuelle."
+
 msgctxt "moveUp"
 msgid "Move up"
 msgstr "Monter"

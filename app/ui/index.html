@@ -217,6 +217,40 @@
       </div>
       <div class="cmp-hint"></div>
     </dialog>
+    <dialog id="pictureDialog" class="picture-dialog" aria-label="Edit picture" data-i18n-aria="editPicture">
+      <h2 data-i18n="editPicture">Edit picture</h2>
+      <div class="pic-stage" id="picStage">
+        <canvas id="picCanvas"></canvas>
+        <div class="pic-crop" id="picCrop">
+          <i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i>
+        </div>
+      </div>
+      <div class="pic-tools">
+        <button id="picLeft" title="Turn left" data-i18n-title="turnLeft" data-i18n-aria="turnLeft">↺</button>
+        <button id="picRight" title="Turn right" data-i18n-title="turnRight" data-i18n-aria="turnRight">
+          ↻
+        </button>
+        <label class="pic-angle"
+          ><span data-i18n="straighten">Straighten</span>
+          <input type="range" id="picAngle" min="-15" max="15" step="0.5" value="0" /><output
+            id="picAngleOut"
+          ></output
+        ></label>
+        <span class="grow"></span>
+        <button id="picWhole" class="ghost" data-i18n="wholePicture">Whole picture</button>
+        <button id="picReset" class="ghost" data-i18n="undoPictureEdits">Undo all changes</button>
+      </div>
+      <p class="note" data-i18n="cropHint">
+        Drag on the picture to keep only part of it; drag the corners to adjust.
+      </p>
+      <div class="dialog-foot">
+        <span class="note" id="picInfo"></span><span class="grow"></span>
+        <button id="picCancel" data-i18n="cancel">Cancel</button>
+        <button id="picSave" data-i18n="save">Save</button>
+        <button id="picSaveRead" class="primary" data-i18n="saveReadAgain">Save and read again</button>
+      </div>
+    </dialog>
+
     <dialog id="trialDialog">
       <h2 data-i18n="trialTitle">Try on some pages</h2>
       <p class="note" data-i18n="trialText">

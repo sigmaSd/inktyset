@@ -2,6 +2,8 @@
 // notices, POSTs (with the X-Inktyset header) for every action.
 import { createLatexEditor } from "./editor.ts";
 import { diffWords } from "../../src/diff.ts";
+import { MAX_ANGLE, turnCrop } from "../../src/picture.ts";
+import { drawFrame } from "./picture.ts";
 import { bytes, isRtl, languageName, ltr, num, setUiLang, t, uiLang, websiteUrl } from "./i18n.ts";
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -647,11 +649,177 @@ $("#trialGo").onclick = async () => {
   }
 };
 
+// ---------------------------------------------------------------- Edit picture
+// Turn, straighten and crop a page's picture (src/picture.ts). The preview is drawn here from the page's base
+// picture by the same code the image worker uses (picture.ts); saving sends only the numbers.
+const pic = { id: null, src: null, edit: null, drag: null };
+const WHOLE = { x: 0, y: 0, w: 1, h: 1 };
+
+async function openPicture(id) {
+  const r = await api(`/api/page/${id}/picture`);
+  const blob = await (await fetch(`/files/${r.base}`)).blob();
+  const bmp = await createImageBitmap(blob);
+  // the preview works on a smaller copy: straightening is redrawn as the slider moves
+  const s = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
+  const small = document.createElement("canvas");
+  small.width = Math.round(bmp.width * s);
+  small.height = Math.round(bmp.height * s);
+  small.getContext("2d").drawImage(bmp, 0, 0, small.width, small.height);
+  bmp.close();
+  Object.assign(pic, { id, src: small, edit: structuredClone(r.edit) });
+  const p = S.pages.find((x) => x.id === id);
+  // a page read already: read it again only if asked (a new version, the text stays in the old one)
+  $("#picSaveRead").hidden = p?.status !== "done";
+  $("#picSave").classList.toggle("primary", p?.status !== "done");
+  $("#picInfo").textContent =
+    p?.status === "working"
+      ? t("pictureWhileReading")
+      : p?.status === "done"
+        ? t("pictureReadAgainInfo")
+        : "";
+  $("#pictureDialog").showModal();
+  drawPicture();
+}
+
+function drawPicture() {
+  const e = pic.edit;
+  const stage = $("#picStage");
+  // as big as the dialog allows
+  const maxW = stage.clientWidth || 640,
+    maxH = Math.max(240, innerHeight * 0.6);
+  const full = drawFrame(pic.src, { ...e, crop: null });
+  const s = Math.min(maxW / full.width, maxH / full.height);
+  const c = $("#picCanvas");
+  c.width = Math.round(full.width * s);
+  c.height = Math.round(full.height * s);
+  c.getContext("2d").drawImage(full, 0, 0, c.width, c.height);
+  stage.style.height = `${c.height}px`;
+  $("#picAngle").value = e.angle;
+  $("#picAngleOut").textContent = `${e.angle > 0 ? "+" : ""}${num(e.angle, 1)}°`;
+  placeCrop();
+}
+
+function placeCrop() {
+  const c = $("#picCanvas"),
+    cr = pic.edit.crop ?? WHOLE,
+    box = $("#picCrop");
+  Object.assign(box.style, {
+    left: `${c.offsetLeft + cr.x * c.width}px`,
+    top: `${c.offsetTop + cr.y * c.height}px`,
+    width: `${cr.w * c.width}px`,
+    height: `${cr.h * c.height}px`,
+  });
+  box.classList.toggle("whole", !pic.edit.crop);
+}
+
+/** Where the pointer is on the picture, as fractions of it (kept inside). */
+function picPoint(ev) {
+  const r = $("#picCanvas").getBoundingClientRect();
+  return {
+    x: Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)),
+    y: Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height)),
+  };
+}
+
+const MIN = 0.05;
+$("#picStage").addEventListener("pointerdown", (ev) => {
+  if (!pic.src) return;
+  ev.preventDefault();
+  const at = picPoint(ev),
+    cr = { ...(pic.edit.crop ?? WHOLE) };
+  const handle = ev.target.dataset?.h;
+  const inside = at.x > cr.x && at.x < cr.x + cr.w && at.y > cr.y && at.y < cr.y + cr.h;
+  // a corner: resize; inside a crop: move it; anywhere else: draw a new one from here
+  pic.drag = handle
+    ? { kind: "corner", h: handle, cr }
+    : inside && pic.edit.crop
+      ? { kind: "move", at, cr }
+      : { kind: "new", at };
+  $("#picStage").setPointerCapture(ev.pointerId);
+});
+$("#picStage").addEventListener("pointermove", (ev) => {
+  const d = pic.drag;
+  if (!d) return;
+  const p = picPoint(ev);
+  let cr;
+  if (d.kind === "new") {
+    cr = {
+      x: Math.min(d.at.x, p.x),
+      y: Math.min(d.at.y, p.y),
+      w: Math.abs(p.x - d.at.x),
+      h: Math.abs(p.y - d.at.y),
+    };
+    if (cr.w < 0.01 && cr.h < 0.01) return; // a click, not a drag yet
+  } else if (d.kind === "move") {
+    cr = {
+      ...d.cr,
+      x: Math.min(1 - d.cr.w, Math.max(0, d.cr.x + p.x - d.at.x)),
+      y: Math.min(1 - d.cr.h, Math.max(0, d.cr.y + p.y - d.at.y)),
+    };
+  } else {
+    // the corner follows the pointer, the opposite one stays
+    let [x1, y1, x2, y2] = [d.cr.x, d.cr.y, d.cr.x + d.cr.w, d.cr.y + d.cr.h];
+    if (d.h.includes("w")) x1 = Math.min(p.x, x2 - MIN);
+    else x2 = Math.max(p.x, x1 + MIN);
+    if (d.h.includes("n")) y1 = Math.min(p.y, y2 - MIN);
+    else y2 = Math.max(p.y, y1 + MIN);
+    cr = { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+  }
+  pic.edit.crop = cr;
+  placeCrop();
+});
+const endDrag = () => {
+  const cr = pic.edit?.crop;
+  if (pic.drag && cr && (cr.w < MIN || cr.h < MIN)) pic.edit.crop = null; // too small to be meant
+  pic.drag = null;
+  if (pic.edit) placeCrop();
+};
+$("#picStage").addEventListener("pointerup", endDrag);
+$("#picStage").addEventListener("pointercancel", endDrag);
+
+const turn = (dir) => {
+  pic.edit.rotate = (pic.edit.rotate + dir * 90 + 360) % 360;
+  pic.edit.crop = turnCrop(pic.edit.crop, dir); // the same part of the page stays kept
+  drawPicture();
+};
+$("#picLeft").onclick = () => turn(-1);
+$("#picRight").onclick = () => turn(1);
+$("#picAngle").min = -MAX_ANGLE;
+$("#picAngle").max = MAX_ANGLE;
+$("#picAngle").addEventListener("input", (ev) => {
+  pic.edit.angle = Number(ev.target.value);
+  $("#picStage").classList.add("grid"); // lines to straighten against, while the slider moves
+  drawPicture();
+});
+$("#picAngle").addEventListener("change", () => $("#picStage").classList.remove("grid"));
+$("#picWhole").onclick = () => {
+  pic.edit.crop = null;
+  placeCrop();
+};
+$("#picReset").onclick = () => {
+  pic.edit = { rotate: 0, angle: 0, crop: null };
+  drawPicture();
+};
+$("#picCancel").onclick = () => $("#pictureDialog").close();
+$("#pictureDialog").addEventListener("close", () => Object.assign(pic, { id: null, src: null, edit: null }));
+async function savePicture(readAgain) {
+  try {
+    await api(`/api/page/${pic.id}/picture`, { edit: pic.edit, readAgain });
+    $("#pictureDialog").close();
+  } catch (err) {
+    toast(err.message);
+  }
+}
+$("#picSave").onclick = () => savePicture(false);
+$("#picSaveRead").onclick = () => savePicture(true);
+addEventListener("resize", () => pic.src && drawPicture());
+
 // ---------------------------------------------------------------- pages
 function statusOf(p) {
   if (p.status === "queued") return ["", t("waiting")];
   if (p.status === "working") return ["busy", t("reading")];
   if (p.status === "failed") return ["bad", t("failed")];
+  if (p.status === "stopped") return ["", t("stoppedChip")];
   if (p.ok === false) return ["bad", t("formatError", { f: FORMAT_NAME[fmtOf(p)] })];
   if (p.ok === null) return ["busy", t("buildingPreview")];
   if (p.checked) return ["ok", t("checked")];
@@ -683,8 +851,13 @@ function renderStatusLine() {
     const left = Math.max(0, S.avgSecs - elapsed) + queued * S.avgSecs;
     html += `<span class="bar"><i style="width:${((100 * done) / Math.max(1, pages.length)).toFixed(1)}%"></i></span>`;
     html += `<span>${S.intake ? t("addingFiles") + " · " : ""}${working || queued ? t("timeLeft", { t: about(left) }) : ""}</span>`;
+    if (queued + (working ? 1 : 0) > 1)
+      html += ` <button class="ghost" data-act="stopAll" title="${t("stopAllTitle")}">${t("stopAll")}</button>`;
     html += `<span class="note">${t("canClose")}</span>`;
   }
+  const stopped = pages.filter((p) => p.status === "stopped").length;
+  if (stopped)
+    html += `<span>· ${t("stoppedN", { n: stopped })} <button class="ghost" data-act="readStopped">${t("readThem", { n: stopped })}</button></span>`;
   const trials = pages.filter((p) => p.trial === "queued" || p.trial === "working").length;
   if (trials)
     html += `<span>· ${t("trialsLeft", { n: trials })} <button class="ghost" data-act="stopTrials">${t("stopTrials")}</button></span>`;
@@ -709,6 +882,7 @@ function cardKey(p) {
     p.fresh,
     p.current,
     p.versions?.length,
+    p.pic,
   ].join("|");
 }
 
@@ -727,17 +901,25 @@ function buildCard(p) {
   const el = document.createElement("article");
   el.className =
     "card " +
-    ({ queued: "queued", working: "working", failed: "failed" }[p.status] ||
+    ({ queued: "queued", working: "working", failed: "failed", stopped: "queued" }[p.status] ||
       (p.ok === false ? "broken" : !p.checked && (p.unk || p.truncated) ? "unclear" : "done"));
   el.dataset.id = p.id;
-  const scan = `<div class="col scan"><h3>${t("scan")}</h3><img loading="lazy" src="/files/scans/${p.id}.jpg?r=${p.id}" alt="${t("scanAlt")}"></div>`;
+  const scan = p.noScan
+    ? `<div class="col scan"><h3>${t("scan")}</h3></div>`
+    : `<div class="col scan"><div class="col-head"><h3>${t("scan")}</h3>
+      <button class="ghost small" data-act="editPicture" title="${t("editPictureTitle")}">${t("editPicture")}</button></div>
+      <img loading="lazy" src="/files/scans/${p.id}.jpg?r=${p.pic ?? 0}" alt="${t("scanAlt")}"></div>`;
   let mid = "",
     right = "";
+  const stop = `<button data-act="stopPage" title="${t("stopPageTitle")}">${t("stopPage")}</button>`;
   if (p.status === "queued") {
-    mid = `<div class="col" style="grid-column: span 2"><div class="waiting">${t("waitingTurn")}</div></div>`;
+    mid = `<div class="col" style="grid-column: span 2"><div class="waiting">${t("waitingTurn")}${stop}</div></div>`;
   } else if (p.status === "working") {
     mid = `<div class="col" style="grid-column: span 2"><div class="waiting"><div class="spinner"></div>
-      <div>${t("readingHandwriting")} <b class="elapsed"></b></div><div class="note">${t("usuallyTakes", { t: about(S.avgSecs) })}</div></div></div>`;
+      <div>${t("readingHandwriting")} <b class="elapsed"></b></div><div class="note">${t("usuallyTakes", { t: about(S.avgSecs) })}</div>${stop}</div></div>`;
+  } else if (p.status === "stopped") {
+    mid = `<div class="col" style="grid-column: span 2"><div class="waiting">${t("stoppedText")}
+      <button class="primary" data-act="readPage">${t("readPage")}</button></div></div>`;
   } else if (p.status === "failed") {
     mid = `<div class="col" style="grid-column: span 2"><div class="err">${esc(p.err || t("wentWrong"))}</div>
       <p><button class="primary" data-act="redo">${t("tryAgain")}</button></p></div>`;
@@ -1009,7 +1191,12 @@ document.addEventListener("click", async (e) => {
       const busy = S.pages.some((p) => p.status === "working" || p.trial === "working");
       if (busy && !confirm(t("folderWhileReading"))) return;
       await api("/api/folder", { usual: act === "usualFolder" });
-    } else if (act === "tryOn") openTrial();
+    } else if (act === "stopPage") await api(`/api/page/${id}/stop`);
+    else if (act === "readPage") await api(`/api/page/${id}/read`);
+    else if (act === "stopAll") await api("/api/stop-all");
+    else if (act === "readStopped") await api("/api/read-stopped");
+    else if (act === "editPicture") await openPicture(id);
+    else if (act === "tryOn") openTrial();
     else if (act === "stopTrials") await api("/api/trial/cancel");
     else if (act === "resetPrompt") {
       await api("/api/settings", { prompt: "" });

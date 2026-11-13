@@ -1,6 +1,7 @@
 // The pages: their order, status and proofreading marks, kept in <data>/state.json (the same file the first,
 // Python version kept, so its pages carry over). Each page's files:
-//   scans/<id>.jpg     what the model was shown (resized)
+//   scans/<id>.jpg     what the model was shown (resized; turned and cropped when the user fixed it)
+//   scans/<id>.base.jpg  the picture those fixes start from (src/picture.ts), once a picture is edited
 //   pages/<id>.tex     the page's LaTeX, with your corrections (the model always reads in LaTeX)
 //   pages/<id>.typ     the same page in Typst, converted from the LaTeX (src/convert.ts), when used
 //   raw/<id>.tex       the model's untouched answer (to compare against your corrections later)
@@ -14,8 +15,10 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { copyFile, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import type { PictureEdit } from "./picture.ts";
 
-export type PageStatus = "queued" | "working" | "done" | "failed";
+/** "stopped": not read, and not read until the user asks (Stop on the page, or Stop all). */
+export type PageStatus = "queued" | "working" | "done" | "failed" | "stopped";
 
 /** One reading of a page. */
 export interface Version {
@@ -59,6 +62,14 @@ export interface Page {
   trialErr?: string;
   /** A version made by a trial, not compared yet. */
   fresh?: string;
+  /** The file it came from (under the pages folder), and which sheet of a PDF: Edit picture starts from it. */
+  source?: string;
+  sheet?: number;
+  /** How the user fixed its picture (src/picture.ts), and a count that changes with each fix. */
+  edit?: PictureEdit;
+  pic?: number;
+  /** A file that couldn't be opened as a picture: listed, with no picture. */
+  noScan?: boolean;
 }
 
 interface Saved {
@@ -178,7 +189,7 @@ export class Library {
   /** A file that could not be turned into a page: listed, with why. */
   addFailed(label: string, origin: Page["origin"], err: string) {
     const page = this.add(this.nextId(), label, origin);
-    Object.assign(page, { status: "failed", ok: false, err });
+    Object.assign(page, { status: "failed", ok: false, err, noScan: true });
     this.changed();
   }
 
@@ -189,6 +200,8 @@ export class Library {
   pathOf = (id: string) =>
     (this.get(id)?.format ?? "latex") === "typst" ? this.typPath(id) : this.texPath(id);
   scanPath = (id: string) => join(this.dir, "scans", `${id}.jpg`);
+  /** The picture Edit picture starts from (made the first time a page's picture is edited). */
+  basePath = (id: string) => join(this.dir, "scans", `${id}.base.jpg`);
   buildDir = (id: string) => join(this.dir, "build", id);
 
   versionPath = (id: string, vid: string, ext: "tex" | "typ" = "tex") =>

@@ -43,6 +43,10 @@ A chat model reads one photo. Inktyset is built for the whole stack of pages:
 - **Any model, on your machines:** the built-in Qwen3.5 9B, any vision model llama.cpp runs (a `.gguf` and
   its `mmproj`), or a model server on your computer or local network (Ollama, LM Studio, llama-server,
   vLLM). Never a cloud service: Inktyset refuses addresses outside your own network.
+- **Stop when you like:** Stop on a page (or Stop all) and it waits, unread, until you ask; a page being
+  read again goes back to the text it had.
+- **Fix a picture:** turn it, straighten it or crop it (Edit picture on the page), from the file as it was
+  added, so it can always be changed back. A page already read can be read again with it, as a new version.
 - **Your pages where you want them:** in Documents/Inktyset, or any folder you choose in Settings (a private
   one, another drive). Switch between folders whenever you like; each keeps its own pages, and Inktyset keeps
   no list of them. `inktyset --folder=<path>` opens a folder for that run only: a launcher of its own for a

@@ -319,7 +319,22 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       else void core.versionPreview(id, vid);
       return { ok: true };
     }
-    const m = /^\/api\/page\/(page\d+)\/(tex|redo|delete|move|check|seen)$/.exec(path);
+    if (path === "/api/stop-all") {
+      await core.stopPages(lib.pages.map((p) => p.id));
+      return { ok: true };
+    }
+    const pic = /^\/api\/page\/(page\d+)\/picture$/.exec(path);
+    if (pic) {
+      // {} → where Edit picture starts from; {edit, readAgain} → the picture fixed
+      if (body.edit === undefined) return await core.picture(pic[1]);
+      await core.editPicture(pic[1], body.edit, body.readAgain === true);
+      return { ok: true };
+    }
+    if (path === "/api/read-stopped") {
+      core.readStopped(lib.pages.map((p) => p.id));
+      return { ok: true };
+    }
+    const m = /^\/api\/page\/(page\d+)\/(tex|redo|delete|move|check|seen|stop|read)$/.exec(path);
     if (m) {
       const [, id, action] = m;
       const p = lib.get(id);
@@ -343,6 +358,10 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         p.checked = Boolean(body.checked ?? true);
       } else if (action === "seen") {
         p.fresh = undefined; // its trial version was looked at
+      } else if (action === "stop") {
+        await core.stopPages([id]);
+      } else if (action === "read") {
+        core.readStopped([id]);
       }
       lib.changed();
       return { ok: true };

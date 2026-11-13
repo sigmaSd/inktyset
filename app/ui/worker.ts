@@ -3,6 +3,8 @@
 
 import * as pdfjs from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import type { PictureEdit } from "../../src/picture.ts";
+import { drawEdited } from "./picture.ts";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -61,12 +63,14 @@ function trim(src: HTMLCanvasElement, pad = 24): HTMLCanvasElement {
 async function renderPdf(
   rel: string,
   scaleFor: (w: number, h: number) => number,
+  only?: number,
 ): Promise<HTMLCanvasElement[]> {
   const task = pdfjs.getDocument({ url: `/files/${rel}` });
   const doc = await task.promise;
   const out: HTMLCanvasElement[] = [];
   try {
     for (let n = 1; n <= doc.numPages; n++) {
+      if (only !== undefined && n !== only + 1) continue;
       const page = await doc.getPage(n);
       const base = page.getViewport({ scale: 1 });
       const viewport = page.getViewport({ scale: scaleFor(base.width, base.height) });
@@ -97,6 +101,22 @@ const render = {
   async pdfPages(rel: string, maxSide: number): Promise<string[]> {
     const pages = await renderPdf(rel, (w, h) => maxSide / Math.max(w, h));
     return await Promise.all(pages.map(async (c) => await base64(await blobOf(c, "image/jpeg", 0.92))));
+  },
+
+  /** One sheet of a PDF (from 0) → JPEG, long side maxSide. */
+  async pdfPage(rel: string, index: number, maxSide: number): Promise<string> {
+    const [c] = await renderPdf(rel, (w, h) => maxSide / Math.max(w, h), index);
+    if (!c) throw new Error(`no sheet ${index + 1}`);
+    return await base64(await blobOf(c, "image/jpeg", 0.92));
+  },
+
+  /** A page's base picture as the user edited it (src/picture.ts) → JPEG, long side at most maxSide. */
+  async edited(rel: string, edit: PictureEdit, maxSide: number): Promise<string> {
+    const blob = await (await fetch(`/files/${rel}`)).blob();
+    const bmp = await createImageBitmap(blob, { imageOrientation: "from-image" });
+    const c = drawEdited(bmp, edit, maxSide);
+    bmp.close();
+    return await base64(await blobOf(c, "image/jpeg", 0.92));
   },
 
   /** A compiled page → PNG per page at dpi, empty margins cut off. */

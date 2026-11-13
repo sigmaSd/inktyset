@@ -832,6 +832,102 @@ msgctxt "dragToMove"
 msgid "Drag to move this page"
 msgstr "اسحب لنقل هذه الصفحة"
 
+msgctxt "stopPage"
+msgid "Stop"
+msgstr "إيقاف"
+
+msgctxt "stopPageTitle"
+msgid "Don't read this page until you ask"
+msgstr "لا تُقرأ هذه الصفحة حتى تطلب ذلك"
+
+msgctxt "stoppedChip"
+msgid "Stopped"
+msgstr "متوقفة"
+
+msgctxt "stoppedText"
+msgid "Not read: stopped. It waits until you ask."
+msgstr "لم تُقرأ: أُوقفت. تنتظر حتى تطلب ذلك."
+
+msgctxt "readPage"
+msgid "Read"
+msgstr "قراءة"
+
+msgctxt "stopAll"
+msgid "Stop all"
+msgstr "إيقاف الكل"
+
+msgctxt "stopAllTitle"
+msgid "Stop the page being read and the waiting ones"
+msgstr "إيقاف الصفحة الجاري قراءتها والصفحات المنتظرة"
+
+msgctxt "stoppedN"
+msgid "{n} page stopped"
+msgid_plural "{n} pages stopped"
+msgstr[0] "لا صفحات متوقفة"
+msgstr[1] "صفحة واحدة متوقفة"
+msgstr[2] "صفحتان متوقفتان"
+msgstr[3] "{n} صفحات متوقفة"
+msgstr[4] "{n} صفحة متوقفة"
+msgstr[5] "{n} صفحة متوقفة"
+
+msgctxt "readThem"
+msgid "Read it"
+msgid_plural "Read them"
+msgstr[0] "قراءتها"
+msgstr[1] "قراءتها"
+msgstr[2] "قراءتهما"
+msgstr[3] "قراءتها"
+msgstr[4] "قراءتها"
+msgstr[5] "قراءتها"
+
+msgctxt "editPicture"
+msgid "Edit picture"
+msgstr "تعديل الصورة"
+
+msgctxt "editPictureTitle"
+msgid "Turn, straighten or crop this page's picture"
+msgstr "تدوير صورة هذه الصفحة أو تقويمها أو قصّها"
+
+msgctxt "turnLeft"
+msgid "Turn left"
+msgstr "تدوير إلى اليسار"
+
+msgctxt "turnRight"
+msgid "Turn right"
+msgstr "تدوير إلى اليمين"
+
+msgctxt "straighten"
+msgid "Straighten"
+msgstr "تقويم"
+
+msgctxt "wholePicture"
+msgid "Whole picture"
+msgstr "الصورة كاملة"
+
+msgctxt "undoPictureEdits"
+msgid "Undo all changes"
+msgstr "التراجع عن كل التغييرات"
+
+msgctxt "cropHint"
+msgid "Drag on the picture to keep only part of it; drag the corners to adjust."
+msgstr "اسحب على الصورة للإبقاء على جزء منها فقط؛ اسحب الزوايا للضبط."
+
+msgctxt "save"
+msgid "Save"
+msgstr "حفظ"
+
+msgctxt "saveReadAgain"
+msgid "Save and read again"
+msgstr "حفظ وإعادة القراءة"
+
+msgctxt "pictureWhileReading"
+msgid "This page is being read: saving starts its reading again with the new picture."
+msgstr "تجري قراءة هذه الصفحة الآن: الحفظ يعيد قراءتها من البداية بالصورة الجديدة."
+
+msgctxt "pictureReadAgainInfo"
+msgid "Read again, the page gets a new version; your corrections stay in the current one."
+msgstr "عند إعادة القراءة تحصل الصفحة على نسخة جديدة؛ تبقى تصحيحاتك في النسخة الحالية."
+
 msgctxt "moveUp"
 msgid "Move up"
 msgstr "تحريك لأعلى"

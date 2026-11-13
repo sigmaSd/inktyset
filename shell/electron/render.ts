@@ -4,6 +4,7 @@
 
 import { BrowserWindow } from "electron";
 import type { Renderer as CoreRenderer } from "../../src/core.ts";
+import type { PictureEdit } from "../../src/picture.ts";
 
 export class Renderer implements CoreRenderer {
   readonly #win: BrowserWindow;
@@ -29,6 +30,14 @@ export class Renderer implements CoreRenderer {
 
   async pdfPages(rel: string, maxSide: number) {
     return ((await this.#call("pdfPages", rel, maxSide)) as string[]).map((b) => Buffer.from(b, "base64"));
+  }
+
+  async pdfPage(rel: string, index: number, maxSide: number) {
+    return Buffer.from((await this.#call("pdfPage", rel, index, maxSide)) as string, "base64");
+  }
+
+  async edited(rel: string, edit: PictureEdit, maxSide: number) {
+    return Buffer.from((await this.#call("edited", rel, edit, maxSide)) as string, "base64");
   }
 
   async preview(rel: string, dpi: number) {

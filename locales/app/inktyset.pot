@@ -816,6 +816,94 @@ msgctxt "dragToMove"
 msgid "Drag to move this page"
 msgstr ""
 
+msgctxt "stopPage"
+msgid "Stop"
+msgstr ""
+
+msgctxt "stopPageTitle"
+msgid "Don't read this page until you ask"
+msgstr ""
+
+msgctxt "stoppedChip"
+msgid "Stopped"
+msgstr ""
+
+msgctxt "stoppedText"
+msgid "Not read: stopped. It waits until you ask."
+msgstr ""
+
+msgctxt "readPage"
+msgid "Read"
+msgstr ""
+
+msgctxt "stopAll"
+msgid "Stop all"
+msgstr ""
+
+msgctxt "stopAllTitle"
+msgid "Stop the page being read and the waiting ones"
+msgstr ""
+
+msgctxt "stoppedN"
+msgid "{n} page stopped"
+msgid_plural "{n} pages stopped"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "readThem"
+msgid "Read it"
+msgid_plural "Read them"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "editPicture"
+msgid "Edit picture"
+msgstr ""
+
+msgctxt "editPictureTitle"
+msgid "Turn, straighten or crop this page's picture"
+msgstr ""
+
+msgctxt "turnLeft"
+msgid "Turn left"
+msgstr ""
+
+msgctxt "turnRight"
+msgid "Turn right"
+msgstr ""
+
+msgctxt "straighten"
+msgid "Straighten"
+msgstr ""
+
+msgctxt "wholePicture"
+msgid "Whole picture"
+msgstr ""
+
+msgctxt "undoPictureEdits"
+msgid "Undo all changes"
+msgstr ""
+
+msgctxt "cropHint"
+msgid "Drag on the picture to keep only part of it; drag the corners to adjust."
+msgstr ""
+
+msgctxt "save"
+msgid "Save"
+msgstr ""
+
+msgctxt "saveReadAgain"
+msgid "Save and read again"
+msgstr ""
+
+msgctxt "pictureWhileReading"
+msgid "This page is being read: saving starts its reading again with the new picture."
+msgstr ""
+
+msgctxt "pictureReadAgainInfo"
+msgid "Read again, the page gets a new version; your corrections stay in the current one."
+msgstr ""
+
 msgctxt "moveUp"
 msgid "Move up"
 msgstr ""

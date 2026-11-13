@@ -3,6 +3,7 @@
 // Renderer (Chromium's image and PDF decoding, in a hidden window) and its dialogs; the window talks to it
 // through server.ts.
 
+import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { type ComponentId, install, type Progress, sizeOf, supported, verifyModelDir } from "./components.ts";
@@ -11,6 +12,7 @@ import { Library } from "./library.ts";
 import { Model, type ModelKind } from "./model.ts";
 import { Phone } from "./phone.ts";
 import { pagesFolderIn } from "./folders.ts";
+import { isNoEdit, type PictureEdit, sanitizeEdit } from "./picture.ts";
 import { cleanLatex, type Format, langPrompt, PROMPT } from "./pipeline.ts";
 import { Scanner } from "./scanner.ts";
 import { Tex, type TexMode } from "./tex.ts";
@@ -21,6 +23,7 @@ import { loadLocales } from "./locales.ts";
 import type { Translations } from "./po.ts";
 
 const MAX_SIDE = 1600; // the long side of what the model sees
+const BASE_SIDE = 3200; // the picture edits start from: sharper than what the model sees, for crops
 
 /** Image and PDF work, done by Chromium (shell/electron/render.ts). Paths are relative to the data folder. */
 export interface Renderer {
@@ -28,6 +31,10 @@ export interface Renderer {
   image(rel: string, maxSide: number): Promise<Buffer>;
   /** Each page of a PDF → JPEG, long side `maxSide`. */
   pdfPages(rel: string, maxSide: number): Promise<Buffer[]>;
+  /** One sheet of a PDF (from 0) → JPEG, long side `maxSide`. */
+  pdfPage(rel: string, index: number, maxSide: number): Promise<Buffer>;
+  /** A picture as the user edited it (src/picture.ts) → JPEG, long side at most `maxSide`. */
+  edited(rel: string, edit: PictureEdit, maxSide: number): Promise<Buffer>;
   /** A compiled page → PNG per page at `dpi`, empty margins cut off. */
   preview(rel: string, dpi: number): Promise<Buffer[]>;
 }
@@ -375,13 +382,18 @@ export class Core {
         for (const [i, jpeg] of sheets.entries()) {
           const id = this.lib.nextId();
           await writeFile(this.lib.scanPath(id), jpeg);
-          this.lib.add(id, sheets.length > 1 ? `${label} · sheet ${i + 1}/${sheets.length}` : label, origin);
+          const p = this.lib.add(
+            id,
+            sheets.length > 1 ? `${label} · sheet ${i + 1}/${sheets.length}` : label,
+            origin,
+          );
+          Object.assign(p, { source: this.rel(path), sheet: i }); // for Edit picture: the sheet, sharper
         }
       } else {
         const jpeg = await this.renderer.image(this.rel(path), MAX_SIDE);
         const id = this.lib.nextId();
         await writeFile(this.lib.scanPath(id), jpeg);
-        this.lib.add(id, label, origin);
+        this.lib.add(id, label, origin).source = this.rel(path);
       }
     } catch (e) {
       this.lib.addFailed(label, origin, msg("notPicture", { error: (e as Error).message }));
@@ -403,6 +415,7 @@ export class Core {
         : this.lib.pages.find((p) => p.trial === "queued" && p.status === "done");
       // nothing to read, or not set up yet (the engine or the model still to download)
       if ((!page && !trial) || this.missing.engine || this.missing.model) {
+        // (the model stays loaded while Inktyset is open, idle or not: the owner's choice, 2026-11-13)
         await new Promise<void>((r) => (this.#wake = r));
         this.#wake = null;
         continue;
@@ -511,7 +524,7 @@ export class Core {
       const prompt = this.readingPrompt();
       const { text, finish } = await this.model.read(jpeg, prompt, abort.signal);
       const p = this.lib.get(id);
-      if (!p) return; // removed while it was read
+      if (!p || (!trial && p.status !== "working")) return; // removed or stopped while it was read
       const body = cleanLatex(text);
       // every reading is a version (versions/<id>/vN.tex); the text it replaces stays in its own
       await this.lib.ensureVersions(p);
@@ -544,11 +557,87 @@ export class Core {
     } catch (e) {
       const p = this.lib.get(id);
       if (p && trial) Object.assign(p, { trial: "failed", trialErr: (e as Error).message });
-      else if (p) Object.assign(p, { status: "failed", err: (e as Error).message });
+      else if (p && p.status === "working") Object.assign(p, { status: "failed", err: (e as Error).message });
+      // (otherwise stopped by the user while it was read: it stays as Stop left it)
       if (p) this.lib.changed();
     } finally {
       this.#reading = null;
     }
+  }
+
+  /**
+   * Don't read these pages until the user asks: the one being read stops, the waiting ones wait no more. A page
+   * read before (being read again) keeps its text and is back as it was; the others show Stopped, with Read.
+   */
+  async stopPages(ids: string[]) {
+    for (const id of ids) {
+      const p = this.lib.get(id);
+      if (!p || (p.status !== "queued" && p.status !== "working")) continue;
+      const had = !!p.current && existsSync(this.lib.texPath(id));
+      const reading = p.status === "working";
+      Object.assign(p, { status: had ? "done" : "stopped", err: "" });
+      if (reading) this.#reading?.abort();
+      if (had) void this.compile(id);
+    }
+    this.lib.changed();
+  }
+
+  /**
+   * The picture Edit picture starts from (scans/<id>.base.jpg): made once, from the file the page came from
+   * (sharper than what the model sees), or from the page's picture when that file is gone or unknown.
+   */
+  async picture(id: string): Promise<{ base: string; edit: PictureEdit }> {
+    const p = this.lib.get(id);
+    if (!p || !existsSync(this.lib.scanPath(id))) throw Object.assign(new Error("no picture"), { code: 404 });
+    const base = this.lib.basePath(id);
+    if (!existsSync(base)) {
+      let jpeg: Buffer | null = null;
+      const src = p.source && join(this.lib.dir, p.source);
+      if (src && existsSync(src) && !p.edit) {
+        try {
+          jpeg =
+            p.sheet !== undefined
+              ? await this.renderer.pdfPage(p.source!, p.sheet, BASE_SIDE)
+              : await this.renderer.image(p.source!, BASE_SIDE);
+        } catch {
+          /* not worth failing for: the page's own picture will do */
+        }
+      }
+      await writeFile(base, jpeg ?? (await readFile(this.lib.scanPath(id))));
+    }
+    return { base: this.rel(base), edit: p.edit ?? { rotate: 0, angle: 0, crop: null } };
+  }
+
+  /**
+   * The page's picture as the user edited it: the model's picture is made again from the base one. A page
+   * waiting or being read is read with it; one already read is read again only when asked (a new version).
+   */
+  async editPicture(id: string, raw: unknown, readAgain: boolean) {
+    const p = this.lib.get(id);
+    if (!p) throw Object.assign(new Error("no such page"), { code: 404 });
+    const edit = sanitizeEdit(raw);
+    const { base } = await this.picture(id);
+    await writeFile(this.lib.scanPath(id), await this.renderer.edited(base, edit, MAX_SIDE));
+    p.edit = isNoEdit(edit) ? undefined : edit;
+    p.pic = (p.pic ?? 0) + 1;
+    if (p.status === "working") {
+      p.status = "queued"; // read again, from the start, with the new picture
+      this.#reading?.abort();
+    } else if (p.status === "failed" || (p.status === "done" && readAgain)) {
+      Object.assign(p, { status: "queued", err: "", ok: null, pngs: [], rev: p.rev + 1, checked: false });
+    }
+    this.lib.changed();
+    this.wake();
+  }
+
+  /** Stopped pages go back in the queue. */
+  readStopped(ids: string[]) {
+    for (const id of ids) {
+      const p = this.lib.get(id);
+      if (p?.status === "stopped") p.status = "queued";
+    }
+    this.lib.changed();
+    this.wake();
   }
 
   /** A page removed while it's being read: stop reading it. */
