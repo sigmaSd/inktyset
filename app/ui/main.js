@@ -465,7 +465,7 @@ function buildCard(p) {
     mid = `<div class="col" style="grid-column: span 2"><div class="err">${esc(p.err || "Something went wrong.")}</div>
       <p><button class="primary" data-act="redo">Try again</button></p></div>`;
   } else {
-    mid = `<div class="col"><h3>LaTeX</h3><textarea spellcheck="false" aria-label="LaTeX of this page"></textarea>
+    mid = `<div class="col"><h3>LaTeX</h3><div class="code card-code"></div>
       <div class="editor-foot">
         <span class="saved"></span><span class="grow"></span>
         ${p.unk ? `<button data-act="nextUnk" title="Jump to the next [??] the model could not read">Next unclear spot</button>` : ""}
@@ -492,17 +492,63 @@ function buildCard(p) {
   return el;
 }
 
+// The list's editors: one per card, made when the card comes near the visible area (main scrolls) and
+// released when it goes far away again (unless it's being typed in or has unsaved text), so a list of
+// hundreds of pages stays light. Removed with their card.
+const cardEds = new Map(); // page id -> { ed, div }
+const nearView = new IntersectionObserver(
+  (entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) mountEditor(e.target);
+      else releaseEditor(e.target);
+    }
+  },
+  { root: $("main"), rootMargin: "800px 0px" },
+);
+
+function releaseEditor(div) {
+  const id = div.closest(".card")?.dataset.id;
+  const entry = id && cardEds.get(id);
+  if (!entry || entry.div !== div || entry.ed.hasFocus() || dirty.has(id)) return;
+  entry.ed.destroy();
+  cardEds.delete(id); // the box stays observed: back near the view, it gets a new editor
+}
+
+function mountEditor(div) {
+  const card = div.closest(".card"),
+    id = card?.dataset.id;
+  if (!id || cardEds.get(id)?.div === div) return;
+  dropEditor(id); // an editor left on an older box of this card
+  const ed = createLatexEditor(div, { onChange: (pid, text) => save(pid, text, $(".saved", card)) });
+  cardEds.set(id, { ed, div });
+  const p = S.pages.find((x) => x.id === id);
+  if (pendingTex.has(id)) ed.load(id, pendingTex.get(id)); // an edit not saved yet: it wins
+  if (p) loadTex(p, card);
+}
+
+/** A card leaves (removed or rebuilt): its editor goes, and its box is no longer watched. */
+function dropEditor(id, cardEl) {
+  const code = cardEl && $(".card-code", cardEl);
+  if (code) nearView.unobserve(code);
+  const entry = cardEds.get(id);
+  if (!entry) return;
+  nearView.unobserve(entry.div);
+  entry.ed.destroy();
+  cardEds.delete(id);
+}
+
+/** Fill a card's editor with the page's text, unless it's being typed in or has unsaved edits. */
 async function loadTex(p, el) {
-  const ta = $("textarea", el);
-  if (!ta) return;
+  const entry = cardEds.get(p.id);
+  if (!entry || entry.div !== $(".card-code", el)) return; // not near the visible area yet
+  const fill = (tex) => {
+    if (!dirty.has(p.id) && (!entry.ed.hasFocus() || entry.ed.text === "")) entry.ed.load(p.id, tex);
+  };
   const c = texCache.get(p.id);
-  if (c && c.rev === p.rev) {
-    if (!dirty.has(p.id) && document.activeElement !== ta) ta.value = c.tex;
-    return;
-  }
+  if (c && c.rev === p.rev) return fill(c.tex);
   const r = await fetch(`/api/page/${p.id}`).then((r) => r.json());
   texCache.set(p.id, { rev: p.rev, tex: r.tex });
-  if (!dirty.has(p.id) && document.activeElement !== ta) ta.value = r.tex;
+  fill(r.tex);
 }
 
 function renderPages() {
@@ -511,6 +557,7 @@ function renderPages() {
   const ids = new Set(S.pages.map((p) => p.id));
   for (const [id, c] of cards)
     if (!ids.has(id)) {
+      dropEditor(id, c.el);
       c.el.remove();
       cards.delete(id);
     }
@@ -518,19 +565,17 @@ function renderPages() {
   for (const p of S.pages) {
     let c = cards.get(p.id);
     const key = cardKey(p) + "|" + pageNumber(p.id);
-    const editing =
-      c &&
-      document.activeElement &&
-      c.el.contains(document.activeElement) &&
-      document.activeElement.tagName === "TEXTAREA";
+    const editing = c && !!cardEds.get(p.id)?.ed.hasFocus();
     if (!c || (c.key !== key && !editing)) {
-      const keep = c && $("textarea", c.el);
       const el = buildCard(p);
-      if (keep && dirty.has(p.id)) $("textarea", el).value = keep.value;
-      if (c) c.el.replaceWith(el);
-      else box.append(el);
+      if (c) {
+        dropEditor(p.id, c.el); // the new card gets its own (unsaved text comes back from pendingTex)
+        c.el.replaceWith(el);
+      } else box.append(el);
       c = { el, key };
       cards.set(p.id, c);
+      const code = $(".card-code", el);
+      if (code) nearView.observe(code);
     } else if (editing) {
       // keep the editor; refresh only the preview column
       const [cls, label] = statusOf(p);
@@ -643,12 +688,6 @@ function save(id, text, el, shown = () => true) {
   );
 }
 
-document.addEventListener("input", (e) => {
-  if (e.target.tagName !== "TEXTAREA") return;
-  const card = e.target.closest(".card");
-  if (card) save(card.dataset.id, e.target.value, $(".saved", card));
-});
-
 // Big images shrink to fit the window; small ones (a single formula) are enlarged up to 2.5x.
 function zoom(src) {
   const z = $("#zoom"),
@@ -680,19 +719,11 @@ document.addEventListener("click", async (e) => {
     else if (act === "compareNext") {
       const n = nextUnchecked(null);
       if (n) openCompare(n);
-    } else if (act === "copy") copyText($("textarea", card).value, `Page ${pageNumber(id)}`, b);
-    else if (act === "nextUnk") {
-      const ta = $("textarea", card),
-        from = ta.selectionEnd || 0;
-      let i = ta.value.indexOf("[??]", from);
-      if (i < 0) i = ta.value.indexOf("[??]");
-      if (i >= 0) {
-        ta.focus();
-        ta.setSelectionRange(i, i + 4);
-        const line = ta.value.slice(0, i).split("\n").length;
-        ta.scrollTop = Math.max(0, (line - 4) * 19.5);
-      }
-    } else if (act === "redo") {
+    } else if (act === "copy") {
+      const text = cardEds.get(id)?.ed.text ?? (await fetch(`/api/page/${id}`).then((r) => r.json())).tex;
+      copyText(text, `Page ${pageNumber(id)}`, b);
+    } else if (act === "nextUnk") cardEds.get(id)?.ed.nextUnclear();
+    else if (act === "redo") {
       if (p_done(id) && !confirm("Read this page again? Your corrections on this page will be replaced."))
         return;
       await api(`/api/page/${id}/redo`);

@@ -911,14 +911,21 @@ button.icon svg {
   color: var(--ink);
 }
 
-/* the Compare view's LaTeX editor (CodeMirror, app/ui/editor.ts) */
-.cmp-editor .code {
-  flex: 1;
-  min-height: 0;
+/* the LaTeX editors (CodeMirror, app/ui/editor.ts): in the Compare view, and in each card of the list */
+.code {
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
+  background: var(--surface-2);
 }
-.cmp-editor .code:focus-within {
+.code:focus-within {
   border-color: var(--accent);
+}
+.cmp-editor .code {
+  flex: 1;
+  min-height: 0;
+}
+.card-code {
+  height: 380px;
+  resize: vertical; /* drag the corner, as the old text box allowed */
 }

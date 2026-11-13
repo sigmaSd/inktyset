@@ -1,6 +1,7 @@
 // The LaTeX editor of the Compare view (CodeMirror 6): highlighting, matching and auto-closed brackets, the
 // model's [??] marks in orange, search (Ctrl+F), undo, and completion of LaTeX commands and environments.
-// main.js creates one and feeds it the page shown; the list's quick-edit boxes stay plain text areas.
+// main.js creates one for the Compare view and one per page card in the list (only while the card is near
+// the visible area, so hundreds of pages stay light).
 
 import {
   autocompletion,
@@ -315,11 +316,13 @@ export interface LatexEditor {
   hasFocus(): boolean;
   /** Select the next [??] after the cursor (from the top again at the end). */
   nextUnclear(): void;
+  /** Remove it (its card left the list or was rebuilt). */
+  destroy(): void;
 }
 
 export function createLatexEditor(
   parent: HTMLElement,
-  opts: { onChange: (pageId: string, text: string) => void; onCheck: () => void },
+  opts: { onChange: (pageId: string, text: string) => void; onCheck?: () => void },
 ): LatexEditor {
   let pageId: string | null = null;
   const extensions = [
@@ -338,8 +341,10 @@ export function createLatexEditor(
     unclear,
     theme,
     placeholder("The LaTeX of this page"),
-    // Ctrl+Enter: "checked, next page", as in the rest of the Compare view (not a blank line)
-    Prec.highest(keymap.of([{ key: "Mod-Enter", run: () => (opts.onCheck(), true) }])),
+    // Ctrl+Enter in the Compare view: "checked, next page", as in the rest of it (not a blank line)
+    ...(opts.onCheck
+      ? [Prec.highest(keymap.of([{ key: "Mod-Enter", run: () => (opts.onCheck!(), true) }]))]
+      : []),
     keymap.of([
       ...closeBracketsKeymap,
       ...completionKeymap,
@@ -387,5 +392,6 @@ export function createLatexEditor(
       view.dispatch({ selection: EditorSelection.single(k, k + 4), scrollIntoView: true });
       view.focus();
     },
+    destroy: () => view.destroy(),
   };
 }
