@@ -94,9 +94,6 @@ for (const dark of [false, true]) {
   await js(`document.querySelector(".card [data-act=compare]").click()`);
   await sleep(1800);
   await shot(`compare-formula-${suffix}.png`);
-  await js(`document.querySelector("[data-cmp=next]").click()`);
-  await sleep(1800);
-  await shot(`compare-page-${suffix}.png`);
 }
 
 ws.close();

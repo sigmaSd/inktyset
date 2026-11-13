@@ -40,8 +40,6 @@ A chat model reads one photo. Inktyset is built for the whole stack of pages:
   ([Tectonic](https://tectonic-typesetting.github.io), Typst) downloaded once.
   ([docs/scope.md](docs/scope.md) says what Inktyset is, and isn't, for.)
 
-![A full page in the Compare view, side by side](docs/screenshots/compare-page-light.png)
-
 ## Requirements
 
 - About **8 GB of free memory** for the model.
