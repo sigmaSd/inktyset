@@ -16,6 +16,14 @@ msgctxt "phoneLabel"
 msgid "Phone photo {name}"
 msgstr ""
 
+msgctxt "pagesFolderTitle"
+msgid "Folder for your pages"
+msgstr ""
+
+msgctxt "folderUnavailable"
+msgid "Your pages folder {p} could not be opened ({e}); Inktyset is using {d} for now."
+msgstr ""
+
 msgctxt "modelFolderTitle"
 msgid "Folder with Qwen3.5-9B-Q4_K_M.gguf and mmproj-F16.gguf"
 msgstr ""
@@ -591,6 +599,30 @@ msgstr ""
 
 msgctxt "savedIn"
 msgid "Saved in {p}"
+msgstr ""
+
+msgctxt "useOtherFolder"
+msgid "Use another folder…"
+msgstr ""
+
+msgctxt "otherFolderHelp"
+msgid "Inktyset restarts in the folder you pick, with the pages already there, or none. The pages in this folder stay here: you can come back to them."
+msgstr ""
+
+msgctxt "otherFolders"
+msgid "Folders used before:"
+msgstr ""
+
+msgctxt "usualFolder"
+msgid "the usual one"
+msgstr ""
+
+msgctxt "openThisFolder"
+msgid "Open"
+msgstr ""
+
+msgctxt "folderWhileReading"
+msgid "A page is being read. Inktyset restarts in the other folder now, and reads it when you come back to this one. Go on?"
 msgstr ""
 
 msgctxt "about"

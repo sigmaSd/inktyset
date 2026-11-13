@@ -4,10 +4,12 @@
 //
 //   --dev        print a link that opens the window's page in a normal browser (for testing)
 //   --no-window  start without opening the window (testing; stop it with Ctrl+C)
-// INKTYSET_DATA and INKTYSET_USERDATA move the pages folder and the app's own files (testing).
+// INKTYSET_DATA and INKTYSET_USERDATA move the pages folder and the app's own files (testing). The pages folder
+// chosen in Settings (src/folders.ts) wins over INKTYSET_DATA only when INKTYSET_USERDATA is set too: a test
+// with its own pages folder never opens the folder chosen in the real settings.
 
 import { app, type BrowserWindow, dialog, Menu, Notification, session } from "electron";
-import { createWriteStream, mkdirSync, statSync } from "node:fs";
+import { createWriteStream, mkdirSync, readFileSync, statSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -84,6 +86,27 @@ function notify(body: string) {
   if (Notification.isSupported()) new Notification({ title: "Inktyset", body, icon: ICON }).show();
 }
 
+/**
+ * The pages folder chosen in Settings, when there is one and it can be opened (a removed drive can't): else the
+ * usual one, and what went wrong, to tell the user.
+ */
+function pagesFolder(defaultDir: string): [string, { dir: string; error: string }?] {
+  if (process.env.INKTYSET_DATA && !process.env.INKTYSET_USERDATA) return [defaultDir];
+  let dir: string | undefined;
+  try {
+    dir = JSON.parse(readFileSync(join(app.getPath("userData"), "settings.json"), "utf8")).folder;
+  } catch {
+    /* no settings yet */
+  }
+  if (typeof dir !== "string" || !dir) return [defaultDir];
+  try {
+    mkdirSync(dir, { recursive: true });
+    return [dir];
+  } catch (e) {
+    return [defaultDir, { dir, error: (e as Error).message }];
+  }
+}
+
 /** The folders of the app's earlier name (hand2tex) move over once (src/migrate.ts). */
 async function migrateFromHand2tex(dataDir: string) {
   const moves: [string, string, string[]?][] = [];
@@ -109,9 +132,11 @@ async function main() {
   ses.setPermissionRequestHandler((_wc, permission, done) => done(allowed.has(permission)));
   ses.setPermissionCheckHandler((_wc, permission) => allowed.has(permission));
 
-  const dataDir = process.env.INKTYSET_DATA ?? join(app.getPath("documents"), "Inktyset");
-  await migrateFromHand2tex(dataDir);
+  const defaultDir = process.env.INKTYSET_DATA ?? join(app.getPath("documents"), "Inktyset");
+  const [dataDir, unavailable] = pagesFolder(defaultDir);
+  if (dataDir === defaultDir) await migrateFromHand2tex(dataDir);
   const core = new Core(dataDir, app.getPath("userData"));
+  core.defaultFolder = defaultDir;
   const served = await serve(core, join(APP_DIR, "app", "ui", "dist"));
   await ses.cookies.set({
     url: served.origin,
@@ -153,11 +178,16 @@ async function main() {
     },
     notify,
     installUpdate: installNow,
+    relaunch() {
+      app.relaunch(); // the new Inktyset starts once this one has quit (single instance)
+      app.quit();
+    },
   };
   core.appVersion = app.getVersion();
   core.systemLocales = app.getPreferredSystemLanguages();
   core.localesDir = join(app.getAppPath(), "locales", "app");
   await core.init();
+  if (unavailable) notify(msg("folderUnavailable", { p: unavailable.dir, e: unavailable.error, d: dataDir }));
   watchUpdates((version) => {
     core.update = version; // offered in the window: "Restart to update"
     core.changed();

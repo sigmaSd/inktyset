@@ -10,6 +10,7 @@ import { checkHardware, type Hardware } from "./hardware.ts";
 import { Library } from "./library.ts";
 import { Model, type ModelKind } from "./model.ts";
 import { Phone } from "./phone.ts";
+import { pagesFolderIn, rememberFolder } from "./folders.ts";
 import { cleanLatex, type Format, langPrompt, PROMPT } from "./pipeline.ts";
 import { Scanner } from "./scanner.ts";
 import { Tex, type TexMode } from "./tex.ts";
@@ -40,6 +41,8 @@ export interface Shell {
   notify(text: string): void;
   /** Restart into a downloaded update (offered once `Core.update` is set). */
   installUpdate(): void;
+  /** Start Inktyset again (it then opens the pages folder in the settings). */
+  relaunch(): void;
 }
 
 /** Settings of this computer (userData/settings.json); the language belongs to the pages (state.json). */
@@ -61,6 +64,10 @@ export interface Settings {
   serverUrl?: string;
   serverModel?: string;
   serverKey?: string;
+  /** The pages folder, when the user chose one (src/folders.ts); read by the shell before starting. */
+  folder?: string;
+  /** Pages folders used before, offered to go back to. */
+  recentFolders?: string[];
 }
 
 /** Inktyset's own instructions, as shown in the settings. */
@@ -97,6 +104,8 @@ export class Core {
   appVersion = "";
   /** The computer's preferred languages (from the shell), for the app language "auto". */
   systemLocales: readonly string[] = [];
+  /** Where the pages go when the user chose no other folder (set by the shell). */
+  defaultFolder = "";
   /** Where the translations are (locales/app), set by the shell; and what was read there. */
   localesDir = "";
   locales: Record<string, Translations> = {};
@@ -296,6 +305,30 @@ export class Core {
 
   cancel(id: ComponentId) {
     this.jobs[id].abort?.abort();
+  }
+
+  /**
+   * Keep the pages in another folder: one the user picks (or `path`, one of those offered), then restart there.
+   * The folder left keeps its pages, and is offered to come back to.
+   */
+  async useFolder(path?: string) {
+    const offered = [this.defaultFolder, ...(this.settings.recentFolders ?? [])];
+    if (path !== undefined && !offered.includes(path)) throw new Error("not a folder Inktyset offered");
+    const chosen = path ?? (await this.shell.chooseFolder(msg("pagesFolderTitle")));
+    if (!chosen) return;
+    const dir = path ?? (await pagesFolderIn(chosen));
+    const folder = dir === this.defaultFolder ? undefined : dir;
+    if (dir === this.lib.dir) {
+      // already open (the chosen one could not be, at start): just remember it
+      if (this.settings.folder !== folder) await this.setSettings({ folder });
+      return;
+    }
+    await mkdir(dir, { recursive: true });
+    await this.setSettings({
+      folder,
+      recentFolders: rememberFolder(this.settings.recentFolders ?? [], this.lib.dir, dir),
+    });
+    this.shell.relaunch();
   }
 
   /** Use model files the user already has: choose their folder, check them, remember it. */

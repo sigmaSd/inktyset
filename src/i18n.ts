@@ -86,6 +86,8 @@ export class Translator {
 export const CORE_SOURCE = {
   scanLabel: "Scan {time}",
   phoneLabel: "Phone photo {name}",
+  pagesFolderTitle: "Folder for your pages",
+  folderUnavailable: "Your pages folder {p} could not be opened ({e}); Inktyset is using {d} for now.",
   modelFolderTitle: "Folder with Qwen3.5-9B-Q4_K_M.gguf and mmproj-F16.gguf",
   notPicture: "This file could not be opened as a picture or PDF ({error}).",
   previewFailed: "The preview could not be built.",

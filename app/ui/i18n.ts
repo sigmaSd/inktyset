@@ -124,6 +124,14 @@ export const UI_SOURCE = {
   noEngineYet: "No engine yet.",
   yourPages: "Your pages",
   savedIn: "Saved in {p}",
+  useOtherFolder: "Use another folder…",
+  otherFolderHelp:
+    "Inktyset restarts in the folder you pick, with the pages already there, or none. The pages in this folder stay here: you can come back to them.",
+  otherFolders: "Folders used before:",
+  usualFolder: "the usual one",
+  openThisFolder: "Open",
+  folderWhileReading:
+    "A page is being read. Inktyset restarts in the other folder now, and reads it when you come back to this one. Go on?",
   about: "About",
   aboutUpdate: "Version {v} is downloaded: restart to use it.",
   freeSoftware: "Free software under the GPL-3.0.",

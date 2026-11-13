@@ -452,10 +452,7 @@ function renderSettings() {
   </section>
   ${readingHtml()}
   ${modelHtml()}
-  <section class="set">
-    <h3>${t("yourPages")}</h3>
-    <p class="note">${t("savedIn", { p: `<bdi>${esc(S.folder)}</bdi>` })}</p>
-  </section>
+  ${foldersHtml()}
   <section class="set">
     <h3>${t("about")}</h3>
     <p class="note">Inktyset <bdi>${esc(S.appVersion)}</bdi>. ${S.update ? t("aboutUpdate", { v: esc(S.update) }) : ""}
@@ -486,6 +483,22 @@ $("#settingsBtn").onclick = () => {
   renderSettings();
 };
 $("#settingsClose").onclick = () => $("#settingsDialog").close();
+// Settings → Your pages: the folder they're in, another one (Inktyset restarts there), the ones used before.
+function foldersHtml() {
+  const f = S.folders;
+  const others = [...new Set([...f.recent, f.default])].filter((d) => d && d !== S.folder);
+  const row = (d) => `<div class="file-row">
+      <span class="note"><bdi>${esc(d)}</bdi>${d === f.default ? ` · ${t("usualFolder")}` : ""}</span>
+      <button data-act="openFolder" data-path="${esc(d)}">${t("openThisFolder")}</button></div>`;
+  return `<section class="set">
+    <h3>${t("yourPages")}</h3>
+    <p class="note">${t("savedIn", { p: `<bdi>${esc(S.folder)}</bdi>` })}</p>
+    <div class="setup-actions"><button data-act="pickFolder">${t("useOtherFolder")}</button></div>
+    <p class="note">${t("otherFolderHelp")}</p>
+    ${others.length ? `<p class="note">${t("otherFolders")}</p>${others.map(row).join("")}` : ""}
+  </section>`;
+}
+
 // Settings → Reading instructions: the user's notes, and (advanced) all of Inktyset's instructions.
 let promptOpen = false;
 function readingHtml() {
@@ -992,6 +1005,10 @@ document.addEventListener("click", async (e) => {
     } else if (act === "versions") {
       const p = S.pages.find((x) => x.id === id);
       openCompare(id, { other: p?.versions?.filter((v) => v.id !== p.current).at(-1)?.id });
+    } else if (act === "pickFolder" || act === "openFolder") {
+      const busy = S.pages.some((p) => p.status === "working" || p.trial === "working");
+      if (busy && !confirm(t("folderWhileReading"))) return;
+      await api("/api/folder", act === "openFolder" ? { path: b.dataset.path } : {});
     } else if (act === "tryOn") openTrial();
     else if (act === "stopTrials") await api("/api/trial/cancel");
     else if (act === "resetPrompt") {

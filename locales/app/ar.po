@@ -16,6 +16,14 @@ msgctxt "phoneLabel"
 msgid "Phone photo {name}"
 msgstr "صورة من الهاتف {name}"
 
+msgctxt "pagesFolderTitle"
+msgid "Folder for your pages"
+msgstr "مجلد صفحاتك"
+
+msgctxt "folderUnavailable"
+msgid "Your pages folder {p} could not be opened ({e}); Inktyset is using {d} for now."
+msgstr "تعذّر فتح مجلد صفحاتك {p} ({e})؛ يستخدم Inktyset المجلد {d} حاليًا."
+
 msgctxt "modelFolderTitle"
 msgid "Folder with Qwen3.5-9B-Q4_K_M.gguf and mmproj-F16.gguf"
 msgstr "المجلد الذي يحتوي Qwen3.5-9B-Q4_K_M.gguf وmmproj-F16.gguf"
@@ -600,6 +608,30 @@ msgstr "صفحاتك"
 msgctxt "savedIn"
 msgid "Saved in {p}"
 msgstr "محفوظة في {p}"
+
+msgctxt "useOtherFolder"
+msgid "Use another folder…"
+msgstr "استخدام مجلد آخر…"
+
+msgctxt "otherFolderHelp"
+msgid "Inktyset restarts in the folder you pick, with the pages already there, or none. The pages in this folder stay here: you can come back to them."
+msgstr "يُعاد تشغيل Inktyset في المجلد الذي تختاره، مع الصفحات الموجودة فيه، أو بدونها. تبقى صفحات هذا المجلد فيه: يمكنك العودة إليها."
+
+msgctxt "otherFolders"
+msgid "Folders used before:"
+msgstr "مجلدات استُخدمت من قبل:"
+
+msgctxt "usualFolder"
+msgid "the usual one"
+msgstr "المجلد المعتاد"
+
+msgctxt "openThisFolder"
+msgid "Open"
+msgstr "فتح"
+
+msgctxt "folderWhileReading"
+msgid "A page is being read. Inktyset restarts in the other folder now, and reads it when you come back to this one. Go on?"
+msgstr "تجري الآن قراءة صفحة. سيُعاد تشغيل Inktyset في المجلد الآخر الآن، وستُقرأ الصفحة عند عودتك إلى هذا المجلد. هل تريد المتابعة؟"
 
 msgctxt "about"
 msgid "About"
