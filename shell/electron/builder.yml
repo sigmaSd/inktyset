@@ -69,4 +69,4 @@ publish:
   provider: github
   owner: sigmaSd
   repo: inktyset
-  releaseType: release
+  releaseType: draft # CI publishes it once every system's build is in (.github/workflows/release.yml)

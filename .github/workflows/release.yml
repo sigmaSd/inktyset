@@ -1,5 +1,7 @@
 # A v* tag: the installers for every system, attached to that tag's GitHub release, with the latest*.yml files
 # automatic updates read (shell/electron/builder.yml `publish`). Not signed (see builder.yml); macOS ad-hoc.
+# The release is a draft while the builds upload, and published only when all of them succeeded: until then the
+# website's buttons and the apps' update checks keep seeing the previous, complete release.
 name: Release
 on:
   push:
@@ -19,10 +21,10 @@ jobs:
         run: |
           v=$(node -p "require('./package.json').version")
           test "${GITHUB_REF_NAME}" = "v$v" || { echo "tag ${GITHUB_REF_NAME} ≠ package.json v$v"; exit 1; }
-      - name: Create the release (the build jobs upload into it)
+      - name: Create the draft release (the build jobs upload into it)
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Inktyset ${GITHUB_REF_NAME#v}" --generate-notes
+        run: gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --draft --title "Inktyset ${GITHUB_REF_NAME#v}" --generate-notes
 
   build:
     needs: release
@@ -70,3 +72,12 @@ jobs:
             dist/packages/*.zip
             dist/packages/latest*.yml
           retention-days: 14
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Publish the release, now that every system's packages are in it
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" --draft=false --latest
