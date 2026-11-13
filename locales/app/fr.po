@@ -1281,6 +1281,12 @@ msgctxt "answerCut"
 msgid "The answer was cut off: it was too long."
 msgstr "La réponse a été coupée : elle était trop longue."
 
+msgctxt "unplaced"
+msgid "One change wasn't found in the page's text, so it isn't in what Apply makes."
+msgid_plural "{n} changes weren't found in the page's text, so they aren't in what Apply makes."
+msgstr[0] "Une modification n'a pas été trouvée dans le texte de la page : elle n'est pas dans ce qu'Appliquer produit."
+msgstr[1] "{n} modifications n'ont pas été trouvées dans le texte de la page : elles ne sont pas dans ce qu'Appliquer produit."
+
 msgctxt "answerStopped"
 msgid "Stopped."
 msgstr "Arrêtée."

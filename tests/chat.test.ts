@@ -1,5 +1,14 @@
 import { expect, test } from "vite-plus/test";
-import { type ChatMessage, fitHistory, imageTokens, PROPOSED, proposalIn } from "../src/chat.ts";
+import {
+  applyEdits,
+  type ChatMessage,
+  editsIn,
+  fitHistory,
+  imageTokens,
+  PROPOSED,
+  proposalIn,
+  withoutEdits,
+} from "../src/chat.ts";
 
 const q = (text: string, attach = 0): ChatMessage => ({
   role: "user",
@@ -38,4 +47,21 @@ test("chat: older pictures and older rewrites are only named", () => {
   expect(fit[1].text).toBe(`A\n${PROPOSED}`);
   expect(fit[4].text).toContain("new"); // the latest rewrite stays whole
   expect(imageTokens(560, 280)).toBe(200);
+});
+
+test("chat: a fix comes as find-and-replace blocks, applied with any spacing", () => {
+  const answer =
+    "I replaced it.\n<<<<<<< FIND\nI\\alpha_i,\n=======\nici,\n>>>>>>> REPLACE\nand\n<<<<<<< FIND\n\\R\n=======\n\\mathbb{R}\n>>>>>>> REPLACE";
+  const edits = editsIn(answer);
+  expect(edits).toEqual([
+    { find: "I\\alpha_i,", replace: "ici," },
+    { find: "\\R", replace: "\\mathbb{R}" },
+  ]);
+  const page = "On a $I \\alpha _ i ,$ x \\in \\R and y \\in \\R.";
+  expect(applyEdits(page, edits)).toEqual({
+    text: "On a $ici,$ x \\in \\mathbb{R} and y \\in \\mathbb{R}.",
+    unplaced: 0,
+  });
+  expect(applyEdits(page, [{ find: "\\beta", replace: "b" }]).unplaced).toBe(1);
+  expect(withoutEdits(answer)).toBe("I replaced it.\n\nand");
 });

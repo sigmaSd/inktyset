@@ -294,6 +294,10 @@ export const UI_SOURCE = {
   appliedAs: "Applied as {v}.",
   dismissed: "Dismissed.",
   answerCut: "The answer was cut off: it was too long.",
+  unplaced: {
+    one: "One change wasn't found in the page's text, so it isn't in what Apply makes.",
+    other: "{n} changes weren't found in the page's text, so they aren't in what Apply makes.",
+  },
   answerStopped: "Stopped.",
   removeAttach: "Remove",
   fromChat: "from the chat",

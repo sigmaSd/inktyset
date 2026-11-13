@@ -12,9 +12,18 @@ import { Library } from "./library.ts";
 import { Model, type ModelKind } from "./model.ts";
 import { Phone } from "./phone.ts";
 import { pagesFolderIn } from "./folders.ts";
-import { type Chat, chatInstructions, fitHistory, imageTokens, proposalIn, textTokens } from "./chat.ts";
+import {
+  applyEdits,
+  type Chat,
+  chatInstructions,
+  editsIn,
+  fitHistory,
+  imageTokens,
+  proposalIn,
+  textTokens,
+} from "./chat.ts";
 import { isNoEdit, type PictureEdit, sanitizeEdit } from "./picture.ts";
-import { cleanLatex, type Format, langPrompt, PROMPT } from "./pipeline.ts";
+import { cleanLatex, type Format, langInfo, langPrompt, PROMPT } from "./pipeline.ts";
 import { Scanner } from "./scanner.ts";
 import { Tex, type TexMode } from "./tex.ts";
 import { latexToTypst } from "./convert.ts";
@@ -750,7 +759,7 @@ export class Core {
     const m = c.messages[n];
     if (!p || p.status !== "done" || !m?.proposal || m.applied) throw new Error("nothing to apply");
     m.applied = await this.lib.addVersion(p, m.proposal, {
-      prompt: this.lib.promptKey(chatInstructions(p.format ?? "latex")),
+      prompt: this.lib.promptKey(this.#chatInstructions(p.format ?? "latex")),
       model: this.model.label(),
       secs: m.secs ?? null,
       truncated: false,
@@ -766,6 +775,15 @@ export class Core {
     if (c.messages[n]) c.messages[n].dismissed = true;
     await this.#saveChat(c);
     this.lib.changed();
+  }
+
+  /** The chat's instructions, with the pages' writing language and the user's notes on their writing. */
+  #chatInstructions(format: "latex" | "typst") {
+    return chatInstructions(
+      format,
+      langInfo(this.lib.settings.language).name,
+      this.settings.instructions ?? "",
+    );
   }
 
   async #answer(id: string) {
@@ -786,7 +804,7 @@ export class Core {
       const size = jpegSize(scan);
       const body = await this.lib.body(id);
       const intro = `The page's current ${name} text:\n\`\`\`${format === "typst" ? "typst" : "latex"}\n${body}\n\`\`\``;
-      const instructions = chatInstructions(format);
+      const instructions = this.#chatInstructions(format);
       const fixed = textTokens(instructions) + textTokens(intro) + imageTokens(size.w, size.h);
       const history = fitHistory(c.messages, CHAT_CONTEXT - CHAT_ANSWER - fixed - 200);
       const image = (jpeg: Buffer) => ({
@@ -834,7 +852,14 @@ export class Core {
         abort.signal,
       );
       Object.assign(answer, { text: r.text.trim(), thinking: r.thinking.trim(), cut: r.finish === "length" });
-      const proposal = proposalIn(answer.text);
+      // a fix: its changes made to the page's text here; or the whole new text, for a bigger change
+      const edits = editsIn(answer.text);
+      let proposal = proposalIn(answer.text);
+      if (edits.length) {
+        const r = applyEdits(body, edits);
+        proposal = r.text;
+        if (r.unplaced) answer.unplaced = r.unplaced;
+      }
       if (proposal !== undefined && proposal.trim() !== body.trim()) answer.proposal = proposal;
     } catch (e) {
       if (abort.signal.aborted)

@@ -2,7 +2,9 @@
 // Each page's chat is kept in the pages folder (chats/<id>.json, its pictures in chats/<id>/), like the pages.
 // The model sees the page's scan and its current text, then the conversation: as much of it as fits in its
 // context (fitHistory). An answer that rewrites the page carries the whole new text in one code block
-// (proposalIn); the window shows it word by word against the current text, and Apply makes it a new version.
+// (proposalIn), or, for a fix, only the changes as find-and-replace blocks (editsIn, applied here by
+// applyEdits: a one-word fix costs the model a few tokens, not the whole page); the window shows the result word
+// by word against the current text, and Apply makes it a new version.
 // The queue (src/core.ts) answers a question before the next page, or at once with "Answer now".
 
 /** A picture attached to a question: a part of the scan or of the preview, or the whole preview. */
@@ -26,6 +28,8 @@ export interface ChatMessage {
   proposal?: string;
   applied?: string;
   dismissed?: boolean;
+  /** Changes the answer gave that weren't found in the page's text (not applied). */
+  unplaced?: number;
   /** Cut off: the answer was longer than the model may write at once. */
   cut?: boolean;
   /** Stopped before it was done, or failed (why). */
@@ -86,17 +90,64 @@ export function proposalIn(answer: string): string | undefined {
   return body ? body : undefined;
 }
 
-/** What the model is told, for a page in LaTeX or Typst. */
-export function chatInstructions(format: "latex" | "typst"): string {
+const EDIT = /<{3,}\s*FIND[^\n]*\n([\s\S]*?)\n?={3,}[^\n]*\n([\s\S]*?)\n?>{3,}[^\n]*/g;
+
+/** The changes in an answer, as find-and-replace blocks (see chatInstructions). */
+export function editsIn(answer: string): { find: string; replace: string }[] {
+  return [...answer.matchAll(EDIT)].map((m) => ({ find: m[1], replace: m[2] })).filter((e) => e.find.trim());
+}
+
+/** An answer with its change blocks taken out (they're shown as the text they make). */
+export const withoutEdits = (text: string) =>
+  text
+    .replace(EDIT, "")
+    .replace(/```\w*\s*```/g, "")
+    .trim();
+
+/**
+ * The page's text with these changes made: each one wherever its text appears, as written or with other spacing
+ * (LaTeX doesn't care, the model often doesn't copy it exactly). `unplaced`: how many weren't found.
+ */
+export function applyEdits(text: string, edits: { find: string; replace: string }[]) {
+  let out = text,
+    unplaced = 0;
+  for (const { find, replace } of edits) {
+    if (out.includes(find)) {
+      out = out.split(find).join(replace);
+      continue;
+    }
+    const chars = [...new Intl.Segmenter().segment(find.replace(/\s+/g, ""))].map((g) => g.segment);
+    const loose = new RegExp(chars.map((c) => c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s*"), "g");
+    if (chars.length && loose.test(out)) out = out.replace(loose, () => replace);
+    else unplaced++;
+  }
+  return { text: out, unplaced };
+}
+
+/**
+ * What the model is told, for a page in LaTeX or Typst: the chat's own instructions (the reading ones are for
+ * transcribing, these for talking and fixing), with the page's language and the user's notes on their writing.
+ */
+export function chatInstructions(format: "latex" | "typst", language = "", notes = ""): string {
   const name = format === "typst" ? "Typst" : "LaTeX";
   const fence = format === "typst" ? "typst" : "latex";
   return [
     `You help someone check the ${name} transcription of one handwritten page.`,
-    `You are given a picture of the page and its current ${name} text, then their questions; they may add`,
+    `You are given a picture of the page and its current ${name} text, then their messages; they may add`,
     "pictures of parts of the page or of how it typesets.",
-    "Answer briefly, in the language they write in. Write math between $...$ in explanations.",
-    `When they ask you to change the text, say in one sentence what you changed, then give the complete new`,
-    `${name} text of the page in a single \`\`\`${fence} block: the whole page, changing only what they asked.`,
+    "When they say something is wrong, or ask for a change, make the change; don't ask whether they want it.",
+    "Say in one sentence what you changed, then give each change as a block like this:",
+    "<<<<<<< FIND",
+    `the exact text to change, copied from the page's current ${name}`,
+    "=======",
+    "the new text",
+    ">>>>>>> REPLACE",
+    "Copy the FIND text exactly, with a little around it so it is found; it is changed everywhere it appears.",
+    "Use one block per change. Only when most of the page changes, give the whole new text in one",
+    `\`\`\`${fence} block instead.`,
+    "Otherwise answer briefly, in the language they write in, with math between $...$.",
     "Keep to what is written on the page: never add content that isn't there.",
+    ...(language && language !== "English" ? [`The prose on the page is in ${language}.`] : []),
+    ...(notes.trim() ? ["Notes from the person who wrote the page, about their writing:", notes.trim()] : []),
   ].join("\n");
 }

@@ -3,6 +3,7 @@
 import { createLatexEditor } from "./editor.ts";
 import { diffWords } from "../../src/diff.ts";
 import { MAX_ANGLE, turnCrop } from "../../src/picture.ts";
+import { withoutEdits } from "../../src/chat.ts";
 import { drawFrame } from "./picture.ts";
 import katex from "katex";
 import "katex/dist/katex.min.css";
@@ -1751,7 +1752,8 @@ async function renderChat() {
     html += `<div class="msg bot">`;
     if (m.thinking)
       html += `<details class="think" data-n="${n}" ${openThoughts.has(n) ? "open" : ""}><summary>${t("howItThought")}</summary><div>${esc(m.thinking)}</div></details>`;
-    const text = m.proposal !== undefined ? m.text.replace(/```[\s\S]*?```/g, "").trim() : m.text;
+    // the changes are shown as the text they make (below), not as the blocks the model wrote
+    const text = withoutEdits(m.proposal !== undefined ? m.text.replace(/```[\s\S]*?```/g, "") : m.text);
     if (text) html += `<div>${richText(text)}</div>`;
     if (m.proposal !== undefined) {
       // (once applied or dismissed, the comparison with today's text says nothing any more)
@@ -1763,6 +1765,7 @@ async function renderChat() {
         html += `<div class="prop-actions"><button class="primary small" data-cmp="chatApply" data-n="${n}" title="${t("applyTitle")}">${t("applyProposal")}</button>
           <button class="ghost small" data-cmp="chatDismiss" data-n="${n}">${t("dismiss")}</button></div>`;
     }
+    if (m.unplaced) html += `<p class="warn-note">${t("unplaced", { n: m.unplaced })}</p>`;
     if (m.cut) html += `<p class="note">${t("answerCut")}</p>`;
     if (m.stopped) html += `<p class="note">${t("answerStopped")}</p>`;
     if (m.err) html += `<p class="err">${esc(m.err)}</p>`;
@@ -1773,7 +1776,13 @@ async function renderChat() {
     html += `<div class="msg bot live">`;
     if (c.live.thinking && !c.live.text)
       html += `<div class="think-live">${esc(c.live.thinking.slice(-600))}</div>`;
-    if (c.live.text) html += `<div>${richText(c.live.text)}</div>`;
+    // (a change block still being written isn't shown: it becomes the comparison when the answer is done)
+    if (c.live.text)
+      html += `<div>${richText(
+        withoutEdits(c.live.text)
+          .replace(/<{3,}[\s\S]*$/, "")
+          .trim() || "…",
+      )}</div>`;
     html += `</div>`;
   }
   const log = $("#chatLog");
