@@ -1,7 +1,8 @@
 // The pages: their order, status and proofreading marks, kept in <data>/state.json (the same file the first,
 // Python version kept, so its pages carry over). Each page's files:
 //   scans/<id>.jpg     what the model was shown (resized)
-//   pages/<id>.tex     the LaTeX, with your corrections
+//   pages/<id>.tex     the page's LaTeX, with your corrections (the model always reads in LaTeX)
+//   pages/<id>.typ     the same page in Typst, converted from the LaTeX (src/convert.ts), when used
 //   raw/<id>.tex       the model's untouched answer (to compare against your corrections later)
 //   build/<id>/        the preview: doc.tex, doc.pdf, render-N.png
 //   originals/         files as they were added; phone/ what the phone sent
@@ -27,19 +28,21 @@ export interface Page {
   truncated: boolean;
   pngs: string[];
   checked?: boolean;
+  /** What the page was read as; pages from before Typst existed are LaTeX. */
+  format?: "latex" | "typst";
 }
 
 interface Saved {
   pages: Page[];
   counter: number;
-  settings: { language: string };
+  settings: { language: string; format: "latex" | "typst" };
   seen_phone: string[];
 }
 
 export class Library {
   pages: Page[] = [];
   counter = 0;
-  settings = { language: "english" };
+  settings: Saved["settings"] = { language: "english", format: "latex" };
   seenPhone = new Set<string>();
   /** Files still being prepared (a PDF being split, a photo being resized). */
   intake = 0;
@@ -143,15 +146,21 @@ export class Library {
   }
 
   texPath = (id: string) => join(this.dir, "pages", `${id}.tex`);
+  /** The page in Typst (src/convert.ts makes it from the LaTeX). */
+  typPath = (id: string) => join(this.dir, "pages", `${id}.typ`);
+  /** The file shown and edited: the page's current format. */
+  pathOf = (id: string) =>
+    (this.get(id)?.format ?? "latex") === "typst" ? this.typPath(id) : this.texPath(id);
   scanPath = (id: string) => join(this.dir, "scans", `${id}.jpg`);
   buildDir = (id: string) => join(this.dir, "build", id);
 
   async body(id: string) {
-    return await readFile(this.texPath(id), "utf8").catch(() => "");
+    return await readFile(this.pathOf(id), "utf8").catch(() => "");
   }
 
-  async doneBodies() {
-    const done = this.pages.filter((p) => p.status === "done");
+  /** The finished pages' text, in order: those in `format` (pages read in the other format are left out). */
+  async doneBodies(format: "latex" | "typst" = this.settings.format) {
+    const done = this.pages.filter((p) => p.status === "done" && (p.format ?? "latex") === format);
     return await Promise.all(done.map((p) => this.body(p.id)));
   }
 }

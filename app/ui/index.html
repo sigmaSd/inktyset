@@ -17,6 +17,13 @@
         <select id="lang"></select>
         <input id="langOther" placeholder="e.g. Dutch" hidden />
       </label>
+      <label class="lang" title="What new pages are written in"
+        >Output
+        <select id="format">
+          <option value="latex">LaTeX</option>
+          <option value="typst">Typst</option>
+        </select>
+      </label>
       <button id="updateBtn" class="primary" hidden title="A new version of Inktyset is downloaded">
         Restart to update
       </button>
@@ -164,7 +171,7 @@
       <div class="cmp-hint">
         <kbd>←</kbd> <kbd>→</kbd> pages · <kbd>Enter</kbd> mark checked and go to the next one
         (<kbd>Ctrl</kbd>+<kbd>Enter</kbd> while typing) · <kbd>+</kbd> <kbd>−</kbd> or <kbd>Ctrl</kbd>+scroll
-        zoom · <kbd>L</kbd> layout · <kbd>E</kbd> LaTeX · <kbd>Esc</kbd> close
+        zoom · <kbd>L</kbd> layout · <kbd>E</kbd> editor · <kbd>Esc</kbd> close
       </div>
     </dialog>
     <dialog id="zoom"><img alt="" /></dialog>

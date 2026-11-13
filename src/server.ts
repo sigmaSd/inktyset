@@ -13,6 +13,7 @@ import { sizeOf, supported } from "./components.ts";
 import type { Core } from "./core.ts";
 import { CSP, guard, newSecret } from "./guard.ts";
 import { allBodies, fullDocument, LANGS } from "./pipeline.ts";
+import { typstBodies, typstDocument } from "./typst.ts";
 
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -98,7 +99,12 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       setup: {
         missing: core.missing,
         jobs,
-        sizes: { engine: sizeOf("engine"), model: sizeOf("model"), tectonic: sizeOf("tectonic") },
+        sizes: {
+          engine: sizeOf("engine"),
+          model: sizeOf("model"),
+          tectonic: sizeOf("tectonic"),
+          typst: sizeOf("typst"),
+        },
         supported: { engine: supported("engine"), tectonic: supported("tectonic") },
         modelDir: core.model.modelDir(),
         serverPath: (await core.model.serverPath()) ?? "",
@@ -113,6 +119,11 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         detail: core.tex.detail,
         system: core.tex.system,
         tectonic: (await core.tex.tectonic()) ?? "",
+      },
+      typst: {
+        system: core.typst.system ?? "",
+        downloaded: (await core.typst.downloaded()) ?? "",
+        using: core.typst.using,
       },
     };
   };
@@ -167,6 +178,10 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
     }
     const body = JSON.parse((await readBody(req, 5 << 20)).toString() || "{}") as Record<string, unknown>;
     if (path === "/api/settings") {
+      if (body.format !== undefined) {
+        if (body.format !== "latex" && body.format !== "typst") throw new Error("unknown format");
+        await core.setFormat(body.format);
+      }
       if (body.language !== undefined) {
         const lang = String(body.language).trim();
         if (!/^[^\\{}$%#&~^_\n]{1,40}$/.test(lang)) throw new Error("language name not allowed");
@@ -206,8 +221,12 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       return { ok: true };
     }
     if (path === "/api/save-document") {
-      const text = fullDocument(await lib.doneBodies(), lib.settings.language);
-      const saved = await core.shell.saveFile("inktyset.tex", text);
+      const typst = lib.settings.format === "typst";
+      const bodies = await lib.doneBodies();
+      const text = typst
+        ? typstDocument(bodies, lib.settings.language)
+        : fullDocument(bodies, lib.settings.language);
+      const saved = await core.shell.saveFile(typst ? "inktyset.typ" : "inktyset.tex", text);
       return { path: saved };
     }
     if (path === "/api/phone/pair") return (await core.phone.pair(), { ok: true });
@@ -230,7 +249,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       if (!p) throw Object.assign(new Error("no such page"), { code: 404 });
       if (action === "tex") {
         if (p.status !== "done") throw Object.assign(new Error("page is not ready"), { code: 409 });
-        await writeFile(lib.texPath(id), String(body.tex ?? ""));
+        await writeFile(lib.pathOf(id), String(body.tex ?? ""));
         void core.compile(id);
       } else if (action === "redo") {
         if (p.status === "working") throw Object.assign(new Error("page is being read"), { code: 409 });
@@ -276,8 +295,11 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       if (path === "/api/state") return send(res, 200, await state());
       if (path === "/api/version") return send(res, 200, { version: core.lib.version });
       if (path === "/api/events") return events(req, res);
-      if (path === "/api/all.tex")
-        return send(res, 200, allBodies(await core.lib.doneBodies()), "text/plain; charset=utf-8");
+      if (path === "/api/all.tex") {
+        const bodies = await core.lib.doneBodies();
+        const text = core.lib.settings.format === "typst" ? typstBodies(bodies) : allBodies(bodies);
+        return send(res, 200, text, "text/plain; charset=utf-8");
+      }
       const pm = /^\/api\/page\/(page\d+)$/.exec(path);
       if (pm) return send(res, 200, { tex: await core.lib.body(pm[1]) });
       if (path.startsWith("/files/")) {

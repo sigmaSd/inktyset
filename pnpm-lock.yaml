@@ -182,6 +182,9 @@ importers:
       folder-camera-receiver:
         specifier: https://github.com/sigmasd/folder-camera/releases/download/receiver-engine-v1.3.0/folder-camera-receiver-1.3.0.tgz
         version: https://github.com/sigmasd/folder-camera/releases/download/receiver-engine-v1.3.0/folder-camera-receiver-1.3.0.tgz
+      tex2typst:
+        specifier: 0.6.2
+        version: 0.6.2
     devDependencies:
       '@codemirror/autocomplete':
         specifier: ^6.20.4
@@ -2270,6 +2273,9 @@ packages:
   temp@0.9.4:
     resolution: {integrity: sha512-yYrrsWnrXMcdsnu/7YMYAofM1ktpL5By7vZhf15CrXijWWrEYZks5AXBudalfSWJLlnen/QUJUB5aoB0kqZUGA==}
     engines: {node: '>=6.0.0'}
+
+  tex2typst@0.6.2:
+    resolution: {integrity: sha512-KQwpKUZ3kWI/cBEChFhVPJJV5/61R2Eb0epL6AGlQTKdto4OZer9wX4F2mbTsThVJPeLP4Ax0CkUk23IdcgnGQ==}
 
   tiny-async-pool@1.3.0:
     resolution: {integrity: sha512-01EAw5EDrcVrdgyCLgoSPvqznC0sVxDSVeiOz09FUpjh71G79VCqneOr+xvt7T1r76CF6ZZfPjHorN2+d+3mqA==}
@@ -4511,6 +4517,8 @@ snapshots:
     dependencies:
       mkdirp: 0.5.6
       rimraf: 2.6.3
+
+  tex2typst@0.6.2: {}
 
   tiny-async-pool@1.3.0:
     dependencies:

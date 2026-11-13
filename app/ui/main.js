@@ -15,6 +15,8 @@ if (navigator.userAgent.includes("Mac")) document.documentElement.classList.add(
 document.addEventListener("contextmenu", (e) => {
   if (!e.target.closest?.("input, textarea, [contenteditable]")) e.preventDefault();
 });
+const FORMAT_NAME = { latex: "LaTeX", typst: "Typst" };
+const fmtOf = (p) => p.format ?? "latex";
 let S = null; // last state from the server
 const texCache = new Map(); // id -> {rev, tex}
 const dirty = new Map(); // id -> timer for unsaved edits
@@ -121,8 +123,13 @@ function renderHeader() {
   }
   $("#updateBtn").hidden = !S.update;
   if (S.update) $("#updateBtn").title = `Inktyset ${S.update} is downloaded: restart to use it`;
-  const done = S.pages.filter((p) => p.status === "done").length;
-  $("#copyAll").disabled = $("#saveTex").disabled = !done;
+  const fmt = S.settings.format ?? "latex";
+  if (document.activeElement !== $("#format")) $("#format").value = fmt;
+  $("#copyAll").textContent = `Copy all ${FORMAT_NAME[fmt]}`;
+  $("#copyAll").title = `Copy the ${FORMAT_NAME[fmt]} of every finished ${FORMAT_NAME[fmt]} page`;
+  $("#saveTex").textContent = fmt === "typst" ? "Save .typ file" : "Save .tex file";
+  const inFormat = S.pages.filter((p) => p.status === "done" && fmtOf(p) === fmt).length;
+  $("#copyAll").disabled = $("#saveTex").disabled = !inFormat;
 }
 
 function renderScanner() {
@@ -345,6 +352,11 @@ function renderSettings() {
     ${tecJob.status === "running" || tecJob.status === "error" ? `<div class="setup-row"><span class="setup-name">Tectonic</span>${jobHtml(tecJob)}</div>` : ""}
   </section>
   <section class="set">
+    <h3>Typst</h3>
+    <p class="note">${S.typst.system ? `Using the installed Typst: ${esc(S.typst.system)}` : S.typst.downloaded ? "Downloaded." : `For Typst output; downloaded when first needed (${bytes(su.sizes.typst)}).`}</p>
+    ${su.jobs.typst.status === "running" || su.jobs.typst.status === "error" ? `<div class="setup-row"><span class="setup-name">Typst</span>${jobHtml(su.jobs.typst)}</div>` : ""}
+  </section>
+  <section class="set">
     <h3>Phone</h3>
     <label class="choice"><input type="checkbox" id="setPhone" ${m.phone ? "checked" : ""}>
       <span><b>Receive photos from a phone (Folder Camera)</b>
@@ -419,7 +431,7 @@ function statusOf(p) {
   if (p.status === "queued") return ["", "Waiting"];
   if (p.status === "working") return ["busy", "Reading…"];
   if (p.status === "failed") return ["bad", "Failed"];
-  if (p.ok === false) return ["bad", "LaTeX error"];
+  if (p.ok === false) return ["bad", `${FORMAT_NAME[fmtOf(p)]} error`];
   if (p.ok === null) return ["busy", "Building preview…"];
   if (p.checked) return ["ok", "Checked ✓"];
   if (p.truncated) return ["warn", "May be cut off"];
@@ -483,17 +495,17 @@ function buildCard(p) {
     mid = `<div class="col" style="grid-column: span 2"><div class="err">${esc(p.err || "Something went wrong.")}</div>
       <p><button class="primary" data-act="redo">Try again</button></p></div>`;
   } else {
-    mid = `<div class="col"><h3>LaTeX</h3><div class="code card-code"></div>
+    mid = `<div class="col"><h3>${FORMAT_NAME[fmtOf(p)]}</h3><div class="code card-code"></div>
       <div class="editor-foot">
         <span class="saved"></span><span class="grow"></span>
         ${p.unk ? `<button data-act="nextUnk" title="Jump to the next [??] the model could not read">Next unclear spot</button>` : ""}
-        <button class="primary" data-act="copy">Copy LaTeX</button>
+        <button class="primary" data-act="copy">Copy ${FORMAT_NAME[fmtOf(p)]}</button>
       </div></div>`;
     let prev = "";
     if (p.truncated)
       prev += `<div class="err" style="margin-bottom:8px">The page was very long and may be cut off at the end. Check the last lines.</div>`;
     if (p.ok === false)
-      prev += `<div class="err">This LaTeX does not compile yet. Fix the text, and the preview updates by itself.<pre>${esc(p.err)}</pre></div>`;
+      prev += `<div class="err">This ${FORMAT_NAME[fmtOf(p)]} does not compile yet. Fix the text, and the preview updates by itself.<pre>${esc(p.err)}</pre></div>`;
     if (p.ok === null) prev += `<div class="waiting"><div class="spinner"></div>Building the preview…</div>`;
     prev += p.pngs.map((src) => `<img src="/files/${esc(src)}?r=${p.rev}" alt="Rendered page">`).join("");
     right = `<div class="col preview"><h3>Preview</h3>${prev}</div>`;
@@ -540,7 +552,7 @@ function mountEditor(div) {
   const ed = createLatexEditor(div, { onChange: (pid, text) => save(pid, text, $(".saved", card)) });
   cardEds.set(id, { ed, div });
   const p = S.pages.find((x) => x.id === id);
-  if (pendingTex.has(id)) ed.load(id, pendingTex.get(id)); // an edit not saved yet: it wins
+  if (pendingTex.has(id)) ed.load(id, pendingTex.get(id), p && fmtOf(p)); // an edit not saved yet: it wins
   if (p) loadTex(p, card);
 }
 
@@ -560,7 +572,8 @@ async function loadTex(p, el) {
   const entry = cardEds.get(p.id);
   if (!entry || entry.div !== $(".card-code", el)) return; // not near the visible area yet
   const fill = (tex) => {
-    if (!dirty.has(p.id) && (!entry.ed.hasFocus() || entry.ed.text === "")) entry.ed.load(p.id, tex);
+    if (!dirty.has(p.id) && (!entry.ed.hasFocus() || entry.ed.text === ""))
+      entry.ed.load(p.id, tex, fmtOf(p));
   };
   const c = texCache.get(p.id);
   if (c && c.rev === p.rev) return fill(c.tex);
@@ -846,6 +859,11 @@ function renderCompare() {
     i = done.findIndex((x) => x.id === p.id);
   const checked = done.filter((x) => x.checked).length;
   $("#cmpTitle").textContent = `Page ${pageNumber(p.id)}`;
+  const fname = FORMAT_NAME[fmtOf(p)];
+  $("#panePrev .pane-label").textContent = `${fname} preview`;
+  $("#cmpEditorBtn").textContent = fname;
+  const copyBtn = $("[data-cmp=copy]");
+  if (!copyBtn.classList.contains("copied")) copyBtn.textContent = copyBtn.dataset.label = `Copy ${fname}`;
   $("#cmpTitle").title = p.label;
   const [cls, label] = statusOf(p);
   $("#cmpChip").className = "chip " + cls;
@@ -878,27 +896,27 @@ function renderCompare() {
     if (p.truncated)
       prev += `<div class="err">The page was very long and may be cut off at the end. Check the last lines.</div>`;
     if (p.ok === false)
-      prev += `<div class="err">This LaTeX does not compile yet. Fix the text, and the preview updates by itself.<pre>${esc(p.err)}</pre></div>`;
+      prev += `<div class="err">This ${FORMAT_NAME[fmtOf(p)]} does not compile yet. Fix the text, and the preview updates by itself.<pre>${esc(p.err)}</pre></div>`;
     if (p.ok === null) prev += `<div class="waiting"><div class="spinner"></div>Building the preview…</div>`;
     prev += p.pngs.map((s) => `<img src="/files/${esc(s)}?r=${p.rev}" alt="Rendered page">`).join("");
     $("#prevInner").innerHTML = prev;
     if (first) setZoom(1);
   }
   if (cmpEd.pageId !== p.id) {
-    cmpEd.load(p.id, ""); // another page: empty until its text arrives (fresh undo history)
+    cmpEd.load(p.id, "", fmtOf(p)); // another page: empty until its text arrives (fresh undo history)
     $(".saved", d).textContent = "";
   }
   // fill the editor unless you are typing in it (an empty editor, right after a page switch, is always filled)
   const mayFill = () => cmpEd.pageId === p.id && !dirty.has(p.id) && (!cmpEd.hasFocus() || cmpEd.text === "");
   if (mayFill()) {
     const c = texCache.get(p.id);
-    if (c && c.rev === p.rev) cmpEd.load(p.id, c.tex);
+    if (c && c.rev === p.rev) cmpEd.load(p.id, c.tex, fmtOf(p));
     else
       fetch(`/api/page/${p.id}`)
         .then((r) => r.json())
         .then((r) => {
           texCache.set(p.id, { rev: p.rev, tex: r.tex });
-          if (mayFill()) cmpEd.load(p.id, r.tex);
+          if (mayFill()) cmpEd.load(p.id, r.tex, fmtOf(p));
         });
   }
 }
@@ -1071,6 +1089,19 @@ $("#phoneTile").onclick = async () => {
 $("#phoneClose").onclick = () => $("#phoneDialog").close();
 $("#zoom").onclick = () => $("#zoom").close();
 
+$("#format").onchange = async (e) => {
+  try {
+    await api("/api/settings", { format: e.target.value });
+    toast(
+      e.target.value === "typst"
+        ? "Every page is now in Typst (converted from its LaTeX)."
+        : "Every page is back in LaTeX (corrections made in Typst don't carry back).",
+      5000,
+    );
+  } catch (err) {
+    toast(err.message);
+  }
+};
 $("#lang").onchange = async (e) => {
   const v = e.target.value;
   if (v === "__other") {

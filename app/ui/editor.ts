@@ -1,5 +1,5 @@
-// The LaTeX editor of the Compare view (CodeMirror 6): highlighting, matching and auto-closed brackets, the
-// model's [??] marks in orange, search (Ctrl+F), undo, and completion of LaTeX commands and environments.
+// The page editor (CodeMirror 6), for LaTeX or Typst (typst-mode.ts): highlighting, matching and auto-closed
+// brackets, the model's [??] marks in orange, search (Ctrl+F), undo, and completion of commands and blocks.
 // main.js creates one for the Compare view and one per page card in the list (only while the card is near
 // the visible area, so hundreds of pages stay light).
 
@@ -16,7 +16,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirro
 import { bracketMatching, HighlightStyle, StreamLanguage, syntaxHighlighting } from "@codemirror/language";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
 import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
-import { Annotation, EditorSelection, EditorState, Prec } from "@codemirror/state";
+import { Annotation, Compartment, EditorSelection, EditorState, Prec } from "@codemirror/state";
 import {
   Decoration,
   drawSelection,
@@ -29,6 +29,7 @@ import {
   type ViewUpdate,
 } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
+import { typstCompletions, typstMode } from "./typst-mode.ts";
 
 /** A change made by Inktyset (a page loaded), not by typing: not saved back. */
 const external = Annotation.define<boolean>();
@@ -43,6 +44,9 @@ const highlight = HighlightStyle.define([
   { tag: t.number, color: "var(--hl-number)" },
   { tag: t.comment, color: "var(--muted)", fontStyle: "italic" },
   { tag: t.invalid, color: "var(--bad)" },
+  { tag: t.heading, color: "var(--hl-command)", fontWeight: "700" },
+  { tag: t.string, color: "var(--hl-env)" },
+  { tag: t.operator, color: "var(--hl-math)" },
 ]);
 
 const theme = EditorView.theme({
@@ -308,12 +312,30 @@ function latexCompletions(ctx: CompletionContext) {
 
 // ------------------------------------------------------------------ the editor
 
+export type Format = "latex" | "typst";
+
+/** What changes with the page's format: its highlighting, completion and placeholder. */
+const LATEX_LANG = StreamLanguage.define(stex);
+const TYPST_LANG = StreamLanguage.define(typstMode);
+const forFormat = (format: Format) =>
+  format === "typst"
+    ? [
+        TYPST_LANG,
+        autocompletion({ override: [typstCompletions], icons: false }),
+        placeholder("The Typst of this page"),
+      ]
+    : [
+        LATEX_LANG,
+        autocompletion({ override: [latexCompletions], icons: false }),
+        placeholder("The LaTeX of this page"),
+      ];
+
 export interface LatexEditor {
   /** The page shown, or null. */
   readonly pageId: string | null;
   readonly text: string;
   /** Show a page's text: a fresh undo history when it's another page. */
-  load(pageId: string, text: string): void;
+  load(pageId: string, text: string, format?: Format): void;
   focus(): void;
   hasFocus(): boolean;
   /** Select the next [??] after the cursor (from the top again at the end). */
@@ -327,22 +349,22 @@ export function createLatexEditor(
   opts: { onChange: (pageId: string, text: string) => void; onCheck?: () => void },
 ): LatexEditor {
   let pageId: string | null = null;
-  const extensions = [
+  let format: Format = "latex";
+  const language = new Compartment();
+  const extensions = () => [
+    language.of(forFormat(format)),
     history(),
     drawSelection(),
     highlightActiveLine(),
     bracketMatching(),
     closeBrackets(),
-    autocompletion({ override: [latexCompletions], icons: false }),
     search({ top: true }),
     highlightSelectionMatches(),
     EditorView.lineWrapping,
     EditorState.allowMultipleSelections.of(true),
-    StreamLanguage.define(stex),
     syntaxHighlighting(highlight),
     unclear,
     theme,
-    placeholder("The LaTeX of this page"),
     // Ctrl+Enter in the Compare view: "checked, next page", as in the rest of it (not a blank line)
     ...(opts.onCheck
       ? [Prec.highest(keymap.of([{ key: "Mod-Enter", run: () => (opts.onCheck!(), true) }]))]
@@ -360,9 +382,9 @@ export function createLatexEditor(
         opts.onChange(pageId, u.state.doc.toString());
       }
     }),
-    EditorView.contentAttributes.of({ "aria-label": "LaTeX of this page", spellcheck: "false" }),
+    EditorView.contentAttributes.of({ "aria-label": "Text of this page", spellcheck: "false" }),
   ];
-  const view = new EditorView({ parent, state: EditorState.create({ extensions }) });
+  const view = new EditorView({ parent, state: EditorState.create({ extensions: extensions() }) });
 
   return {
     get pageId() {
@@ -371,11 +393,16 @@ export function createLatexEditor(
     get text() {
       return view.state.doc.toString();
     },
-    load(id, text) {
+    load(id, text, fmt = "latex") {
       if (id !== pageId) {
         pageId = id;
-        view.setState(EditorState.create({ doc: text, extensions })); // another page: its own undo history
+        format = fmt;
+        view.setState(EditorState.create({ doc: text, extensions: extensions() })); // its own undo history
         return;
+      }
+      if (fmt !== format) {
+        format = fmt; // the page was read again in the other format
+        view.dispatch({ effects: language.reconfigure(forFormat(format)) });
       }
       if (text === view.state.doc.toString()) return;
       view.dispatch({

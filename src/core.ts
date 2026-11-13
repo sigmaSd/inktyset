@@ -3,16 +3,18 @@
 // Renderer (Chromium's image and PDF decoding, in a hidden window) and its dialogs; the window talks to it
 // through server.ts.
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { type ComponentId, install, type Progress, sizeOf, supported, verifyModelDir } from "./components.ts";
 import { checkHardware, type Hardware } from "./hardware.ts";
 import { Library } from "./library.ts";
 import { Model } from "./model.ts";
 import { Phone } from "./phone.ts";
-import { cleanLatex, langPrompt, PROMPT } from "./pipeline.ts";
+import { cleanLatex, type Format, langPrompt, PROMPT } from "./pipeline.ts";
 import { Scanner } from "./scanner.ts";
 import { Tex, type TexMode } from "./tex.ts";
+import { latexToTypst } from "./convert.ts";
+import { Typst } from "./typst.ts";
 
 const MAX_SIDE = 1600; // the long side of what the model sees
 
@@ -54,6 +56,7 @@ export class Core {
   readonly lib: Library;
   readonly model: Model;
   readonly tex: Tex;
+  readonly typst: Typst;
   readonly phone: Phone;
   readonly scanner: Scanner;
   settings: Settings = { phone: false, tex: "auto" };
@@ -61,6 +64,7 @@ export class Core {
     engine: { status: "idle", progress: null, error: "" },
     model: { status: "idle", progress: null, error: "" },
     tectonic: { status: "idle", progress: null, error: "" },
+    typst: { status: "idle", progress: null, error: "" },
     verify: { status: "idle", progress: null, error: "" },
   };
   missing = { engine: true, model: true };
@@ -81,6 +85,7 @@ export class Core {
     const changed = () => this.changed();
     this.model = new Model(userData, changed);
     this.tex = new Tex(userData, (p) => this.#track("tectonic", p));
+    this.typst = new Typst(userData, (p) => this.#track("typst", p));
     this.scanner = new Scanner(changed);
     this.phone = new Phone({
       stateDir: join(userData, "phone"),
@@ -130,6 +135,32 @@ export class Core {
     await this.refreshMissing();
     this.changed();
     this.wake();
+  }
+
+  /**
+   * The document's output format. Every finished page switches at once: to Typst, its LaTeX is converted
+   * (src/convert.ts) unless a Typst version newer than the LaTeX exists (Typst corrections are kept); back to
+   * LaTeX, it shows its LaTeX (corrections made in Typst don't carry back).
+   */
+  async setFormat(format: Format) {
+    this.lib.settings.format = format;
+    for (const p of this.lib.pages) {
+      if (p.status !== "done" || (p.format ?? "latex") === format) continue;
+      if (format === "typst") await this.#ensureTypst(p.id);
+      p.format = format;
+      p.ok = null;
+    }
+    this.lib.changed();
+    void this.recompileAll();
+  }
+
+  /** pages/<id>.typ from pages/<id>.tex, unless it's already newer. */
+  async #ensureTypst(id: string) {
+    const tex = await stat(this.lib.texPath(id)).catch(() => null);
+    const typ = await stat(this.lib.typPath(id)).catch(() => null);
+    if (typ && tex && typ.mtimeMs >= tex.mtimeMs) return;
+    const latex = await readFile(this.lib.texPath(id), "utf8").catch(() => "");
+    await writeFile(this.lib.typPath(id), latexToTypst(latex));
   }
 
   async setLanguage(language: string) {
@@ -301,6 +332,8 @@ export class Core {
     try {
       const jpeg = await readFile(this.lib.scanPath(id));
       const t0 = Date.now();
+      const format = this.lib.settings.format;
+      // always LaTeX: the model reads it far better than Typst, which is converted from it (src/convert.ts)
       const prompt = PROMPT + langPrompt(this.lib.settings.language);
       const { text, finish } = await this.model.read(jpeg, prompt, abort.signal);
       const p = this.lib.get(id);
@@ -308,7 +341,13 @@ export class Core {
       const body = cleanLatex(text);
       await writeFile(this.lib.texPath(id), body);
       await writeFile(join(this.lib.dir, "raw", `${id}.tex`), body); // untouched, to diff against corrections
-      Object.assign(p, { status: "done", secs: (Date.now() - t0) / 1000, truncated: finish === "length" });
+      if (format === "typst") await writeFile(this.lib.typPath(id), latexToTypst(body));
+      Object.assign(p, {
+        status: "done",
+        format,
+        secs: (Date.now() - t0) / 1000,
+        truncated: finish === "length",
+      });
       this.lib.changed();
       await this.compile(id);
     } catch (e) {
@@ -346,7 +385,11 @@ export class Core {
       err = "",
       pngs: string[] = [];
     try {
-      const r = await this.tex.compile(dir, body, this.lib.settings.language);
+      const lang = this.lib.settings.language;
+      const r =
+        (page.format ?? "latex") === "typst"
+          ? await this.typst.compile(dir, body, lang)
+          : await this.tex.compile(dir, body, lang);
       ok = r.ok;
       err = r.err;
       if (r.pdf) {

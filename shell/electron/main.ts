@@ -134,7 +134,9 @@ async function main() {
     async saveFile(name, text) {
       const r = await dialog.showSaveDialog(mainWindow ?? undefined!, {
         defaultPath: join(app.getPath("documents"), name),
-        filters: [{ name: "LaTeX", extensions: ["tex"] }],
+        filters: name.endsWith(".typ")
+          ? [{ name: "Typst", extensions: ["typ"] }]
+          : [{ name: "LaTeX", extensions: ["tex"] }],
       });
       if (r.canceled || !r.filePath) return null;
       await writeFile(r.filePath, text);

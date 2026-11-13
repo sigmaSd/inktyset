@@ -27,8 +27,11 @@ and should come out as clean LaTeX without math markup where there is no math.
 Formats that compile, because the compile-and-compare check is the point:
 
 - **LaTeX:** now.
-- **Typst:** next. A single small compiler that compiles in milliseconds (the preview could follow typing),
-  growing among students; also spares Typst users any TeX installation.
+- **Typst:** since 0.4.0. The model still reads LaTeX (asked for Typst, Qwen mixed in LaTeX commands and
+  nothing compiled), and `src/convert.ts` converts it, deterministically: math through tex2typst, the
+  structure (headings, theorem blocks, lists, tables, emphasis) by Inktyset. Each page keeps both files, so
+  the document's format switches instantly. Corrections made in LaTeX carry over to Typst; ones made in Typst
+  don't carry back.
 - Perhaps Markdown with math, for light notes.
 
 Not plain text or HTML: nothing to check them against, and that is generic OCR.

@@ -24,6 +24,7 @@ files ship inside every installer (`LICENSE`, `LICENSES.chromium.html`).
 | [folder-camera-receiver](https://github.com/sigmaSd/folder-camera) | GPL-3.0-or-later |
 | `@peculiar/x509`, `@peculiar/asn1-*`, `@peculiar/utils`, `pvtsutils`, `pvutils` | MIT, © PeculiarVentures |
 | `asn1js` | BSD-3-Clause, © PeculiarVentures |
+| [tex2typst](https://github.com/qwinsi/tex2typst) (LaTeX math to Typst) | Apache-2.0, © qwinsi |
 | `reflect-metadata` | Apache-2.0, © Microsoft |
 | `tsyringe` | MIT, © Microsoft |
 | `tslib` | 0BSD, © Microsoft |
@@ -41,6 +42,7 @@ are not part of the installers.
 | [llama.cpp](https://github.com/ggml-org/llama.cpp) server, release b12061 | MIT, © The ggml authors | GitHub releases of ggml-org/llama.cpp |
 | [Qwen3.5-9B](https://huggingface.co/Qwen) vision model, Q4_K_M quantization and its image encoder | Apache-2.0, © Alibaba Cloud (Qwen team); GGUF files by [Unsloth](https://huggingface.co/unsloth/Qwen3.5-9B-GGUF) | Hugging Face, unsloth/Qwen3.5-9B-GGUF |
 | [Tectonic](https://tectonic-typesetting.github.io) 0.17.0 (only when no working LaTeX is installed) | MIT, © the Tectonic Project | GitHub releases of tectonic-typesetting/tectonic |
+| [Typst](https://typst.app) 0.15.1 (only for Typst output, when none is installed) | Apache-2.0, © the Typst authors | GitHub releases of typst/typst |
 
 Tectonic in turn fetches the TeX packages and fonts a page uses from its TeX Live-based bundle, under their
 own licenses (mostly the LaTeX Project Public License; fonts such as Amiri under the SIL Open Font License).

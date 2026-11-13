@@ -14,6 +14,9 @@ Rules:
 - Diagrams/figures: write \textbf{[FIGURE: short description]}.
 - Output ONLY the LaTeX body. No preamble, no \documentclass, no \begin{document}, no markdown fences, no comments to me.`;
 
+/** What pages are written in: LaTeX, or Typst (src/typst.ts). */
+export type Format = "latex" | "typst";
+
 /** The languages offered by name; any other name only changes what the model is told. */
 export const LANGS: Record<string, { name: string; polyglossia: string; babel?: string }> = {
   english: { name: "English", polyglossia: "english" },

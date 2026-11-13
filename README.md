@@ -7,7 +7,7 @@ notes, lists, tables) works too. Everything runs on your own computer.
 
 Add photos, scans or PDFs of your notes. Inktyset reads each page with a local vision model, compiles it, and
 shows the scan next to the LaTeX and the rendered page, so you can proofread page by page, then copy the
-LaTeX into your thesis or save one `.tex` file. Nothing you add leaves your computer.
+LaTeX (or Typst) into your thesis or save one file. Nothing you add leaves your computer.
 
 **[Download](https://sigmasd.github.io/inktyset/)** · Linux, Windows, macOS
 
@@ -34,9 +34,11 @@ A chat model reads one photo. Inktyset is built for the whole stack of pages:
   environments (`\fr` → `\frac{}{}`, `\begin{align*}` … `\end{align*}`).
 - **Languages:** English by default; French, Arabic (right to left), German, Spanish, Italian, Portuguese,
   Turkish, or any other language for the prose. The math is unaffected and nothing is translated.
-- **LaTeX:** the preview uses the LaTeX installed on your computer when it works (TeX Live, MiKTeX, MacTeX),
-  otherwise a built-in one ([Tectonic](https://tectonic-typesetting.github.io)) downloaded once.
-- **Coming:** Typst output ([docs/scope.md](docs/scope.md) says what Inktyset is, and isn't, for).
+- **LaTeX or Typst:** choose the output in the header. Pages are converted to [Typst](https://typst.app)
+  from the model's LaTeX, instantly, and switch back just as fast. The preview uses the LaTeX or Typst
+  installed on your computer when it works, otherwise a built-in one
+  ([Tectonic](https://tectonic-typesetting.github.io), Typst) downloaded once.
+  ([docs/scope.md](docs/scope.md) says what Inktyset is, and isn't, for.)
 
 ![A full page in the Compare view, side by side](docs/screenshots/compare-page-light.png)
 

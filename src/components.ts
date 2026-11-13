@@ -1,6 +1,7 @@
 // What Inktyset downloads on first use, pinned and checksummed: the engine (llama.cpp's server, the
-// build for this system), the model (two files), and Tectonic (a self-contained LaTeX, only when no working
-// TeX is installed). Downloads resume after an interruption and are checked (SHA-256) before use.
+// build for this system), the model (two files), Tectonic (a self-contained LaTeX, only when no working TeX
+// is installed) and Typst (for Typst output, when none is installed). Downloads resume after an interruption
+// and are checked (SHA-256) before use.
 
 import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream, existsSync } from "node:fs";
@@ -15,7 +16,7 @@ export interface Download {
   file: string; // the name it's saved under
 }
 
-export type ComponentId = "engine" | "model" | "tectonic";
+export type ComponentId = "engine" | "model" | "tectonic" | "typst";
 
 interface Component {
   /** What the user is told: "the engine (36 MB)". */
@@ -87,6 +88,35 @@ const TECTONICS: Record<string, Download> = {
 };
 for (const d of Object.values(TECTONICS)) d.url = TECTONIC_URL + d.file;
 
+const TYPST_URL = "https://github.com/typst/typst/releases/download/v0.15.1/";
+const TYPSTS: Record<string, Download> = {
+  "linux-x64": {
+    file: "typst-x86_64-unknown-linux-musl.tar.xz",
+    size: 17462992,
+    sha256: "a6d077d0a95eed5a2eba715b2dae06be954f624ccbf85758a03f389ded33118c",
+    url: "",
+  },
+  "win32-x64": {
+    file: "typst-x86_64-pc-windows-msvc.zip",
+    size: 22463684,
+    sha256: "19ce3551153c2fe7ee9fa2f95208310c8f4d3209fedb699e0333faf8913f6736",
+    url: "",
+  },
+  "darwin-arm64": {
+    file: "typst-aarch64-apple-darwin.tar.xz",
+    size: 14438168,
+    sha256: "48f62ed034aa3a7978309579ac6ca00045e2ef0da73114e8af27cfd8e74dc05a",
+    url: "",
+  },
+  "darwin-x64": {
+    file: "typst-x86_64-apple-darwin.tar.xz",
+    size: 15635600,
+    sha256: "7f9fdd9584866245de9a79e0add8f9236fae6f40a8a45e2c4771ccc14db4e0fa",
+    url: "",
+  },
+};
+for (const d of Object.values(TYPSTS)) d.url = TYPST_URL + d.file;
+
 export const MODEL_FILES: Download[] = [
   {
     file: "Qwen3.5-9B-Q4_K_M.gguf",
@@ -106,13 +136,11 @@ const PLATFORM = `${process.platform}-${process.arch}`;
 
 function component(id: ComponentId): Component | null {
   if (id === "model") return { label: "the model", files: MODEL_FILES, unpack: false };
-  const d = (id === "engine" ? ENGINES : TECTONICS)[PLATFORM];
+  const table = { engine: ENGINES, tectonic: TECTONICS, typst: TYPSTS }[id];
+  const d = table[PLATFORM];
   if (!d) return null;
-  return {
-    label: id === "engine" ? "the engine" : "the LaTeX engine (Tectonic)",
-    files: [d],
-    unpack: true,
-  };
+  const label = { engine: "the engine", tectonic: "the LaTeX engine (Tectonic)", typst: "Typst" }[id];
+  return { label, files: [d], unpack: true };
 }
 
 export const supported = (id: ComponentId) => component(id) !== null;
@@ -201,7 +229,7 @@ export async function install(
       if (r.code !== 0) throw new Error(`Could not unpack ${f.file}: ${r.stderr.trim()}`);
       await rm(final, { force: true });
       if (process.platform !== "win32") {
-        for (const name of ["llama-server", "tectonic"]) {
+        for (const name of ["llama-server", "tectonic", "typst"]) {
           const bin = await findFile(dir, name);
           if (bin) await chmod(bin, 0o755);
         }
