@@ -199,6 +199,11 @@ msgid "Your pages are read on your computer and stay there. Inktyset only goes o
 msgstr "Vos pages sont lues sur votre ordinateur et y restent. Inktyset ne va en ligne que pour télécharger son moteur et son modèle (depuis GitHub et Hugging Face), Tectonic et les paquets LaTeX nécessaires si vous n'avez pas LaTeX, et pour vérifier les mises à jour (GitHub). Pas de compte, pas de pistage. L'envoi depuis un téléphone est désactivé tant que vous ne l'activez pas, et ne fonctionne alors que sur votre propre Wi-Fi."
 
 #. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "privacySite"
+msgid "This website counts its visits with <a href=\"https://www.goatcounter.com\">GoatCounter</a>, which sets no cookies and doesn't keep your IP address. The app itself counts nothing."
+msgstr "Ce site compte ses visites avec <a href=\"https://www.goatcounter.com\">GoatCounter</a>, qui ne dépose aucun cookie et ne garde pas votre adresse IP. L'application elle-même ne compte rien."
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
 msgctxt "footer"
 msgid "Inktyset is free software under the <a href=\"https://github.com/sigmaSd/inktyset/blob/main/LICENSE\">GPL-3.0</a>. Built on llama.cpp, Qwen, Tectonic, PDF.js, CodeMirror and Electron (<a href=\"https://github.com/sigmaSd/inktyset/blob/main/THIRD_PARTY_NOTICES.md\">notices</a>). · <a href=\"https://github.com/sigmaSd/inktyset\">Source</a> · <a href=\"https://github.com/sigmaSd/inktyset/issues\">Report a problem</a> · <a href=\"https://github.com/sigmaSd/inktyset/blob/main/docs/translating.md\">Translate</a>"
 msgstr "Inktyset est un logiciel libre sous licence <a href=\"https://github.com/sigmaSd/inktyset/blob/main/LICENSE\">GPL-3.0</a>. Construit avec llama.cpp, Qwen, Tectonic, PDF.js, CodeMirror et Electron (<a href=\"https://github.com/sigmaSd/inktyset/blob/main/THIRD_PARTY_NOTICES.md\">mentions</a>). · <a href=\"https://github.com/sigmaSd/inktyset\">Code source</a> · <a href=\"https://github.com/sigmaSd/inktyset/issues\">Signaler un problème</a> · <a href=\"https://github.com/sigmaSd/inktyset/blob/main/docs/translating.md\">Traduire</a>"

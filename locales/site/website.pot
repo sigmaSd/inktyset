@@ -199,6 +199,11 @@ msgid "Your pages are read on your computer and stay there. Inktyset only goes o
 msgstr ""
 
 #. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "privacySite"
+msgid "This website counts its visits with <a href=\"https://www.goatcounter.com\">GoatCounter</a>, which sets no cookies and doesn't keep your IP address. The app itself counts nothing."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
 msgctxt "footer"
 msgid "Inktyset is free software under the <a href=\"https://github.com/sigmaSd/inktyset/blob/main/LICENSE\">GPL-3.0</a>. Built on llama.cpp, Qwen, Tectonic, PDF.js, CodeMirror and Electron (<a href=\"https://github.com/sigmaSd/inktyset/blob/main/THIRD_PARTY_NOTICES.md\">notices</a>). · <a href=\"https://github.com/sigmaSd/inktyset\">Source</a> · <a href=\"https://github.com/sigmaSd/inktyset/issues\">Report a problem</a> · <a href=\"https://github.com/sigmaSd/inktyset/blob/main/docs/translating.md\">Translate</a>"
 msgstr ""

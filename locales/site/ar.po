@@ -199,6 +199,11 @@ msgid "Your pages are read on your computer and stay there. Inktyset only goes o
 msgstr "تُقرأ صفحاتك على حاسوبك وتبقى عليه. لا يتصل Inktyset بالإنترنت إلا لتنزيل محرّكه ونموذجه (من GitHub وHugging Face)، وTectonic وحزم LaTeX اللازمة إن لم يكن لديك LaTeX، وللتحقق من التحديثات (GitHub). لا حسابات ولا تتبّع. الإرسال من الهاتف معطّل ما لم تفعّله، وعندها لا يعمل إلا على شبكة Wi-Fi الخاصة بك."
 
 #. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "privacySite"
+msgid "This website counts its visits with <a href=\"https://www.goatcounter.com\">GoatCounter</a>, which sets no cookies and doesn't keep your IP address. The app itself counts nothing."
+msgstr "يحصي هذا الموقع زياراته باستخدام <a href=\"https://www.goatcounter.com\">GoatCounter</a>، الذي لا يضع أي ملفات تعريف ارتباط (cookies) ولا يحتفظ بعنوان IP الخاص بك. أما التطبيق نفسه فلا يحصي شيئًا."
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
 msgctxt "footer"
 msgid "Inktyset is free software under the <a href=\"https://github.com/sigmaSd/inktyset/blob/main/LICENSE\">GPL-3.0</a>. Built on llama.cpp, Qwen, Tectonic, PDF.js, CodeMirror and Electron (<a href=\"https://github.com/sigmaSd/inktyset/blob/main/THIRD_PARTY_NOTICES.md\">notices</a>). · <a href=\"https://github.com/sigmaSd/inktyset\">Source</a> · <a href=\"https://github.com/sigmaSd/inktyset/issues\">Report a problem</a> · <a href=\"https://github.com/sigmaSd/inktyset/blob/main/docs/translating.md\">Translate</a>"
 msgstr "Inktyset برنامج حر بموجب رخصة <a href=\"https://github.com/sigmaSd/inktyset/blob/main/LICENSE\">GPL-3.0</a>. مبني على llama.cpp وQwen وTectonic وPDF.js وCodeMirror وElectron (<a href=\"https://github.com/sigmaSd/inktyset/blob/main/THIRD_PARTY_NOTICES.md\">الإشعارات</a>). · <a href=\"https://github.com/sigmaSd/inktyset\">الشيفرة المصدرية</a> · <a href=\"https://github.com/sigmaSd/inktyset/issues\">الإبلاغ عن مشكلة</a> · <a href=\"https://github.com/sigmaSd/inktyset/blob/main/docs/translating.md\">ساهم في الترجمة</a>"
