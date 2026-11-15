@@ -154,6 +154,9 @@ modules:
         npm_config_cache: /run/build/inktyset/flatpak-node/npm-cache
         CI: "true"
     build-commands:
+      # the generator's offline store keys a package installed by URL (folder-camera-receiver) differently from
+      # pnpm 12: flatpak/pnpm-url-keys.py adds the key pnpm 12 looks up
+      - python3 flatpak/pnpm-url-keys.py flatpak-node/pnpm-store/v11/index.db
       - ./pnpm-exe/pnpm install --offline --frozen-lockfile --trust-lockfile
       - ./node_modules/.bin/vp build
       - ./node_modules/.bin/vp pack

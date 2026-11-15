@@ -26,13 +26,13 @@ linux:
   icon: app/icon.png
   executableName: inktyset
   maintainer: Bedis Nbiba
-  synopsis: Handwritten math to LaTeX, on your own computer
-  description: Turn photos and scans of handwritten mathematics into LaTeX. Everything runs on your computer.
+  synopsis: Handwritten math to LaTeX or Typst, on your own computer
+  description: Turn photos and scans of handwritten mathematics into LaTeX or Typst. Everything runs on your computer.
   syncDesktopName: true # the windows belong to inktyset.desktop (package.json desktopName)
   desktop:
     entry:
       Name: Inktyset
-      Comment: Turn photos and scans of handwritten math into LaTeX
+      Comment: Turn photos and scans of handwritten math into LaTeX or Typst
       Keywords: latex;math;handwriting;scan;ocr;
 appImage:
   artifactName: Inktyset-${version}-${arch}.AppImage

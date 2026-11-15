@@ -13,6 +13,7 @@ is downloaded on first start. The AppImage, .deb, .rpm, Windows and macOS packag
 | `io.github.sigmasd.inktyset.metainfo.xml` | the AppStream description: summary, screenshots, releases |
 | `io.github.sigmasd.inktyset.desktop` | the launcher |
 | `generate-sources.sh` | makes the offline sources below |
+| `pnpm-url-keys.py` | run by the build: makes the generator's offline pnpm store findable by pnpm 12 for a package installed by URL (folder-camera-receiver), which the generator keys as `<integrity>\t<name>@<url>` where pnpm 12 looks up `<integrity>\t<url>` |
 | `node-sources.json`, `tectonic-cargo-sources.json`, `typst-cargo-sources.json` | generated, not in git here: they go in the Flathub repo next to the manifest |
 
 ## Inside the sandbox
@@ -44,8 +45,10 @@ flatpak install --user flathub org.freedesktop.Sdk//26.08 org.electronjs.Electro
 Make the offline sources (again whenever `pnpm-lock.yaml` or a pinned version changes):
 
 ```bash
-flatpak/generate-sources.sh
+PYTHON=/usr/bin/python3 flatpak/generate-sources.sh
 ```
+
+(`PYTHON` when the `python3` on your PATH lacks aiohttp, tomlkit or PyYAML, as a project's virtualenv may.)
 
 Build and install with Flathub's own builder (`org.flatpak.Builder`; on Fedora the system `flatpak-builder`
 1.18.2 fails copying the Electron BaseApp with "lsetxattr(security.selinux): Operation not supported"). With

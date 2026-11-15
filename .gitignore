@@ -13,3 +13,5 @@ test/src/*.aux
 test/src/*.log
 test/src/*.pdf
 _site/
+# the Flatpak's generated offline sources (flatpak/generate-sources.sh): they live in the Flathub repo
+flatpak/*-sources.json

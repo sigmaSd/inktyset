@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Inktyset
-Comment=Turn photos and scans of handwritten math into LaTeX
+Comment=Turn photos and scans of handwritten math into LaTeX or Typst
 Exec=inktyset %U
 Icon=io.github.sigmasd.inktyset
 Terminal=false

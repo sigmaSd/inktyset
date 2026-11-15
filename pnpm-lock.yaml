@@ -180,8 +180,8 @@ importers:
         specifier: 6.8.11
         version: 6.8.11(supports-color@7.2.0)
       folder-camera-receiver:
-        specifier: https://github.com/sigmasd/folder-camera/releases/download/receiver-engine-v1.3.0/folder-camera-receiver-1.3.0.tgz
-        version: https://github.com/sigmasd/folder-camera/releases/download/receiver-engine-v1.3.0/folder-camera-receiver-1.3.0.tgz
+        specifier: https://github.com/sigmasd/folder-camera/releases/download/receiver-engine-v1.3.1/folder-camera-receiver-1.3.1.tgz
+        version: https://github.com/sigmasd/folder-camera/releases/download/receiver-engine-v1.3.1/folder-camera-receiver-1.3.1.tgz
       tex2typst:
         specifier: 0.6.2
         version: 0.6.2
@@ -1569,9 +1569,9 @@ packages:
   flatted@3.4.4:
     resolution: {integrity: sha512-5+ybhBZANEJxaH3X5evAFatUxLfEHSr7n6kYJ+1Qd0mUqr4eu9gIf6GDbWHf8RJijHrjjO8G+la14SlL2SeS1Q==}
 
-  folder-camera-receiver@https://github.com/sigmasd/folder-camera/releases/download/receiver-engine-v1.3.0/folder-camera-receiver-1.3.0.tgz:
-    resolution: {integrity: sha512-+NHDSP6LcTbbYwuV3mnbfkNpBDrKpbzbaylXQcoJl5WqRkPWrJRRCR/VFT/jv7fTeNusGMGtg31SIZz3I/M8uQ==, tarball: https://github.com/sigmasd/folder-camera/releases/download/receiver-engine-v1.3.0/folder-camera-receiver-1.3.0.tgz}
-    version: 1.3.0
+  folder-camera-receiver@https://github.com/sigmasd/folder-camera/releases/download/receiver-engine-v1.3.1/folder-camera-receiver-1.3.1.tgz:
+    resolution: {integrity: sha512-ZlLmai0c25g6lHGTjgEiWCroxonNFQmoswQ8i9YJV7C4g9Kau4m8Uq7siNGwI7qbDh+f5B5MbMGh9VttXgw/Ww==, tarball: https://github.com/sigmasd/folder-camera/releases/download/receiver-engine-v1.3.1/folder-camera-receiver-1.3.1.tgz}
+    version: 1.3.1
     engines: {node: '>=22'}
 
   form-data@4.0.6:
@@ -3821,7 +3821,7 @@ snapshots:
 
   flatted@3.4.4: {}
 
-  folder-camera-receiver@https://github.com/sigmasd/folder-camera/releases/download/receiver-engine-v1.3.0/folder-camera-receiver-1.3.0.tgz:
+  folder-camera-receiver@https://github.com/sigmasd/folder-camera/releases/download/receiver-engine-v1.3.1/folder-camera-receiver-1.3.1.tgz:
     dependencies:
       '@peculiar/x509': 2.1.0
       '@types/qrcode': 1.5.5
