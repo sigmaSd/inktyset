@@ -43,10 +43,12 @@ Make the offline sources (again whenever `pnpm-lock.yaml` or a pinned version ch
 flatpak/generate-sources.sh
 ```
 
-Build and install, with the memory capped (the Rust builds and llama.cpp's Vulkan backend are the heavy part):
+Build and install with Flathub's own builder (`org.flatpak.Builder`; on Fedora the system `flatpak-builder`
+1.18.2 fails copying the Electron BaseApp with "lsetxattr(security.selinux): Operation not supported"). With
+`--jobs=4` the whole build fits in 3 GB of memory:
 
 ```bash
-systemd-run --user --scope --quiet -p MemoryMax=6G -p MemorySwapMax=0 flatpak-builder --user --install --force-clean --jobs=4 --state-dir=$HOME/dev/tmp/flatpak-state $HOME/dev/tmp/flatpak-build flatpak/io.github.sigmasd.inktyset.yml
+systemd-run --user --scope --quiet -p MemoryMax=3G -p MemorySwapMax=0 flatpak run org.flatpak.Builder --user --install --force-clean --jobs=4 --mirror-screenshots-url=https://dl.flathub.org/media/ --state-dir=$HOME/dev/tmp/flatpak-state --repo=$HOME/dev/tmp/flatpak-repo $HOME/dev/tmp/flatpak-build flatpak/io.github.sigmasd.inktyset.yml
 ```
 
 The manifest builds the release tag it names. To build the checkout instead, replace the `inktyset` module's
@@ -58,9 +60,12 @@ Try it with its data in scratch folders, never on the real pages:
 flatpak run --env=INKTYSET_DATA=$HOME/dev/tmp/ink-data --env=INKTYSET_USERDATA=$HOME/dev/tmp/ink-user --filesystem=$HOME/dev/tmp io.github.sigmasd.inktyset
 ```
 
-Check it: the setup screen offers only the model; Settings → LaTeX and Typst say "Included with Inktyset.";
-`engine.log` in the user-data folder shows llama-server finding the graphics card (`ggml_vulkan: Found 1
-Vulkan devices`).
+Check it: the setup screen offers only the model; Settings → LaTeX and Typst say "Included with Inktyset.".
+That llama-server sees the graphics card inside the sandbox:
+
+```bash
+flatpak run --command=llama-server io.github.sigmasd.inktyset --list-devices
+```
 
 Lint, as Flathub's CI does:
 
@@ -69,10 +74,17 @@ flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest flatpak/
 ```
 
 ```bash
-flatpak run --command=flatpak-builder-lint org.flatpak.Builder repo $HOME/dev/tmp/flatpak-build/../repo
+ostree commit --repo=$HOME/dev/tmp/flatpak-repo --canonical-permissions --branch=screenshots/x86_64 $HOME/dev/tmp/flatpak-build/files/share/app-info/media
 ```
 
-(`repo` needs a build exported with `--repo=<dir>`.)
+```bash
+flatpak run --command=flatpak-builder-lint org.flatpak.Builder repo $HOME/dev/tmp/flatpak-repo
+```
+
+The manifest lints clean. The repo check reports `appstream-external-screenshot-url` and
+`appstream-remote-icon-not-mirrored` on a local build: the composer writes the mirrored paths relative to
+`media_baseurl="https://dl.flathub.org/media/"`, and the linter compares each path itself with that address.
+Flathub's builders mirror the screenshots and icon themselves, so these two don't apply there.
 
 ## Submit it
 
