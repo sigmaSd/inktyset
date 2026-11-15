@@ -327,7 +327,7 @@ function renderSetup() {
   const total = (su.missing.engine ? su.sizes.engine : 0) + (su.missing.model ? su.sizes.model : 0);
   let html = `<div class="setup-card">
     <h2>${t("setupTitle")}</h2>
-    <p>${t("setupText")}</p>
+    <p>${t(su.bundled.engine ? "setupTextModel" : "setupText")}</p>
     ${row("engine", t("engineName"), su.missing.engine)}
     ${row("model", t("modelName"), su.missing.model)}`;
   if (!su.supported.engine && su.missing.engine) {

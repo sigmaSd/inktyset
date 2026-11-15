@@ -65,6 +65,8 @@ export const UI_SOURCE = {
   setupTitle: "Set up Inktyset",
   setupText:
     "Inktyset reads your pages on this computer, so it needs two downloads, once. Nothing you add ever leaves this computer. Pages you add now wait until it's ready.",
+  setupTextModel:
+    "Inktyset reads your pages on this computer, so it needs to download its model, once. Nothing you add ever leaves this computer. Pages you add now wait until it's ready.",
   engineName: "Engine (llama.cpp)",
   modelName: "Model (Qwen3.5 9B vision)",
   setupServer:

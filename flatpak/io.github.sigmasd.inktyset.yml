@@ -79,7 +79,8 @@ modules:
       env:
         CARGO_HOME: /run/build/tectonic/cargo
     build-commands:
-      - cargo --offline build --release --locked
+      # the runtime's harfbuzz (with graphite2 and ICU): the GitHub archive lacks the vendored copy (a submodule)
+      - cargo --offline build --release --locked --features external-harfbuzz
       - install -Dm755 target/release/tectonic /app/bin/tectonic
     sources:
       - type: archive

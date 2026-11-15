@@ -400,6 +400,10 @@ msgctxt "setupText"
 msgid "Inktyset reads your pages on this computer, so it needs two downloads, once. Nothing you add ever leaves this computer. Pages you add now wait until it's ready."
 msgstr "Inktyset lit vos pages sur cet ordinateur : il lui faut donc deux téléchargements, une seule fois. Rien de ce que vous ajoutez ne quitte cet ordinateur. Les pages ajoutées maintenant attendent qu'il soit prêt."
 
+msgctxt "setupTextModel"
+msgid "Inktyset reads your pages on this computer, so it needs to download its model, once. Nothing you add ever leaves this computer. Pages you add now wait until it's ready."
+msgstr "Inktyset lit vos pages sur cet ordinateur : il lui faut donc télécharger son modèle, une seule fois. Rien de ce que vous ajoutez ne quitte cet ordinateur. Les pages ajoutées maintenant attendent qu'il soit prêt."
+
 msgctxt "engineName"
 msgid "Engine (llama.cpp)"
 msgstr "Moteur (llama.cpp)"
