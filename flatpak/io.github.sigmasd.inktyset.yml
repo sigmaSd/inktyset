@@ -23,10 +23,14 @@ finish-args:
   - --share=ipc
   - --socket=wayland
   - --socket=fallback-x11
-  # the graphics chip: the window, and llama-server's Vulkan
-  - --device=dri
-  # the model's download (Hugging Face), Tectonic's LaTeX packages, and the phone (Folder Camera) on the local Wi-Fi
+  # the graphics chip (the window, llama-server's Vulkan) and USB scanners: Flatpak has no narrower permission
+  # for USB devices, so all devices, as Flathub's scanner apps (GNOME Document Scanner, Skanpage) have
+  - --device=all
+  # the model's download (Hugging Face), Tectonic's LaTeX packages, the phone (Folder Camera) and network
+  # scanners on the local Wi-Fi
   - --share=network
+  # finding network scanners (sane-airscan asks Avahi)
+  - --system-talk-name=org.freedesktop.Avahi
   # the pages folder Inktyset makes by default (~/Documents/Inktyset); other folders and files go through the
   # file chooser portal
   - --filesystem=xdg-documents/Inktyset:create
@@ -104,6 +108,40 @@ modules:
         url: https://github.com/typst/typst/archive/refs/tags/v0.15.1.tar.gz
         sha256: c07909e01a2a6941e52c9b616e48c209c755eed416d62bcf5583c37a4aca01a3
       - typst-cargo-sources.json
+
+  # Scanning (src/scanner.ts runs SANE's scanimage): the scanner drivers, and SANE itself
+  - name: sane-backends
+    config-opts:
+      - --disable-locking # its lock folder (/var/lock/sane) can't exist in the sandbox
+      - --disable-static
+    cleanup:
+      - /include
+      - /lib/pkgconfig
+      - /share/doc
+      - /share/man
+      - /sbin
+      - /bin/sane-config
+      - /bin/gamma4scanimage
+      - /bin/sane-find-scanner
+      - /bin/umax_pp
+      - "*.la"
+    sources:
+      - type: archive
+        url: https://gitlab.com/-/project/429008/uploads/843c156420e211859e974f78f64c3ea3/sane-backends-1.4.0.tar.gz
+        sha256: f99205c903dfe2fb8990f0c531232c9a00ec9c2c66ac7cb0ce50b4af9f407a72
+
+  # driverless network scanners (eSCL, WSD: most recent printers that scan), found through Avahi
+  - name: sane-airscan
+    buildsystem: meson
+    sources:
+      - type: archive
+        url: https://github.com/alexpevzner/sane-airscan/archive/refs/tags/0.99.38.tar.gz
+        sha256: 1e5b3b8373141caa37bf42fe74ae1950de3ff15c84966d8a415485d334ba5507
+        x-checker-data:
+          type: json
+          url: https://api.github.com/repos/alexpevzner/sane-airscan/releases/latest
+          version-query: .tag_name
+          url-query: '"https://github.com/alexpevzner/sane-airscan/archive/refs/tags/" + $version + ".tar.gz"'
 
   # Inktyset: built from source as the other packages are (vp build, vp pack, electron-builder), offline
   - name: inktyset

@@ -17,17 +17,21 @@ is downloaded on first start. The AppImage, .deb, .rpm, Windows and macOS packag
 
 ## Inside the sandbox
 
-- **Permissions:** network (the model's download, Tectonic's LaTeX packages, the phone on the local Wi-Fi),
-  Wayland with X11 as fallback, `--device=dri` (the window and Vulkan for llama-server), notifications, and
-  `~/Documents/Inktyset` (the default pages folder). Other files and folders are opened through the file
-  chooser portal.
+- **Permissions:** network (the model's download, Tectonic's LaTeX packages, the phone and network scanners
+  on the local Wi-Fi), Wayland with X11 as fallback, `--device=all` (the window and Vulkan for llama-server,
+  and USB scanners: Flatpak has no narrower permission for USB devices), Avahi on the system bus (finding
+  network scanners), notifications, and `~/Documents/Inktyset` (the default pages folder). Other files and
+  folders are opened through the file chooser portal.
 - **LaTeX:** a TeX installed on the computer is invisible in the sandbox, so the previews always use the
   bundled Tectonic (Settings → LaTeX shows it as included).
 - **Typst:** the bundled one, even if the computer has another.
 - **Updates:** Inktyset's own updater is off (`shell/electron/updates.ts` only updates an AppImage, and
   `APPIMAGE` is unset in a Flatpak); Flathub updates it.
-- **Scanner:** not available: SANE's `scanimage` isn't in the sandbox, so the Scan button stays hidden. Photos,
-  PDFs and the phone work.
+- **Scanner:** the manifest builds SANE (`sane-backends`, the drivers for most USB scanners) and
+  `sane-airscan` (driverless network scanners: eSCL and WSD, most recent printers that scan), so the Scan
+  button works as on the other packages. Scanners that need a vendor's own driver installed on the computer
+  (some Epson and Brother models, HP's plugin) aren't seen. To try scanning without a scanner, SANE's virtual
+  one: `flatpak run --env=SANE_CONFIG_DIR=<a folder whose dll.conf says test> io.github.sigmasd.inktyset`.
 
 ## Build it locally
 
@@ -118,6 +122,9 @@ The bundled programs move together with `src/components.ts`. When a release chan
 - `TECTONIC_URL`: the `tectonic` archive and sha256, `TECTONIC=` in `generate-sources.sh`, then run it for a new
   `tectonic-cargo-sources.json`.
 - `TYPST_URL`: the same for `typst` (`TYPST_VERSION`, `TYPST=` in `generate-sources.sh`).
+
+`sane-backends` and `sane-airscan` (scanning) don't follow Inktyset's versions: move them when they release
+(Flathub's bot proposes `sane-airscan` updates through its `x-checker-data`).
 
 `sha256sum` of the downloaded tarball gives the sha256. Each year, when a new freedesktop runtime comes out
 (26.08, 27.08…), move `runtime-version`, `base-version` and the SDK extensions to it together.
