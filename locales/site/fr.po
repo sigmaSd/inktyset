@@ -9,8 +9,8 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 msgctxt "title"
-msgid "Inktyset: handwritten math to LaTeX, on your computer"
-msgstr "Inktyset : des maths manuscrites en LaTeX, sur votre ordinateur"
+msgid "Inktyset: handwritten math to LaTeX or Typst, on your computer"
+msgstr "Inktyset : des maths manuscrites en LaTeX ou Typst, sur votre ordinateur"
 
 msgctxt "navWhy"
 msgid "Why"
@@ -30,8 +30,8 @@ msgid "Handwritten pages in,<br />a typeset document you can trust out."
 msgstr "Des pages manuscrites en entrée,<br />un document composé et fiable en sortie."
 
 msgctxt "heroLead"
-msgid "Inktyset reads photos, scans and PDFs of your handwritten math, turns each page into LaTeX, compiles it, and puts the scan next to the result so you can proofread page by page. Everything runs on your own computer."
-msgstr "Inktyset lit les photos, scans et PDF de vos maths manuscrites, transforme chaque page en LaTeX, la compile et place le scan à côté du résultat pour que vous relisiez page par page. Tout se passe sur votre propre ordinateur."
+msgid "Inktyset reads photos, scans and PDFs of your handwritten math, turns each page into LaTeX or Typst, compiles it, and puts the scan next to the result so you can proofread page by page. Everything runs on your own computer."
+msgstr "Inktyset lit les photos, scans et PDF de vos maths manuscrites, transforme chaque page en LaTeX ou Typst, la compile et place le scan à côté du résultat pour que vous relisiez page par page. Tout se passe sur votre propre ordinateur."
 
 msgctxt "download"
 msgid "Download"
@@ -209,8 +209,8 @@ msgid "Inktyset is free software under the <a href=\"https://github.com/sigmaSd/
 msgstr "Inktyset est un logiciel libre sous licence <a href=\"https://github.com/sigmaSd/inktyset/blob/main/LICENSE\">GPL-3.0</a>. Construit avec llama.cpp, Qwen, Tectonic, PDF.js, CodeMirror et Electron (<a href=\"https://github.com/sigmaSd/inktyset/blob/main/THIRD_PARTY_NOTICES.md\">mentions</a>). · <a href=\"https://github.com/sigmaSd/inktyset\">Code source</a> · <a href=\"https://github.com/sigmaSd/inktyset/issues\">Signaler un problème</a> · <a href=\"https://github.com/sigmaSd/inktyset/blob/main/docs/translating.md\">Traduire</a>"
 
 msgctxt "description"
-msgid "Turn handwritten pages into a typeset LaTeX document you can trust. Math first. Runs on your own computer: Linux, Windows, macOS. Free and open source."
-msgstr "Transformez des pages manuscrites en un document LaTeX composé et fiable. Les maths d'abord. Fonctionne sur votre propre ordinateur : Linux, Windows, macOS. Libre et gratuit."
+msgid "Turn handwritten pages into a typeset LaTeX or Typst document you can trust. Math first. Runs on your own computer: Linux, Windows, macOS. Free and open source."
+msgstr "Transformez des pages manuscrites en un document LaTeX ou Typst composé et fiable. Les maths d'abord. Fonctionne sur votre propre ordinateur : Linux, Windows, macOS. Libre et gratuit."
 
 msgctxt "ogDescription"
 msgid "Handwritten pages in, a typeset document you can trust out. Math first, on your own computer."

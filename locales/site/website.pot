@@ -9,7 +9,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgctxt "title"
-msgid "Inktyset: handwritten math to LaTeX, on your computer"
+msgid "Inktyset: handwritten math to LaTeX or Typst, on your computer"
 msgstr ""
 
 msgctxt "navWhy"
@@ -30,7 +30,7 @@ msgid "Handwritten pages in,<br />a typeset document you can trust out."
 msgstr ""
 
 msgctxt "heroLead"
-msgid "Inktyset reads photos, scans and PDFs of your handwritten math, turns each page into LaTeX, compiles it, and puts the scan next to the result so you can proofread page by page. Everything runs on your own computer."
+msgid "Inktyset reads photos, scans and PDFs of your handwritten math, turns each page into LaTeX or Typst, compiles it, and puts the scan next to the result so you can proofread page by page. Everything runs on your own computer."
 msgstr ""
 
 msgctxt "download"
@@ -209,7 +209,7 @@ msgid "Inktyset is free software under the <a href=\"https://github.com/sigmaSd/
 msgstr ""
 
 msgctxt "description"
-msgid "Turn handwritten pages into a typeset LaTeX document you can trust. Math first. Runs on your own computer: Linux, Windows, macOS. Free and open source."
+msgid "Turn handwritten pages into a typeset LaTeX or Typst document you can trust. Math first. Runs on your own computer: Linux, Windows, macOS. Free and open source."
 msgstr ""
 
 msgctxt "ogDescription"
