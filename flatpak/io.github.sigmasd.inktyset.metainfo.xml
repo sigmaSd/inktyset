@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Inktyset's AppStream description (Flathub, GNOME Software, KDE Discover). Add a <release> at each version,
+     newest first (docs/flathub.md). -->
+<component type="desktop-application">
+  <id>io.github.sigmasd.inktyset</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Inktyset</name>
+  <summary>Turn handwritten math into LaTeX, on your computer</summary>
+  <developer id="io.github.sigmasd">
+    <name>Bedis Nbiba</name>
+  </developer>
+
+  <description>
+    <p>
+      Add photos, scans or PDFs of your handwritten notes. Inktyset reads each page with a vision model that
+      runs on your own computer, compiles it, and shows the scan next to the LaTeX and the rendered page, so
+      you can proofread page by page, then copy the LaTeX or Typst into your thesis or save one file. Nothing
+      you add leaves your computer.
+    </p>
+    <ul>
+      <li>Hundreds of pages read in order, on your machine</li>
+      <li>Every page compiled and shown rendered, not just text that looks right</li>
+      <li>The Compare view: the scan and the rendered page side by side, with linked zoom and scrolling</li>
+      <li>A LaTeX editor with highlighting, search and completion</li>
+      <li>English, French, Arabic and other languages, and pages that mix scripts</li>
+      <li>Every reading kept: compare two versions and keep the one you prefer</li>
+      <li>Photos from your phone over your Wi-Fi with Folder Camera (optional, off by default)</li>
+    </ul>
+    <p>
+      On first start Inktyset downloads its model (Qwen3.5 9B, about 6.6 GB) from Hugging Face. It runs best on a
+      graphics card with Vulkan; it needs at least 8 GB of memory.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">io.github.sigmasd.inktyset.desktop</launchable>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>The Compare view: a handwritten formula above its compiled LaTeX, the editor on the right</caption>
+      <image type="source" width="1440" height="900">https://sigmasd.github.io/inktyset/screenshots/compare-formula-dark.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>The page list: scans, their LaTeX in a highlighting editor, and compiled previews</caption>
+      <image type="source" width="1440" height="900">https://sigmasd.github.io/inktyset/screenshots/list-dark.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://sigmasd.github.io/inktyset/</url>
+  <url type="bugtracker">https://github.com/sigmaSd/inktyset/issues</url>
+  <url type="vcs-browser">https://github.com/sigmaSd/inktyset</url>
+  <url type="translate">https://github.com/sigmaSd/inktyset/blob/main/docs/translating.md</url>
+
+  <categories>
+    <category>Office</category>
+    <category>Education</category>
+  </categories>
+  <keywords>
+    <keyword>LaTeX</keyword>
+    <keyword>math</keyword>
+    <keyword>handwriting</keyword>
+    <keyword>OCR</keyword>
+    <keyword>scan</keyword>
+    <keyword>Typst</keyword>
+  </keywords>
+
+  <recommends>
+    <memory>8192</memory>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </recommends>
+  <supports>
+    <control>touch</control>
+  </supports>
+
+  <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="0.9.7" date="2026-11-13">
+      <description>
+        <p>The page chat knows colour works, says only the changes it makes, and answers in your language.</p>
+      </description>
+    </release>
+    <release version="0.9.6" date="2026-11-13">
+      <description>
+        <p>Several saved chats per page.</p>
+      </description>
+    </release>
+    <release version="0.9.5" date="2026-11-13">
+      <description>
+        <p>The page chat answers questions without changing the page.</p>
+      </description>
+    </release>
+    <release version="0.9.4" date="2026-11-13">
+      <description>
+        <p>The page chat shows a change as it is written.</p>
+      </description>
+    </release>
+    <release version="0.9.0" date="2026-11-13">
+      <description>
+        <p>Ask the model about a page, in the Compare view.</p>
+      </description>
+    </release>
+    <release version="0.8.0" date="2026-11-13">
+      <description>
+        <p>Stop a page, and fix its picture: turn, straighten, crop.</p>
+      </description>
+    </release>
+  </releases>
+</component>

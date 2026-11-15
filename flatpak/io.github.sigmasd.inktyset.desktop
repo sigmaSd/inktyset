@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Inktyset
+Comment=Turn photos and scans of handwritten math into LaTeX
+Exec=inktyset %U
+Icon=io.github.sigmasd.inktyset
+Terminal=false
+Categories=Office;
+Keywords=latex;math;handwriting;scan;ocr;typst;
+StartupWMClass=io.github.sigmasd.inktyset
+MimeType=image/png;image/jpeg;application/pdf;

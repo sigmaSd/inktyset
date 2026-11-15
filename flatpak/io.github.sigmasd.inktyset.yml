@@ -1,0 +1,154 @@
+# Inktyset's Flatpak (Flathub): docs/flathub.md says how to build it, submit it and update it.
+#
+# The other packages download llama.cpp's server, Tectonic and Typst on first start (src/components.ts). Flathub
+# doesn't allow downloading programs at run time, so here they are built from source into /app/bin, and the app
+# uses them from there (src/components.ts bundledDir: FLATPAK_ID is set). Only the model is downloaded (6.6 GB,
+# from Hugging Face). Their versions are the ones src/components.ts pins: LLAMA, TECTONIC_URL, TYPST_URL.
+#
+# The generated sources (*-sources.json) are made by flatpak/generate-sources.sh from the lockfiles.
+
+id: io.github.sigmasd.inktyset
+runtime: org.freedesktop.Platform
+runtime-version: "26.08"
+sdk: org.freedesktop.Sdk
+base: org.electronjs.Electron2.BaseApp
+base-version: "26.08"
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.node24
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: inktyset
+separate-locales: false
+
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  # the graphics chip: the window, and llama-server's Vulkan
+  - --device=dri
+  # the model's download (Hugging Face), Tectonic's LaTeX packages, and the phone (Folder Camera) on the local Wi-Fi
+  - --share=network
+  # the pages folder Inktyset makes by default (~/Documents/Inktyset); other folders and files go through the
+  # file chooser portal
+  - --filesystem=xdg-documents/Inktyset:create
+  # "Pages are read" notifications
+  - --talk-name=org.freedesktop.Notifications
+
+modules:
+  # llama.cpp's Vulkan backend needs SPIRV-Headers, which the SDK doesn't have (headers only, for the build)
+  - name: spirv-headers
+    buildsystem: cmake-ninja
+    cleanup: ["*"]
+    sources:
+      - type: archive
+        url: https://github.com/KhronosGroup/SPIRV-Headers/archive/refs/tags/vulkan-sdk-1.4.357.0.tar.gz
+        sha256: 4d703067a7e06331ccb37bdfed3f9b7879cc61969a2689ae95c95db34a47ff07
+
+  # llama.cpp's server, the engine that runs the model: Vulkan, as the build the other packages download
+  - name: llama-server
+    buildsystem: simple
+    build-commands:
+      - >-
+        cmake -S . -B build -G Ninja
+        -DCMAKE_BUILD_TYPE=Release
+        -DBUILD_SHARED_LIBS=OFF
+        -DGGML_VULKAN=ON
+        -DGGML_NATIVE=OFF
+        -DLLAMA_BUILD_NUMBER=12061
+        -DLLAMA_BUILD_TESTS=OFF
+        -DLLAMA_BUILD_EXAMPLES=OFF
+        -DLLAMA_BUILD_APP=OFF
+        -DLLAMA_USE_PREBUILT_UI=OFF
+        -DLLAMA_OPENSSL=OFF
+      - cmake --build build --target llama-server
+      - install -Dm755 build/bin/llama-server /app/bin/llama-server
+    sources:
+      - type: archive
+        url: https://github.com/ggml-org/llama.cpp/archive/refs/tags/b12061.tar.gz
+        sha256: 08ce2d8a63e06dca817cdf207721fb56091927b7eedb3486949e84a2d70b6966
+        x-checker-data:
+          type: json
+          url: https://api.github.com/repos/ggml-org/llama.cpp/releases/latest
+          version-query: .tag_name
+          url-query: '"https://github.com/ggml-org/llama.cpp/archive/refs/tags/" + $version + ".tar.gz"'
+
+  # Tectonic: the LaTeX for the previews (an installed TeX isn't visible inside the sandbox)
+  - name: tectonic
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      env:
+        CARGO_HOME: /run/build/tectonic/cargo
+    build-commands:
+      - cargo --offline build --release --locked
+      - install -Dm755 target/release/tectonic /app/bin/tectonic
+    sources:
+      - type: archive
+        url: https://github.com/tectonic-typesetting/tectonic/archive/refs/tags/tectonic@0.17.0.tar.gz
+        sha256: 30adda98f67dd5389844f6023adeeb54b5475c17a54b777900644468fbc9765d
+      - tectonic-cargo-sources.json
+
+  # Typst: the previews of Typst output
+  - name: typst
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      env:
+        CARGO_HOME: /run/build/typst/cargo
+        TYPST_VERSION: 0.15.1
+    build-commands:
+      - cargo --offline build --release --locked -p typst-cli
+      - install -Dm755 target/release/typst /app/bin/typst
+    sources:
+      - type: archive
+        url: https://github.com/typst/typst/archive/refs/tags/v0.15.1.tar.gz
+        sha256: c07909e01a2a6941e52c9b616e48c209c755eed416d62bcf5583c37a4aca01a3
+      - typst-cargo-sources.json
+
+  # Inktyset: built from source as the other packages are (vp build, vp pack, electron-builder), offline
+  - name: inktyset
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/node24/bin
+      env:
+        XDG_CACHE_HOME: /run/build/inktyset/flatpak-node/cache
+        ELECTRON_CACHE: /run/build/inktyset/flatpak-node/cache/electron
+        npm_config_cache: /run/build/inktyset/flatpak-node/npm-cache
+        CI: "true"
+    build-commands:
+      - ./pnpm-exe/pnpm install --offline --frozen-lockfile --trust-lockfile
+      - ./node_modules/.bin/vp build
+      - ./node_modules/.bin/vp pack
+      # an unpacked app, no installer; no publish: the Flatpak isn't updated by Inktyset itself
+      # (shell/electron/updates.ts: only an AppImage updates itself)
+      - ./node_modules/.bin/electron-builder --config shell/electron/builder.yml --linux dir --publish never
+      - cp -a dist/packages/linux*-unpacked /app/main
+      - install -Dm755 inktyset.sh /app/bin/inktyset
+      - install -Dm644 flatpak/io.github.sigmasd.inktyset.desktop -t /app/share/applications
+      - install -Dm644 flatpak/io.github.sigmasd.inktyset.metainfo.xml -t /app/share/metainfo
+      - install -Dm644 app/icon.svg /app/share/icons/hicolor/scalable/apps/io.github.sigmasd.inktyset.svg
+      - install -Dm644 app/icon.png /app/share/icons/hicolor/512x512/apps/io.github.sigmasd.inktyset.png
+    sources:
+      - type: git
+        url: https://github.com/sigmaSd/inktyset.git
+        tag: v0.9.7
+        commit: e93a8a2f4b680e24cf1d938102a525ea72c72f40
+        x-checker-data:
+          type: git
+          tag-pattern: ^v([\d.]+)$
+      - node-sources.json
+      # pnpm, the version package.json's packageManager names (a program since pnpm 11, one per system)
+      - type: archive
+        only-arches: [x86_64]
+        url: https://registry.npmjs.org/@pnpm/exe.linux-x64/-/exe.linux-x64-12.11.2.tgz
+        sha512: 14aed029edb8018829a49c0ede6a68a18a6d76ebaf206a8a24f8b969cecc7675a48d4cb8e8905f621096d20ae7916282f1839fd31faf1af8ae42a2448f74a941
+        dest: pnpm-exe
+      - type: archive
+        only-arches: [aarch64]
+        url: https://registry.npmjs.org/@pnpm/exe.linux-arm64/-/exe.linux-arm64-12.11.2.tgz
+        sha512: e9ef190105301570161c71efe457ac5aa7ff9042b4e30ba2b41bf97ff831ce40b40e205f6a2c6bf9ffba25079d7bc485e098b92dc33054525bcc0b5f7e95b112
+        dest: pnpm-exe
+      - type: script
+        dest-filename: inktyset.sh
+        commands:
+          # zypak: Chromium's sandbox inside Flatpak's. --class: the window belongs to this launcher (its icon)
+          - exec zypak-wrapper /app/main/inktyset --class=io.github.sigmasd.inktyset "$@"
