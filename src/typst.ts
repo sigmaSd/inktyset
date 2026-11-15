@@ -10,6 +10,7 @@ import { bundled, install, programPath, supported } from "./components.ts";
 import { theoremNames } from "./pipeline.ts";
 import { run, which } from "./run.ts";
 import { msg } from "./i18n.ts";
+import { type Anchor, MARK_DEF, MARK_LABEL, typstAnchors, typstMarked } from "./sync.ts";
 
 /** Typst's language codes, for hyphenation, quotes and text direction (Arabic is right to left). */
 const CODES: Record<string, string> = {
@@ -135,6 +136,41 @@ export class Typst {
     const bin = await this.downloaded();
     if (!bin) throw new Error(msg("typstMissing"));
     return bin;
+  }
+
+  /**
+   * Where each line of a page lands (src/sync.ts): a copy with markers is measured in `dir`; the page's text,
+   * its file and its preview are left as they are. Every line of text first; only paragraph starts if that
+   * copy doesn't compile; null if neither does.
+   */
+  async anchors(dir: string, body: string, lang: string): Promise<Anchor[] | null> {
+    const program = await this.#ensure();
+    await rm(dir, { recursive: true, force: true });
+    await mkdir(dir, { recursive: true });
+    for (const rootOnly of [false, true]) {
+      await writeFile(join(dir, "doc.typ"), typstPage(MARK_DEF + typstMarked(body, rootOnly), lang));
+      const opts = { cwd: dir, timeoutMs: 120_000 };
+      let r = await run(
+        program,
+        ["eval", "--root", ".", "--in", "doc.typ", `query(<${MARK_LABEL}>).map(it => it.value)`],
+        opts,
+      );
+      // an installed Typst older than 0.14 has no `eval`
+      if (r.code !== 0 && /unrecognized subcommand/i.test(r.stderr))
+        r = await run(
+          program,
+          ["query", "--root", ".", "doc.typ", `<${MARK_LABEL}>`, "--field", "value"],
+          opts,
+        );
+      if (r.code === 0) {
+        try {
+          return typstAnchors(r.stdout);
+        } catch {
+          /* not what was expected: try the other way */
+        }
+      }
+    }
+    return null;
   }
 
   async compile(dir: string, body: string, lang: string) {

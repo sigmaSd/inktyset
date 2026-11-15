@@ -5,6 +5,7 @@
 import { BrowserWindow } from "electron";
 import type { Renderer as CoreRenderer } from "../../src/core.ts";
 import type { PictureEdit } from "../../src/picture.ts";
+import type { Sheet } from "../../src/sync.ts";
 
 export class Renderer implements CoreRenderer {
   readonly #win: BrowserWindow;
@@ -41,7 +42,8 @@ export class Renderer implements CoreRenderer {
   }
 
   async preview(rel: string, dpi: number) {
-    return ((await this.#call("preview", rel, dpi)) as string[]).map((b) => Buffer.from(b, "base64"));
+    const pages = (await this.#call("preview", rel, dpi)) as { png: string; sheet: Sheet }[];
+    return pages.map((p) => ({ png: Buffer.from(p.png, "base64"), sheet: p.sheet }));
   }
 
   close() {

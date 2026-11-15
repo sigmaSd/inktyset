@@ -112,6 +112,15 @@ export const CORE_SOURCE = {
     one: "Finishing {n} page in the background. Open Inktyset to watch.",
     other: "Finishing {n} pages in the background. Open Inktyset to watch.",
   },
+  stillReading: {
+    one: "{n} page is still to read.",
+    other: "{n} pages are still to read.",
+  },
+  stillReadingDetail:
+    "Inktyset can keep reading with the window closed, and tell you when it is done. If you stop, they are read the next time you open Inktyset.",
+  keepReading: "Keep reading",
+  stopAndQuit: "Stop and quit",
+  cancelClose: "Cancel",
   allDone: "All pages are done.",
   couldNotStart: "Inktyset could not start: {error}",
   notAnAddress: "“{url}” is not an address (it starts with http:// or https://).",

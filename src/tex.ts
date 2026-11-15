@@ -101,8 +101,9 @@ export class Tex {
 
   async #runTex(program: string, isTectonic: boolean, dir: string): Promise<CompileResult> {
     const args = isTectonic
-      ? ["--keep-logs", "--chatter", "minimal", "doc.tex"]
-      : ["-interaction=nonstopmode", "-halt-on-error", "doc.tex"];
+      ? ["--keep-logs", "--synctex", "--chatter", "minimal", "doc.tex"]
+      : ["-interaction=nonstopmode", "-halt-on-error", "-synctex=1", "doc.tex"];
+    // -synctex: where each line of the page went, for going to the source and back (src/sync.ts)
     // Tectonic's first compiles download the packages they need: give it longer
     const r = await run(program, args, { cwd: dir, timeoutMs: isTectonic ? 300_000 : 120_000 });
     const pdf = join(dir, "doc.pdf");

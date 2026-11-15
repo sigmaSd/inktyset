@@ -15,6 +15,7 @@ import { type Core, DEFAULT_PROMPT } from "./core.ts";
 import { Model } from "./model.ts";
 import { CSP, guard, newSecret } from "./guard.ts";
 import { checkLocalUrl } from "./local.ts";
+import type { Page } from "./library.ts";
 import { latexToTypst } from "./convert.ts";
 import { allBodies, fullDocument, LANGS } from "./pipeline.ts";
 import { typstBodies, typstDocument } from "./typst.ts";
@@ -191,6 +192,9 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
 
   const post = async (path: string, req: IncomingMessage): Promise<unknown> => {
     const lib = core.lib;
+    /** Back in the queue, read from the start (the text it has now stays, as a version). */
+    const readAgain = (p: Page) =>
+      Object.assign(p, { status: "queued", err: "", ok: null, pngs: [], rev: p.rev + 1, checked: false });
     if (path === "/api/upload") {
       const name =
         decodeURIComponent(String(req.headers["x-filename"] ?? "file"))
@@ -216,6 +220,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       }
       const machine: Record<string, unknown> = {};
       if (body.phone !== undefined) machine.phone = Boolean(body.phone);
+      if (body.goToSource !== undefined) machine.goToSource = Boolean(body.goToSource);
       if (body.tex !== undefined) {
         if (!["auto", "system", "builtin"].includes(String(body.tex))) throw new Error("unknown LaTeX mode");
         machine.tex = String(body.tex);
@@ -287,6 +292,18 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       return { ok: true };
     }
     if (path === "/api/trial/cancel") return (core.cancelTrials(), { ok: true });
+    if (path === "/api/redo") {
+      // Read again on the main window: these finished pages are read again, their text replaced (kept as a
+      // version)
+      if (!Array.isArray(body.ids)) throw new Error("ids expected");
+      for (const id of body.ids.map(String)) {
+        const p = lib.get(id);
+        if (p?.status === "done") readAgain(p);
+      }
+      lib.changed();
+      core.wake();
+      return { ok: true };
+    }
     if (path === "/api/install-update") {
       if (!core.update) throw new Error("no update is ready");
       core.shell.installUpdate();
@@ -376,7 +393,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         void core.compile(id);
       } else if (action === "redo") {
         if (p.status === "working") throw Object.assign(new Error("page is being read"), { code: 409 });
-        Object.assign(p, { status: "queued", err: "", ok: null, pngs: [], rev: p.rev + 1, checked: false });
+        readAgain(p);
         core.wake();
       } else if (action === "delete") {
         core.cancelReading(id);
@@ -445,6 +462,14 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
           chats: list,
           text: await core.lib.body(cm[1]),
         });
+      }
+      // go to the source (a point of the preview → a line) and back (a line → where it is on the preview)
+      const sm = /^\/api\/page\/(page\d+)\/(source|spots)$/.exec(path);
+      if (sm) {
+        const q = (k: string) => Number(url.searchParams.get(k));
+        if (sm[2] === "source")
+          return send(res, 200, { line: await core.sourceLine(sm[1], q("sheet"), q("x"), q("y")) });
+        return send(res, 200, { spots: await core.previewSpots(sm[1], q("line")) });
       }
       const pm = /^\/api\/page\/(page\d+)$/.exec(path);
       if (pm) return send(res, 200, { tex: await core.lib.body(pm[1]) });

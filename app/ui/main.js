@@ -24,6 +24,10 @@ document.addEventListener("contextmenu", (e) => {
 });
 const FORMAT_NAME = { latex: "LaTeX", typst: "Typst" };
 const fmtOf = (p) => p.format ?? "latex";
+/** Going to the source and back with Ctrl+click (Settings → Preview), off by default. */
+function syncOn() {
+  return !!S?.machine?.goToSource;
+}
 let S = null; // last state from the server
 const texCache = new Map(); // id -> {rev, tex}
 const dirty = new Map(); // id -> timer for unsaved edits
@@ -123,7 +127,9 @@ function fillHint() {
     `${k(enter)} ${esc(t("hintCheck"))} (${k("Ctrl")}+${k(enter)} ${esc(t("hintWhileTyping"))})`,
     `${k("+")} ${k("−")} ${esc(t("hintOr"))} ${k("Ctrl")}+${esc(t("hintScroll"))} ${esc(t("hintZoom"))}`,
     `${k("L")} ${esc(t("hintLayout"))}`,
+    `${k("S")} ${esc(t("hintSwap"))}`,
     `${k("E")} ${esc(t("hintEditor"))}`,
+    ...(syncOn() ? [`${k("Ctrl")}+${esc(t("hintSyncClick"))}`] : []),
     `${k(t("keyEsc"))} ${esc(t("hintClose"))}`,
   ].join(" · ");
 }
@@ -439,6 +445,11 @@ function renderSettings() {
     ${su.jobs.typst.status === "running" || su.jobs.typst.status === "error" ? `<div class="setup-row"><span class="setup-name">Typst</span>${jobHtml(su.jobs.typst)}</div>` : ""}
   </section>
   <section class="set">
+    <h3>${t("goToSource")}</h3>
+    <label class="choice"><input type="checkbox" id="setGoToSource" ${m.goToSource ? "checked" : ""}>
+      <span><b>${t("goToSourceSetting")}</b><small>${t("goToSourceHelp")}</small></span></label>
+  </section>
+  <section class="set">
     <h3>${t("phone")}</h3>
     <label class="choice"><input type="checkbox" id="setPhone" ${m.phone ? "checked" : ""}>
       <span><b>${t("phoneSetting")}</b>
@@ -647,6 +658,7 @@ $("#settingsDialog").addEventListener("change", async (e) => {
     else if (e.target.id === "setSrvModel") await api("/api/settings", { serverModel: v });
     else if (e.target.id === "setSrvKey") await api("/api/settings", { serverKey: v });
     else if (e.target.id === "setPhone") await api("/api/settings", { phone: e.target.checked });
+    else if (e.target.id === "setGoToSource") await api("/api/settings", { goToSource: e.target.checked });
     else if (e.target.id === "setUi") await api("/api/settings", { ui: e.target.value });
     else if (e.target.id === "setServer") {
       await api("/api/settings", { serverPath: e.target.value });
@@ -660,20 +672,38 @@ $("#settingsDialog").addEventListener("change", async (e) => {
   renderSettings();
 });
 
-// ---------------------------------------------------------------- trying other instructions on some pages
-function openTrial() {
-  const list = $("#trialList");
-  list.innerHTML = S.pages
+// ---------------------------------------------------------------- reading pages again
+// One chooser for two doors: Read again… on the main window (the pages not checked picked first; their text
+// replaced, or both kept to compare), and Settings → Try on some pages… (both kept, to try other instructions).
+const trial = { from: "settings" };
+function openTrial(from = "settings") {
+  trial.from = from;
+  const main = from === "main";
+  $("#trialHead").textContent = main ? t("readAgainHead") : t("trialTitle");
+  $("#trialText").textContent = main ? t("readAgainText") : t("trialText");
+  $("#trialMode").hidden = !main;
+  $("#trialMode input[value=replace]").checked = true;
+  $("#trialList").innerHTML = S.pages
     .filter((p) => p.status === "done")
     .map(
       (p) =>
         `<label><input type="checkbox" value="${esc(p.id)}"> ${esc(t("pageN", { n: pageNumber(p.id) }))}
-        <small><bdi>${esc(p.label)}</bdi></small></label>`,
+        <small>${esc(statusOf(p)[1])} · <bdi>${esc(p.label)}</bdi></small></label>`,
     )
     .join("");
+  pickTrial(main ? "unchecked" : "none");
   $("#trialInfo").textContent = t("usuallyTakes", { t: about(S.avgSecs) });
-  updateTrialGo();
   $("#trialDialog").showModal();
+}
+function pickTrial(which) {
+  for (const box of $("#trialList").querySelectorAll("input")) {
+    const p = S.pages.find((x) => x.id === box.value);
+    box.checked =
+      which === "all" ||
+      (which === "unchecked" && !p?.checked) ||
+      (which === "unclear" && !!(p?.unk || p?.truncated));
+  }
+  updateTrialGo();
 }
 function updateTrialGo() {
   const n = $("#trialList").querySelectorAll("input:checked").length;
@@ -681,13 +711,18 @@ function updateTrialGo() {
   $("#trialGo").disabled = !n;
 }
 $("#trialList").addEventListener("change", updateTrialGo);
+$("#trialDialog").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-pick]");
+  if (b) pickTrial(b.dataset.pick);
+});
 $("#trialCancel").onclick = () => $("#trialDialog").close();
 $("#trialGo").onclick = async () => {
   const ids = [...$("#trialList").querySelectorAll("input:checked")].map((i) => i.value);
+  const replace = trial.from === "main" && $("#trialMode input[value=replace]").checked;
   try {
-    await api("/api/trial", { ids });
+    await api(replace ? "/api/redo" : "/api/trial", { ids });
     $("#trialDialog").close();
-    $("#settingsDialog").close();
+    if (trial.from === "settings") $("#settingsDialog").close();
   } catch (err) {
     toast(err.message);
   }
@@ -869,7 +904,7 @@ function statusOf(p) {
   if (p.checked) return ["ok", t("checked")];
   if (p.truncated) return ["warn", t("mayBeCut")];
   if (p.unk) return ["warn", t("unclear", { n: p.unk })];
-  return ["ok", t("statusDone")];
+  return ["", t("statusDone")]; // green is for checked pages only
 }
 
 function renderStatusLine() {
@@ -889,7 +924,8 @@ function renderStatusLine() {
       `<span>· ${t("checkedOf", { c: `<strong>${checked}</strong>`, d: done })}</span>` +
       (checked < done
         ? ` <button class="ghost compare" data-act="compareNext">${t("proofreadNext")}</button>`
-        : "");
+        : "") +
+      ` <button class="ghost" data-act="readAgainMany" title="${t("readAgainManyTitle")}">${t("readAgainMany")}</button>`;
   if (working || queued || S.intake) {
     const elapsed = working ? Date.now() / 1000 - working.started : 0;
     const left = Math.max(0, S.avgSecs - elapsed) + queued * S.avgSecs;
@@ -946,7 +982,7 @@ function buildCard(p) {
   el.className =
     "card " +
     ({ queued: "queued", working: "working", failed: "failed", stopped: "queued" }[p.status] ||
-      (p.ok === false ? "broken" : !p.checked && (p.unk || p.truncated) ? "unclear" : "done"));
+      (p.ok === false ? "broken" : p.checked ? "checked" : p.unk || p.truncated ? "unclear" : "done"));
   el.dataset.id = p.id;
   const scan = p.noScan
     ? `<div class="col scan"><h3>${t("scan")}</h3></div>`
@@ -981,12 +1017,23 @@ function buildCard(p) {
     if (p.ok === null)
       prev += `<div class="waiting"><div class="spinner"></div>${t("buildingPreview")}</div>`;
     prev += p.pngs
-      .map((src) => `<img src="/files/${esc(src)}?r=${p.rev}" alt="${t("renderedAlt")}">`)
+      .map(
+        (src) =>
+          `<img src="/files/${esc(src)}?r=${p.rev}" alt="${t("renderedAlt")}"${syncOn() ? ` title="${t("syncTitle")}"` : ""}>`,
+      )
       .join("");
     right = `<div class="col preview"><h3>${t("preview")}</h3>${prev}</div>`;
   }
   el.innerHTML = `<div class="card-head" draggable="true" title="${t("dragToMove")}">
-      <h2>${t("pageN", { n: pageNumber(p.id) })}</h2><span class="chip ${cls}">${esc(label)}</span>
+      <h2>${t("pageN", { n: pageNumber(p.id) })}</h2>
+      ${p.checked && p.status === "done" && cls === "ok" ? "" : `<span class="chip ${cls}">${esc(label)}</span>`}
+      ${
+        p.status !== "done"
+          ? ""
+          : p.checked
+            ? `<button class="checked small" data-act="check" title="${t("unmarkTitle")}">${t("checked")}</button>`
+            : `<button class="ghost small check" data-act="check" title="${t("markCardTitle")}">${t("markChecked")}</button>`
+      }
       ${trialChip(p)}
       <span class="src" title="${esc(p.label)}"><bdi>${esc(p.label)}</bdi></span><span class="spacer"></span>
       ${p.fresh ? `<button class="compare fresh" data-act="fresh" title="${t("newVersionTitle")}">${t("newVersion")}</button>` : ""}
@@ -1027,7 +1074,11 @@ function mountEditor(div) {
     id = card?.dataset.id;
   if (!id || cardEds.get(id)?.div === div) return;
   dropEditor(id); // an editor left on an older box of this card
-  const ed = createLatexEditor(div, { onChange: (pid, text) => save(pid, text, $(".saved", card)) });
+  const ed = createLatexEditor(div, {
+    onChange: (pid, text) => save(pid, text, $(".saved", card)),
+    onLineClick: (pid, line) => showOnPreview(pid, line).catch((e) => toast(e.message)),
+    lineClickOn: syncOn,
+  });
   cardEds.set(id, { ed, div });
   const p = S.pages.find((x) => x.id === id);
   if (pendingTex.has(id)) ed.load(id, pendingTex.get(id), p && fmtOf(p)); // an edit not saved yet: it wins
@@ -1073,7 +1124,8 @@ function renderPages() {
   let prev = null;
   for (const p of S.pages) {
     let c = cards.get(p.id);
-    const key = cardKey(p) + "|" + pageNumber(p.id) + "|" + uiLang(); // a new language rebuilds the cards
+    // a new language rebuilds the cards (and going to the source turned on or off: the previews' tooltip)
+    const key = cardKey(p) + "|" + pageNumber(p.id) + "|" + uiLang() + "|" + syncOn();
     const editing = c && !!cardEds.get(p.id)?.ed.hasFocus();
     if (!c || (c.key !== key && !editing)) {
       const el = buildCard(p);
@@ -1213,6 +1265,10 @@ function zoom(src) {
 
 document.addEventListener("click", async (e) => {
   const b = e.target.closest("[data-act]");
+  if (withCtrl(e) && e.target.matches(".card .preview > img")) {
+    goToSource(e.target, e).catch((err) => toast(err.message));
+    return;
+  }
   if (e.target.matches(".card .scan img, .card .preview img")) {
     const id = e.target.closest(".card").dataset.id;
     if (p_done(id)) openCompare(id);
@@ -1238,10 +1294,14 @@ document.addEventListener("click", async (e) => {
     } else if (act === "stopPage") await api(`/api/page/${id}/stop`);
     else if (act === "readPage") await api(`/api/page/${id}/read`);
     else if (act === "stopAll") await api("/api/stop-all");
-    else if (act === "readStopped") await api("/api/read-stopped");
+    else if (act === "check") {
+      const p = S.pages.find((x) => x.id === id);
+      if (p) await api(`/api/page/${id}/check`, { checked: !p.checked });
+    } else if (act === "readStopped") await api("/api/read-stopped");
     else if (act === "editPicture") await openPicture(id);
     else if (act === "expand") openExpand(b.dataset.for);
-    else if (act === "tryOn") openTrial();
+    else if (act === "tryOn") openTrial("settings");
+    else if (act === "readAgainMany") openTrial("main");
     else if (act === "stopTrials") await api("/api/trial/cancel");
     else if (act === "resetPrompt") {
       await api("/api/settings", { prompt: "" });
@@ -1298,7 +1358,15 @@ const store = {
     } catch {}
   },
 };
-const cmp = { id: null, rev: null, z: 1, layout: null, editor: store.get("cmpEditor", true), syncing: false };
+const cmp = {
+  id: null,
+  rev: null,
+  z: 1,
+  layout: null,
+  editor: store.get("cmpEditor", true),
+  swap: store.get("cmpSwap", false), // the handwritten page after the preview (on the other side, or below)
+  syncing: false,
+};
 const donePages = () => S.pages.filter((p) => p.status === "done");
 
 function nextUnchecked(fromId) {
@@ -1333,6 +1401,8 @@ function applyLayout() {
   let layout = cmp.layout;
   if (!layout) layout = img.naturalWidth && img.naturalWidth / img.naturalHeight > 1.4 ? "stack" : "side";
   box.classList.toggle("stack", layout === "stack");
+  box.classList.toggle("swap", cmp.swap);
+  $("#cmpSwap").classList.toggle("on", cmp.swap);
   $("#cmpLayout").textContent = layout === "stack" ? t("sideBySide") : t("stacked");
 }
 
@@ -1444,6 +1514,13 @@ function renderCompare() {
     $("#prevInner").innerHTML = prev;
     if (first) setZoom(1);
   }
+  // going to the source turned on or off: the previews' tooltip and the keyboard help
+  for (const img of $("#prevInner").querySelectorAll(":scope > img"))
+    img.title = syncOn() ? t("syncTitle") : "";
+  if (cmp.hintSync !== syncOn()) {
+    cmp.hintSync = syncOn();
+    fillHint();
+  }
   if (cmpEd.pageId !== p.id) {
     cmpEd.load(p.id, "", fmtOf(p)); // another page: empty until its text arrives (fresh undo history)
     $(".saved", d).textContent = "";
@@ -1531,7 +1608,141 @@ async function renderDiff(p, ov) {
 const cmpEd = createLatexEditor($("#cmpCode"), {
   onChange: (id, text) => save(id, text, $("#compare .saved"), () => cmpEd.pageId === id),
   onCheck: () => cmpCheckAndNext().catch((err) => toast(err.message)),
+  onLineClick: (id, line) => showOnPreview(id, line).catch((err) => toast(err.message)),
+  lineClickOn: () => syncOn(),
 });
+
+// Go to the source and back, as in TeXstudio (src/sync.ts): Ctrl+click on a preview → that line in the
+// editor beside it; Ctrl+click on a line of the editor → where it is on the preview, marked for a moment.
+// Line by line, in the list and in the Compare view. Off until turned on in Settings (syncOn).
+const withCtrl = (e) => syncOn() && (e.ctrlKey || e.metaKey);
+
+/** The preview images a page shows: in its card, or in the Compare view while it's the one shown there. */
+function previewImages(id, card) {
+  if (card) return [...card.querySelectorAll(".preview > img")];
+  return $("#compare").open && cmp.id === id ? [...$("#prevInner").querySelectorAll(":scope > img")] : [];
+}
+
+async function goToSource(img, e) {
+  const card = img.closest(".card"),
+    id = card ? card.dataset.id : cmp.id;
+  const r = img.getBoundingClientRect();
+  const q = new URLSearchParams({
+    sheet: String(previewImages(id, card).indexOf(img)),
+    x: String((e.clientX - r.left) / r.width),
+    y: String((e.clientY - r.top) / r.height),
+  });
+  const { line } = await (await fetch(`/api/page/${id}/source?${q}`)).json();
+  if (!line) return toast(t("noSourceHere"), 4000);
+  let ed;
+  if (card) {
+    const div = $(".card-code", card);
+    if (div) mountEditor(div);
+    ed = cardEds.get(id)?.ed;
+  } else {
+    if (!cmp.editor) {
+      cmp.editor = true; // the editor was hidden: shown, to see the line
+      store.set("cmpEditor", true);
+      renderCompare();
+    }
+    ed = cmpEd;
+  }
+  if (ed?.pageId === id) ed.goToLine(line);
+}
+
+async function showOnPreview(id, line) {
+  const card = $("#compare").open && cmp.id === id ? null : cards.get(id)?.el;
+  const { spots } = await (await fetch(`/api/page/${id}/spots?line=${line}`)).json();
+  const imgs = previewImages(id, card);
+  if (!spots.length || !imgs.length) return toast(t("notOnPreview"), 4000);
+  for (const old of document.querySelectorAll(".sync-spot")) old.remove();
+  let first = null;
+  for (const s of spots) {
+    const img = imgs[s.sheet];
+    if (!img) continue;
+    const box = document.createElement("div");
+    box.className = "sync-spot";
+    Object.assign(box.style, {
+      left: `${img.offsetLeft + s.left * img.offsetWidth}px`,
+      top: `${img.offsetTop + s.top * img.offsetHeight}px`,
+      width: `${s.width * img.offsetWidth}px`,
+      height: `${s.height * img.offsetHeight}px`,
+    });
+    box.addEventListener("animationend", () => box.remove());
+    img.parentElement.append(box);
+    first ??= box;
+  }
+  // in Compare the handwritten page follows the preview's scroll: the same part of it comes into view
+  first?.scrollIntoView({ block: card ? "nearest" : "center", inline: "nearest", behavior: "smooth" });
+}
+
+// The editor and the chat of the Compare view: their edge toward the pictures is dragged to resize them (or
+// moved with the arrow keys); each keeps its width, double-click goes back to the usual one.
+const PANELS = { editor: "#cmpEditor", chat: "#cmpChat" };
+function setPanelWidth(name, w) {
+  const el = $(PANELS[name]),
+    body = $("#compare .cmp-body");
+  if (w === null) {
+    el.style.removeProperty("--w");
+    store.set(`cmpW.${name}`, null);
+    return;
+  }
+  // the pictures keep at least 280 pixels, beside both panels
+  const other = Object.values(PANELS)
+    .map((s) => $(s))
+    .filter((x) => x !== el && !x.hidden)
+    .reduce((sum, x) => sum + x.offsetWidth, 0);
+  const max = Math.max(260, body.clientWidth - other - 280);
+  w = Math.round(Math.min(max, Math.max(260, w)));
+  el.style.setProperty("--w", `${w}px`);
+  store.set(`cmpW.${name}`, w);
+}
+for (const name of Object.keys(PANELS)) {
+  const w = store.get(`cmpW.${name}`, null);
+  if (w) $(PANELS[name]).style.setProperty("--w", `${w}px`);
+}
+for (const h of document.querySelectorAll(".cmp-resize")) {
+  const name = h.dataset.panel,
+    el = $(PANELS[name]);
+  h.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    h.setPointerCapture(e.pointerId);
+    h.classList.add("dragging");
+    $("#compare .cmp-body").classList.add("resizing");
+    const r = el.getBoundingClientRect();
+    // the edge toward the pictures: the left one, or the right one in a right-to-left window
+    const move = (ev) => setPanelWidth(name, isRtl() ? ev.clientX - r.left : r.right - ev.clientX);
+    const up = () => {
+      h.classList.remove("dragging");
+      $("#compare .cmp-body").classList.remove("resizing");
+      h.removeEventListener("pointermove", move);
+      h.removeEventListener("pointerup", up);
+      h.removeEventListener("pointercancel", up);
+    };
+    h.addEventListener("pointermove", move);
+    h.addEventListener("pointerup", up);
+    h.addEventListener("pointercancel", up);
+  });
+  h.addEventListener("dblclick", () => setPanelWidth(name, null));
+  h.addEventListener("keydown", (e) => {
+    const step = e.key === "ArrowLeft" ? 1 : e.key === "ArrowRight" ? -1 : 0;
+    if (!step) return;
+    e.preventDefault();
+    e.stopPropagation(); // not the previous/next page
+    setPanelWidth(name, el.offsetWidth + (isRtl() ? -step : step) * 24);
+  });
+}
+
+$("#prevInner").addEventListener("click", (e) => {
+  if (withCtrl(e) && e.target.matches("#prevInner > img"))
+    goToSource(e.target, e).catch((err) => toast(err.message));
+});
+// a hand over the previews while Ctrl is held: they can be clicked
+const ctrlHeld = (e) => document.documentElement.classList.toggle("ctrl-held", withCtrl(e));
+addEventListener("keydown", ctrlHeld);
+addEventListener("keyup", ctrlHeld);
+addEventListener("blur", () => document.documentElement.classList.remove("ctrl-held"));
 
 async function cmpCheckAndNext() {
   const p = S.pages.find((x) => x.id === cmp.id);
@@ -1555,6 +1766,10 @@ async function cmpAction(act, btn) {
   else if (act === "fit") setZoom(1);
   else if (act === "layout") {
     cmp.layout = $("#cmpImages").classList.contains("stack") ? "side" : "stack";
+    applyLayout();
+  } else if (act === "swap") {
+    cmp.swap = !cmp.swap;
+    store.set("cmpSwap", cmp.swap);
     applyLayout();
   } else if (act === "editor") {
     cmp.editor = !cmp.editor;
@@ -1628,6 +1843,8 @@ $("#compare").addEventListener("keydown", (e) => {
     0: "fit",
     l: "layout",
     L: "layout",
+    s: "swap",
+    S: "swap",
     e: "editor",
     E: "editor",
     c: "chat",

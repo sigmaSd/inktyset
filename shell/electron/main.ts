@@ -54,19 +54,38 @@ let quitting = false;
 
 function createWindow(served: Served, core: Core) {
   const win = openWindow(served.origin, ICON); // windows.ts: our own title bar, locked down, remembered place
+  let asking = false;
   win.on("close", (e) => {
     if (quitting || !core.lib.busy()) return;
-    // pages still waiting: keep reading them with the window hidden
+    // pages still waiting: ask whether to keep reading them with the window hidden, or to stop (a page cut
+    // off mid-read waits again, library.ts: every waiting page is read the next time Inktyset opens)
     e.preventDefault();
-    win.hide();
+    if (asking) return;
+    asking = true;
     const n = core.lib.pages.filter((p) => p.status === "queued" || p.status === "working").length;
-    notify(msg("finishing", { n }));
-    const off = core.lib.onChange(() => {
-      if (core.lib.busy() || win.isVisible()) return;
-      off();
-      notify(msg("allDone"));
-      app.quit();
-    });
+    void dialog
+      .showMessageBox(win, {
+        type: "question",
+        message: msg("stillReading", { n }),
+        detail: msg("stillReadingDetail"),
+        buttons: [msg("keepReading"), msg("stopAndQuit"), msg("cancelClose")],
+        defaultId: 0,
+        cancelId: 2,
+        noLink: true,
+      })
+      .then(({ response }) => {
+        asking = false;
+        if (response === 2) return;
+        if (response === 1 || !core.lib.busy()) return app.quit(); // stopped, or finished while asking
+        win.hide();
+        notify(msg("finishing", { n }));
+        const off = core.lib.onChange(() => {
+          if (core.lib.busy() || win.isVisible()) return;
+          off();
+          notify(msg("allDone"));
+          app.quit();
+        });
+      });
   });
   win.on("closed", () => {
     mainWindow = null;

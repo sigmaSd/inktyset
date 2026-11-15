@@ -114,6 +114,32 @@ msgstr[3] "يُكمل Inktyset {n} صفحات في الخلفية. افتحه ل
 msgstr[4] "يُكمل Inktyset {n} صفحةً في الخلفية. افتحه للمتابعة."
 msgstr[5] "يُكمل Inktyset {n} صفحة في الخلفية. افتحه للمتابعة."
 
+msgctxt "stillReading"
+msgid "{n} page is still to read."
+msgid_plural "{n} pages are still to read."
+msgstr[0] "لا صفحات متبقية للقراءة."
+msgstr[1] "بقيت صفحة واحدة للقراءة."
+msgstr[2] "بقيت صفحتان للقراءة."
+msgstr[3] "بقيت {n} صفحات للقراءة."
+msgstr[4] "بقيت {n} صفحةً للقراءة."
+msgstr[5] "بقيت {n} صفحة للقراءة."
+
+msgctxt "stillReadingDetail"
+msgid "Inktyset can keep reading with the window closed, and tell you when it is done. If you stop, they are read the next time you open Inktyset."
+msgstr "يمكن لـInktyset أن يواصل القراءة والنافذة مغلقة، ويُعلمك عند الانتهاء. وإن أوقفته، تُقرأ في المرة القادمة التي تفتح فيها Inktyset."
+
+msgctxt "keepReading"
+msgid "Keep reading"
+msgstr "مواصلة القراءة"
+
+msgctxt "stopAndQuit"
+msgid "Stop and quit"
+msgstr "إيقاف وخروج"
+
+msgctxt "cancelClose"
+msgid "Cancel"
+msgstr "إلغاء"
+
 msgctxt "allDone"
 msgid "All pages are done."
 msgstr "اكتملت كل الصفحات."
@@ -553,6 +579,20 @@ msgctxt "typstHelp"
 msgid "For Typst output; downloaded when first needed ({size})."
 msgstr "لإخراج Typst؛ يُنزَّل عند أول حاجة إليه ({size})."
 
+#. Title of a section of Settings: going from the preview to the text and back, as in TeXstudio
+msgctxt "goToSource"
+msgid "Go to the source"
+msgstr "الانتقال إلى المصدر"
+
+msgctxt "goToSourceSetting"
+msgid "Ctrl+click between the preview and the text"
+msgstr "Ctrl+نقرة للتنقل بين المعاينة والنص"
+
+#. Ctrl and Alt are keys, as printed on keyboards
+msgctxt "goToSourceHelp"
+msgid "As in TeXstudio: Ctrl+click a spot of the preview to go to its line in the text, and a line of the text to see where it is on the preview. Ctrl+click then no longer adds a cursor in the text: Alt+click does."
+msgstr "كما في TeXstudio: Ctrl+نقرة على موضع في المعاينة للانتقال إلى سطره في النص، وعلى سطر من النص لرؤية موضعه في المعاينة. عندها لا تضيف Ctrl+نقرة مؤشرًا في النص، بل Alt+نقرة."
+
 msgctxt "phoneSetting"
 msgid "Receive photos from a phone (Folder Camera)"
 msgstr "استقبال الصور من هاتف (Folder Camera)"
@@ -820,6 +860,19 @@ msgctxt "renderedAlt"
 msgid "Rendered page"
 msgstr "الصفحة المنضَّدة"
 
+#. Tooltip of the preview. Ctrl is the key, as printed on keyboards; as in TeXstudio
+msgctxt "syncTitle"
+msgid "Ctrl+click: go to this line of the text. Ctrl+click a line of the text to find it here."
+msgstr "Ctrl+نقرة: الانتقال إلى هذا السطر من النص. Ctrl+نقرة على سطر من النص لإيجاده هنا."
+
+msgctxt "noSourceHere"
+msgid "Could not tell which line of the text this is."
+msgstr "تعذّر معرفة سطر النص المقابل لهذا الموضع."
+
+msgctxt "notOnPreview"
+msgid "This line is not on the preview."
+msgstr "هذا السطر غير ظاهر في المعاينة."
+
 msgctxt "preview"
 msgid "Preview"
 msgstr "المعاينة"
@@ -1017,6 +1070,10 @@ msgctxt "markTitle"
 msgid "Mark this page as proofread and go to the next one (Enter)"
 msgstr "تعليم هذه الصفحة كمُراجَعة والانتقال إلى التالية (Enter)"
 
+msgctxt "markCardTitle"
+msgid "Mark this page as proofread"
+msgstr "تعليم هذه الصفحة كمُراجَعة"
+
 msgctxt "allChecked"
 msgid "Every page is checked"
 msgstr "تمت مراجعة كل الصفحات"
@@ -1056,6 +1113,14 @@ msgstr "التخطيط"
 msgctxt "layoutTitle"
 msgid "Side by side, or one above the other (L)"
 msgstr "جنبًا إلى جنب أو واحدة فوق الأخرى (L)"
+
+msgctxt "swap"
+msgid "Swap"
+msgstr "تبديل"
+
+msgctxt "swapTitle"
+msgid "Put the handwritten page on the other side (S)"
+msgstr "ضع الصفحة المكتوبة بخط اليد في الجهة الأخرى (S)"
 
 msgctxt "editorTitle"
 msgid "Show or hide the text (E)"
@@ -1104,9 +1169,23 @@ msgctxt "hintLayout"
 msgid "layout"
 msgstr "التخطيط"
 
+msgctxt "hintSwap"
+msgid "swap sides"
+msgstr "تبديل الجهتين"
+
 msgctxt "hintEditor"
 msgid "editor"
 msgstr "المحرّر"
+
+#. Keyboard help: Ctrl+click goes from a spot of the preview to its line in the text, and from a line to the preview
+msgctxt "hintSyncClick"
+msgid "click: from the preview to the text and back"
+msgstr "نقرة: من المعاينة إلى النص والعكس"
+
+#. Tooltip of the edge between the pictures and the text editor (or the chat), in the Compare view
+msgctxt "resizeTitle"
+msgid "Drag to change the width. Double-click: the usual width."
+msgstr "اسحب لتغيير العرض. نقرة مزدوجة: العرض المعتاد."
 
 msgctxt "hintClose"
 msgid "close"
@@ -1475,6 +1554,58 @@ msgstr[2] "قراءة صفحتين"
 msgstr[3] "قراءة {n} صفحات"
 msgstr[4] "قراءة {n} صفحةً"
 msgstr[5] "قراءة {n} صفحة"
+
+msgctxt "readAgainMany"
+msgid "Read again…"
+msgstr "إعادة القراءة…"
+
+msgctxt "readAgainManyTitle"
+msgid "Choose pages to read again"
+msgstr "اختيار صفحات لإعادة قراءتها"
+
+msgctxt "readAgainHead"
+msgid "Read pages again"
+msgstr "إعادة قراءة صفحات"
+
+msgctxt "readAgainText"
+msgid "Each page you choose is read again from its picture, with the current instructions and model."
+msgstr "تُعاد قراءة كل صفحة تختارها من صورتها، بالتعليمات والنموذج الحاليين."
+
+msgctxt "pickLabel"
+msgid "Choose:"
+msgstr "اختيار:"
+
+msgctxt "pickAll"
+msgid "All"
+msgstr "الكل"
+
+msgctxt "pickUnchecked"
+msgid "Not checked"
+msgstr "غير المُراجَعة"
+
+msgctxt "pickUnclear"
+msgid "With unclear spots"
+msgstr "ذات المواضع غير الواضحة"
+
+msgctxt "pickNone"
+msgid "None"
+msgstr "لا شيء"
+
+msgctxt "modeReplace"
+msgid "Replace their text"
+msgstr "استبدال نصها"
+
+msgctxt "modeReplaceHelp"
+msgid "The text they have now is kept as a version you can go back to."
+msgstr "يُحفظ نصها الحالي كنسخة يمكنك الرجوع إليها."
+
+msgctxt "modeCompare"
+msgid "Keep both, to compare"
+msgstr "الإبقاء على الاثنين للمقارنة"
+
+msgctxt "modeCompareHelp"
+msgid "The new reading waits beside the text: compare the two, then keep the one you prefer."
+msgstr "تنتظر القراءة الجديدة بجانب النص: قارن بينهما، ثم احتفظ بما تفضّله."
 
 msgctxt "trialNone"
 msgid "Choose pages"

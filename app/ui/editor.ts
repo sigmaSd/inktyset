@@ -1,5 +1,7 @@
 // The page editor (CodeMirror 6), for LaTeX or Typst (typst-mode.ts): highlighting, matching and auto-closed
 // brackets, the model's [??] marks in orange, search (Ctrl+F), undo, and completion of commands and blocks.
+// Ctrl+click on a line shows it on the preview (main.js), when turned on in Settings; several cursors are then
+// Alt+click.
 // main.js creates one for the Compare view and one per page card in the list (only while the card is near
 // the visible area, so hundreds of pages stay light).
 
@@ -16,7 +18,15 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirro
 import { bracketMatching, HighlightStyle, StreamLanguage, syntaxHighlighting } from "@codemirror/language";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
 import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
-import { Annotation, Compartment, EditorSelection, EditorState, Prec } from "@codemirror/state";
+import {
+  Annotation,
+  Compartment,
+  EditorSelection,
+  EditorState,
+  Prec,
+  StateEffect,
+  StateField,
+} from "@codemirror/state";
 import {
   Decoration,
   drawSelection,
@@ -31,6 +41,20 @@ import {
 import { tags as t } from "@lezer/highlight";
 import { typstCompletions, typstMode } from "./typst-mode.ts";
 
+/** A line shown for a moment (gone to from the preview): its start, or null to stop showing it (style.css
+ * .cm-flash). */
+const flashLine = Decoration.line({ class: "cm-flash" });
+const flash = StateEffect.define<number | null>();
+const flashed = StateField.define({
+  create: () => Decoration.none,
+  update(deco, tr) {
+    deco = deco.map(tr.changes);
+    for (const e of tr.effects)
+      if (e.is(flash)) deco = e.value === null ? Decoration.none : Decoration.set([flashLine.range(e.value)]);
+    return deco;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
 /** A change made by Inktyset (a page loaded), not by typing: not saved back. */
 const external = Annotation.define<boolean>();
 
@@ -364,16 +388,25 @@ export interface LatexEditor {
   hasFocus(): boolean;
   /** Select the next [??] after the cursor (from the top again at the end). */
   nextUnclear(): void;
+  /** Go to a line (from 1): the cursor at its start, in view, shown for a moment. */
+  goToLine(line: number): void;
   /** Remove it (its card left the list or was rebuilt). */
   destroy(): void;
 }
 
 export function createLatexEditor(
   parent: HTMLElement,
-  opts: { onChange: (pageId: string, text: string) => void; onCheck?: () => void },
+  opts: {
+    onChange: (pageId: string, text: string) => void;
+    onCheck?: () => void;
+    /** Ctrl+click on a line (from 1): show it on the preview, while `lineClickOn` says so (Settings). */
+    onLineClick?: (pageId: string, line: number) => void;
+    lineClickOn?: () => boolean;
+  },
 ): LatexEditor {
   let pageId: string | null = null;
   let format: Format = "latex";
+  const lineClicks = () => !!opts.onLineClick && (opts.lineClickOn?.() ?? true);
   const language = new Compartment();
   const extensions = () => [
     language.of(forFormat(format)),
@@ -388,7 +421,25 @@ export function createLatexEditor(
     EditorState.allowMultipleSelections.of(true),
     syntaxHighlighting(highlight),
     unclear,
+    flashed,
     theme,
+    // Ctrl+click: this line on the preview (as in TeXstudio), when turned on; Alt+click adds a cursor then.
+    // Otherwise Ctrl+click adds a cursor, as usual.
+    EditorView.clickAddsSelectionRange.of((e) =>
+      lineClicks() ? e.altKey : /Mac/.test(navigator.platform) ? e.metaKey : e.ctrlKey,
+    ),
+    EditorView.domEventHandlers({
+      mousedown(e, view) {
+        if (!lineClicks() || !pageId || e.button !== 0 || !(e.ctrlKey || e.metaKey)) return false;
+        const pos = view.posAtCoords({ x: e.clientX, y: e.clientY });
+        if (pos === null) return false;
+        e.preventDefault();
+        view.dispatch({ selection: EditorSelection.cursor(pos) });
+        view.focus();
+        opts.onLineClick!(pageId, view.state.doc.lineAt(pos).number);
+        return true;
+      },
+    }),
     // Ctrl+Enter in the Compare view: "checked, next page", as in the rest of it (not a blank line)
     ...(opts.onCheck
       ? [Prec.highest(keymap.of([{ key: "Mod-Enter", run: () => (opts.onCheck!(), true) }]))]
@@ -409,6 +460,7 @@ export function createLatexEditor(
     EditorView.contentAttributes.of({ "aria-label": "Text of this page", spellcheck: "false" }),
   ];
   const view = new EditorView({ parent, state: EditorState.create({ extensions: extensions() }) });
+  let flashTimer: ReturnType<typeof setTimeout> | undefined;
 
   return {
     get pageId() {
@@ -445,6 +497,20 @@ export function createLatexEditor(
       view.dispatch({ selection: EditorSelection.single(k, k + 4), scrollIntoView: true });
       view.focus();
     },
-    destroy: () => view.destroy(),
+    goToLine(line) {
+      const doc = view.state.doc;
+      const at = doc.line(Math.min(Math.max(1, line), doc.lines)).from;
+      view.dispatch({
+        selection: EditorSelection.cursor(at),
+        effects: [flash.of(at), EditorView.scrollIntoView(at, { y: "center" })],
+      });
+      view.focus();
+      clearTimeout(flashTimer);
+      flashTimer = setTimeout(() => view.dispatch({ effects: flash.of(null) }), 1600);
+    },
+    destroy: () => {
+      clearTimeout(flashTimer);
+      view.destroy();
+    },
   };
 }

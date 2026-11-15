@@ -5,6 +5,7 @@ import * as pdfjs from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import type { PictureEdit } from "../../src/picture.ts";
 import { drawEdited } from "./picture.ts";
+import { type Row, rowsOf, type Sheet } from "../../src/sync.ts";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -30,8 +31,8 @@ const blobOf = (c: HTMLCanvasElement, type: string, quality?: number) =>
     c.toBlob((b) => (b ? ok(b) : fail(new Error("encode failed"))), type, quality),
   );
 
-/** Cut off the empty (white) margins of a rendered page, keeping a little padding. */
-function trim(src: HTMLCanvasElement, pad = 24): HTMLCanvasElement {
+/** Cut off the empty (white) margins of a rendered page, keeping a little padding (`at`: where the cut starts). */
+function trim(src: HTMLCanvasElement, pad = 24, at = { left: 0, top: 0 }): HTMLCanvasElement {
   const ctx = src.getContext("2d")!;
   const { width: w, height: h } = src;
   const data = ctx.getImageData(0, 0, w, h).data;
@@ -55,6 +56,7 @@ function trim(src: HTMLCanvasElement, pad = 24): HTMLCanvasElement {
   top = Math.max(0, top - pad);
   right = Math.min(w - 1, right + pad);
   bottom = Math.min(h - 1, bottom + pad);
+  Object.assign(at, { left, top });
   const { c, ctx: out } = canvas(right - left + 1, bottom - top + 1);
   out.drawImage(src, left, top, c.width, c.height, 0, 0, c.width, c.height);
   return c;
@@ -64,6 +66,7 @@ async function renderPdf(
   rel: string,
   scaleFor: (w: number, h: number) => number,
   only?: number,
+  rows?: Row[][],
 ): Promise<HTMLCanvasElement[]> {
   const task = pdfjs.getDocument({ url: `/files/${rel}` });
   const doc = await task.promise;
@@ -77,11 +80,25 @@ async function renderPdf(
       const { c, ctx } = canvas(viewport.width, viewport.height);
       await page.render({ canvas: c, canvasContext: ctx, viewport }).promise;
       out.push(c);
+      if (rows) rows.push(await textRows(page, base));
     }
   } finally {
     await task.destroy();
   }
   return out;
+}
+
+/** The rows of text on a page, in points from its top left (for going to the source: src/sync.ts). */
+async function textRows(page: pdfjs.PDFPageProxy, base: pdfjs.PageViewport): Promise<Row[]> {
+  const boxes: Row[] = [];
+  for (const item of (await page.getTextContent()).items) {
+    if (!("str" in item) || !item.str.trim()) continue;
+    const t = pdfjs.Util.transform(base.transform, item.transform) as number[];
+    const size = Math.hypot(t[2], t[3]);
+    const [x, y] = [t[4], t[5]]; // the start of the baseline
+    boxes.push({ left: x, right: x + item.width, top: y - 0.8 * size, bottom: y + 0.25 * size });
+  }
+  return rowsOf(boxes);
 }
 
 const render = {
@@ -119,10 +136,18 @@ const render = {
     return await base64(await blobOf(c, "image/jpeg", 0.92));
   },
 
-  /** A compiled page → PNG per page at dpi, empty margins cut off. */
-  async preview(rel: string, dpi: number): Promise<string[]> {
-    const pages = await renderPdf(rel, () => dpi / 72);
-    return await Promise.all(pages.map(async (c) => await base64(await blobOf(trim(c), "image/png"))));
+  /** A compiled page → PNG per page at dpi, empty margins cut off, and where each sits on its page. */
+  async preview(rel: string, dpi: number): Promise<{ png: string; sheet: Sheet }[]> {
+    const rows: Row[][] = [];
+    const pages = await renderPdf(rel, () => dpi / 72, undefined, rows);
+    return await Promise.all(
+      pages.map(async (c, i) => {
+        const at = { left: 0, top: 0 };
+        const cut = trim(c, 24, at);
+        const sheet = { scale: dpi / 72, ...at, width: cut.width, height: cut.height, rows: rows[i] };
+        return { png: await base64(await blobOf(cut, "image/png")), sheet };
+      }),
+    );
   },
 };
 

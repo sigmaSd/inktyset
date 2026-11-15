@@ -175,6 +175,16 @@
         </button>
         <button
           class="ghost"
+          data-cmp="swap"
+          id="cmpSwap"
+          title="Put the handwritten page on the other side (S)"
+          data-i18n-title="swapTitle"
+          data-i18n="swap"
+        >
+          Swap
+        </button>
+        <button
+          class="ghost"
           data-cmp="chat"
           id="cmpChatBtn"
           title="Ask about this page (C)"
@@ -212,6 +222,18 @@
         </div>
         <div class="cmp-diff" id="cmpDiff" hidden></div>
         <div class="cmp-editor" id="cmpEditor">
+          <!-- its edge toward the pictures: drag to resize (main.js), the width kept -->
+          <div
+            class="cmp-resize"
+            data-panel="editor"
+            role="separator"
+            aria-orientation="vertical"
+            tabindex="0"
+            title="Drag to change the width. Double-click: the usual width."
+            data-i18n-title="resizeTitle"
+            aria-label="Drag to change the width. Double-click: the usual width."
+            data-i18n-aria="resizeTitle"
+          ></div>
           <div class="code" id="cmpCode"></div>
           <div class="editor-foot">
             <span class="saved"></span><span class="grow"></span>
@@ -229,6 +251,17 @@
         </div>
         <!-- the page chat (src/chat.ts): questions about this page, answered by the local model -->
         <div class="cmp-chat" id="cmpChat" hidden>
+          <div
+            class="cmp-resize"
+            data-panel="chat"
+            role="separator"
+            aria-orientation="vertical"
+            tabindex="0"
+            title="Drag to change the width. Double-click: the usual width."
+            data-i18n-title="resizeTitle"
+            aria-label="Drag to change the width. Double-click: the usual width."
+            data-i18n-aria="resizeTitle"
+          ></div>
           <div class="chat-head">
             <!-- the page's chats: each saved, newest first -->
             <select id="chatList" aria-label="Chats about this page" data-i18n-aria="chatList"></select>
@@ -305,13 +338,39 @@
       </div>
     </dialog>
 
+    <!-- choose pages to read again: from the main window (their text replaced, or both kept to compare), or
+         from Settings to try other instructions (both kept) -->
     <dialog id="trialDialog">
-      <h2 data-i18n="trialTitle">Try on some pages</h2>
-      <p class="note" data-i18n="trialText">
-        Each page you choose is read again with the current instructions and model, as a new version. Its text
-        is not replaced: compare the two, then keep the one you prefer.
-      </p>
+      <h2 id="trialHead"></h2>
+      <p class="note" id="trialText"></p>
+      <div class="trial-picks">
+        <span data-i18n="pickLabel">Choose:</span>
+        <button class="ghost small" data-pick="all" data-i18n="pickAll">All</button>
+        <button class="ghost small" data-pick="unchecked" data-i18n="pickUnchecked">Not checked</button>
+        <button class="ghost small" data-pick="unclear" data-i18n="pickUnclear">With unclear spots</button>
+        <button class="ghost small" data-pick="none" data-i18n="pickNone">None</button>
+      </div>
       <div id="trialList" class="trial-list"></div>
+      <div id="trialMode">
+        <label class="choice"
+          ><input type="radio" name="trialMode" value="replace" checked />
+          <span
+            ><b data-i18n="modeReplace">Replace their text</b
+            ><small data-i18n="modeReplaceHelp"
+              >The text they have now is kept as a version you can go back to.</small
+            ></span
+          ></label
+        >
+        <label class="choice"
+          ><input type="radio" name="trialMode" value="compare" />
+          <span
+            ><b data-i18n="modeCompare">Keep both, to compare</b
+            ><small data-i18n="modeCompareHelp"
+              >The new reading waits beside the text: compare the two, then keep the one you prefer.</small
+            ></span
+          ></label
+        >
+      </div>
       <div class="dialog-foot">
         <span class="note" id="trialInfo"></span><span class="grow"></span>
         <button id="trialCancel" data-i18n="cancel">Cancel</button>

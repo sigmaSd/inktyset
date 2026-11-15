@@ -230,8 +230,9 @@ select {
 }
 
 /* As in MedStation, the window itself never scrolls: the header (the title bar) stays put and only the
-   content scrolls below it, so no scrollbar runs beside the window's buttons. Its scrollbar is hidden too
-   (the wheel, touchpad and keys still scroll). Content stays centred, at most 1460px wide. */
+   content scrolls below it, so no scrollbar runs beside the window's buttons. Its scrollbar is a thin rounded
+   thumb in the theme's colors, with no track (a long list needs to show how long it is and where you are).
+   Content stays centred, at most 1460px wide. */
 html,
 body {
   height: 100%;
@@ -245,11 +246,25 @@ main {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  scrollbar-width: none;
   padding: 18px max(20px, calc((100% - 1460px) / 2)) 80px;
 }
+/* (Chromium ignores these when scrollbar-width or scrollbar-color is set: leave those unset on main) */
 main::-webkit-scrollbar {
-  display: none;
+  width: 12px;
+}
+main::-webkit-scrollbar-track {
+  background: transparent;
+}
+main::-webkit-scrollbar-thumb {
+  min-height: 40px;
+  border: 3px solid transparent;
+  border-radius: 99px;
+  background-clip: padding-box;
+  background-color: color-mix(in srgb, var(--muted) 40%, transparent);
+}
+main::-webkit-scrollbar-thumb:hover,
+main::-webkit-scrollbar-thumb:active {
+  background-color: color-mix(in srgb, var(--muted) 70%, transparent);
 }
 .add {
   display: grid;
@@ -345,7 +360,11 @@ button.tile:hover:not(:disabled) {
   overflow: hidden;
   border-inline-start: 5px solid var(--line);
 }
+/* green is for checked pages only: a finished page not checked yet is neutral (but darker than a waiting one) */
 .card.done {
+  border-inline-start-color: color-mix(in srgb, var(--muted) 55%, var(--line));
+}
+.card.checked {
   border-inline-start-color: var(--ok);
 }
 .card.unclear {
@@ -736,6 +755,10 @@ button.checked {
 .cmp-images.stack {
   flex-direction: column;
 }
+/* the handwritten page on the other side (or below): after the preview and the other version */
+.cmp-images.swap #paneScan {
+  order: 1;
+}
 .pane {
   flex: 1;
   overflow: auto;
@@ -771,13 +794,52 @@ button.checked {
   border-radius: 6px;
   box-shadow: var(--shadow);
 }
+/* going to the source and back (Ctrl+click, main.js goToSource): the line found in the editor, and the
+   part of the preview a line made, for a moment */
+.pane-inner,
+.card .preview {
+  position: relative;
+}
+.ctrl-held #prevInner > img,
+.ctrl-held .card .preview > img {
+  cursor: pointer;
+}
+.cm-flash {
+  animation: flash-line 1.6s ease-out;
+}
+@keyframes flash-line {
+  from {
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+.sync-spot {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  animation: sync-spot 2.2s ease-out forwards;
+}
+@keyframes sync-spot {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
 .pane-inner .err,
 .pane-inner .waiting {
   margin: 0 0 10px;
 }
 .cmp-editor {
-  width: 36%;
-  min-width: 320px;
+  width: var(--w, 36%); /* --w: the width it was dragged to (main.js) */
+  min-width: 260px;
+  position: relative;
   display: flex;
   flex-direction: column;
   border-inline-start: 1px solid var(--line);
@@ -786,6 +848,30 @@ button.checked {
 }
 .cmp-editor[hidden] {
   display: none;
+}
+/* the edge of the editor and of the chat toward the pictures: drag it to resize them */
+.cmp-resize {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: -4px;
+  width: 8px;
+  cursor: col-resize;
+  z-index: 2;
+  touch-action: none;
+}
+.cmp-resize:hover,
+.cmp-resize:focus-visible,
+.cmp-resize.dragging {
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+  outline: none;
+}
+/* while dragging: no text selected, the pictures don't take the pointer */
+.cmp-body.resizing {
+  user-select: none;
+  cursor: col-resize;
+}
+.cmp-body.resizing .cmp-images {
+  pointer-events: none;
 }
 .cmp-editor textarea {
   flex: 1;
@@ -810,10 +896,17 @@ button.checked {
   color: var(--accent);
   font-weight: 600;
 }
+/* Mark as checked, beside the page's status; once checked, a green Checked ✓ that unchecks it */
+.card-head .check {
+  color: var(--accent);
+}
 
 @media (max-width: 1000px) {
   .cmp-body {
     flex-direction: column;
+  }
+  .cmp-resize {
+    display: none; /* one above the other: the widths don't apply */
   }
   .cmp-editor {
     width: auto;
@@ -1067,6 +1160,22 @@ button.icon svg {
   overflow-wrap: anywhere;
 }
 /* Trying instructions on some pages */
+.trial-picks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+#trialMode {
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+#trialMode[hidden] {
+  display: none;
+}
 .trial-list {
   max-height: 50vh;
   overflow: auto;
@@ -1264,8 +1373,9 @@ button.small {
 
 /* The page chat in the Compare view: the conversation, where the question stands, what's attached, the box */
 .cmp-chat {
-  width: 34%;
-  min-width: 320px;
+  width: var(--w, 34%);
+  min-width: 260px;
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;

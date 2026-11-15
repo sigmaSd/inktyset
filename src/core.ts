@@ -4,6 +4,7 @@
 // through server.ts.
 
 import { existsSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { type ComponentId, install, type Progress, sizeOf, supported, verifyModelDir } from "./components.ts";
@@ -26,6 +27,17 @@ import {
 import { isNoEdit, type PictureEdit, sanitizeEdit } from "./picture.ts";
 import { cleanLatex, type Format, langInfo, langPrompt, PROMPT } from "./pipeline.ts";
 import { Scanner } from "./scanner.ts";
+import { isArabicLang } from "./scripts.ts";
+import {
+  type Anchor,
+  bodyStart,
+  Flow,
+  fromSheet,
+  type Sheet,
+  type Spot,
+  synctexAnchors,
+  toSpots,
+} from "./sync.ts";
 import { Tex, type TexMode } from "./tex.ts";
 import { latexToTypst } from "./convert.ts";
 import { Typst } from "./typst.ts";
@@ -49,8 +61,8 @@ export interface Renderer {
   pdfPage(rel: string, index: number, maxSide: number): Promise<Buffer>;
   /** A picture as the user edited it (src/picture.ts) → JPEG, long side at most `maxSide`. */
   edited(rel: string, edit: PictureEdit, maxSide: number): Promise<Buffer>;
-  /** A compiled page → PNG per page at `dpi`, empty margins cut off. */
-  preview(rel: string, dpi: number): Promise<Buffer[]>;
+  /** A compiled page → PNG per page at `dpi`, empty margins cut off, and where each sits on its page. */
+  preview(rel: string, dpi: number): Promise<{ png: Buffer; sheet: Sheet }[]>;
 }
 
 /** What only the shell can do. */
@@ -70,6 +82,8 @@ export interface Shell {
 export interface Settings {
   phone: boolean;
   tex: TexMode;
+  /** Ctrl+click between the preview and the text (src/sync.ts); off until turned on in Settings. */
+  goToSource?: boolean;
   serverPath?: string;
   modelDir?: string;
   /** The app's own language: "auto" (the computer's), "en", "fr" or "ar" (src/i18n.ts). */
@@ -420,8 +434,10 @@ export class Core {
 
   // ------------------------------------------------------------------ the queue
 
+  #stopped = false;
+
   async #loop() {
-    for (;;) {
+    while (!this.#stopped) {
       // a question in the page chat first (someone is waiting for it), then pages, then trial readings
       if (this.#asked.length && !this.missing.engine && !this.missing.model) {
         await this.#answer(this.#asked.shift()!);
@@ -500,7 +516,7 @@ export class Core {
       if (r.pdf) {
         const images = await this.renderer.preview(this.rel(r.pdf), 150);
         pngs = await Promise.all(
-          images.map(async (png, i) => {
+          images.map(async ({ png }, i) => {
             const f = join(dir, `render-${i + 1}.png`);
             await writeFile(f, png);
             return this.rel(f);
@@ -977,27 +993,100 @@ export class Core {
       if (r.pdf) {
         const images = await this.renderer.preview(this.rel(r.pdf), 150);
         pngs = await Promise.all(
-          images.map(async (png, i) => {
+          images.map(async ({ png }, i) => {
             const f = join(dir, `render-${i + 1}.png`);
             await writeFile(f, png);
             return this.rel(f);
           }),
         );
+        // where the images sit on the pages, for going to the source and back
+        await writeFile(join(dir, "sheets.json"), JSON.stringify(images.map((x) => x.sheet)));
       }
     } catch (e) {
       err = (e as Error).message;
     }
+    this.#flows.delete(id);
     const p = this.lib.get(id);
     if (!p) return;
     Object.assign(p, { ok, err, pngs, unk: body.split("[??]").length - 1, rev: p.rev + 1 });
     this.lib.changed();
   }
 
+  // ------------------------------------------------------------------ go to the source and back
+
+  /** Per page: what its preview was built from (its rev), and the map between its lines and the preview. */
+  readonly #flows = new Map<string, { rev: number; flow: Flow; sheets: Sheet[] } | null>();
+
+  /** The map between a page's lines and its preview (src/sync.ts), made the first time it's asked for. */
+  async #flow(id: string) {
+    const p = this.lib.get(id);
+    if (!p || p.status !== "done" || !p.pngs.length) return null;
+    const known = this.#flows.get(id);
+    if (known && known.rev === p.rev) return known;
+    // a preview built before Inktyset could go to the source: built again, once
+    const dir = this.lib.buildDir(id);
+    const typst = (p.format ?? "latex") === "typst";
+    if (!existsSync(join(dir, "sheets.json")) || (!typst && !existsSync(join(dir, "doc.synctex.gz")))) {
+      if (known === undefined) {
+        this.#flows.set(id, null);
+        await this.compile(id);
+      }
+    }
+    // in turn with compiles: one may be about to rebuild the preview, and the Typst copy shares its folder
+    let made: { rev: number; flow: Flow; sheets: Sheet[] } | null = null;
+    this.#compiling = this.#compiling
+      .then(async () => {
+        const page = this.lib.get(id);
+        if (!page?.pngs.length) return;
+        const rev = page.rev;
+        const sheets = JSON.parse(await readFile(join(dir, "sheets.json"), "utf8")) as Sheet[];
+        const body = await this.lib.body(id);
+        const lang = this.lib.settings.language;
+        const lines = body.split("\n").length;
+        let anchors: Anchor[] | null;
+        if (typst) anchors = await this.typst.anchors(join(dir, "sync"), body, lang);
+        else {
+          const doc = await readFile(join(dir, "doc.tex"), "utf8");
+          const sync = gunzipSync(await readFile(join(dir, "doc.synctex.gz"))).toString("utf8");
+          anchors = synctexAnchors(sync, bodyStart(doc), lines);
+        }
+        if (!anchors?.length) return;
+        const rows = sheets.map((s) => s.rows);
+        const flow = new Flow(anchors, rows, typst ? "start" : "end", isArabicLang(lang));
+        made = { rev, flow, sheets };
+      })
+      .catch(() => {});
+    await this.#compiling;
+    if (made) this.#flows.set(id, made);
+    return made as { rev: number; flow: Flow; sheets: Sheet[] } | null;
+  }
+
+  /** The line of a page's text (from 1) at a point of its preview: image `sheet`, `fx` and `fy` fractions of
+   * it. Null when it can't be told (no preview; a Typst page whose copy didn't compile). */
+  async sourceLine(id: string, sheet: number, fx: number, fy: number): Promise<number | null> {
+    const f = await this.#flow(id);
+    const s = f?.sheets[sheet];
+    if (!f || !s) return null;
+    const { x, y } = fromSheet(s, fx, fy);
+    return f.flow.line(sheet, x, y);
+  }
+
+  /** Where a line of a page's text (from 1) is on its preview. */
+  async previewSpots(id: string, line: number): Promise<Spot[]> {
+    const f = await this.#flow(id);
+    return f ? toSpots(f.flow.where(line), f.sheets) : [];
+  }
+
   async recompileAll() {
     for (const p of this.lib.pages.filter((x) => x.status === "done")) await this.compile(p.id);
   }
 
+  /** Inktyset quits. A page cut off mid-read waits again (not Failed): it's read the next time it opens. */
   stop() {
+    this.#stopped = true; // the queue reads nothing more
+    const p = this.lib.pages.find((x) => x.status === "working" || x.trial === "working");
+    if (p?.status === "working") p.status = "queued";
+    else if (p) p.trial = "queued";
     this.#reading?.abort();
     this.model.stop();
     void this.phone.stop();

@@ -110,6 +110,28 @@ msgid_plural "Finishing {n} pages in the background. Open Inktyset to watch."
 msgstr[0] "Inktyset termine {n} page en arrière-plan. Ouvrez-le pour suivre."
 msgstr[1] "Inktyset termine {n} pages en arrière-plan. Ouvrez-le pour suivre."
 
+msgctxt "stillReading"
+msgid "{n} page is still to read."
+msgid_plural "{n} pages are still to read."
+msgstr[0] "Il reste {n} page à lire."
+msgstr[1] "Il reste {n} pages à lire."
+
+msgctxt "stillReadingDetail"
+msgid "Inktyset can keep reading with the window closed, and tell you when it is done. If you stop, they are read the next time you open Inktyset."
+msgstr "Inktyset peut continuer à lire avec la fenêtre fermée, et vous prévenir quand c'est fini. Si vous arrêtez, elles seront lues à la prochaine ouverture d'Inktyset."
+
+msgctxt "keepReading"
+msgid "Keep reading"
+msgstr "Continuer à lire"
+
+msgctxt "stopAndQuit"
+msgid "Stop and quit"
+msgstr "Arrêter et quitter"
+
+msgctxt "cancelClose"
+msgid "Cancel"
+msgstr "Annuler"
+
 msgctxt "allDone"
 msgid "All pages are done."
 msgstr "Toutes les pages sont terminées."
@@ -545,6 +567,20 @@ msgctxt "typstHelp"
 msgid "For Typst output; downloaded when first needed ({size})."
 msgstr "Pour la sortie Typst ; téléchargé au premier besoin ({size})."
 
+#. Title of a section of Settings: going from the preview to the text and back, as in TeXstudio
+msgctxt "goToSource"
+msgid "Go to the source"
+msgstr "Aller à la source"
+
+msgctxt "goToSourceSetting"
+msgid "Ctrl+click between the preview and the text"
+msgstr "Ctrl+clic entre l’aperçu et le texte"
+
+#. Ctrl and Alt are keys, as printed on keyboards
+msgctxt "goToSourceHelp"
+msgid "As in TeXstudio: Ctrl+click a spot of the preview to go to its line in the text, and a line of the text to see where it is on the preview. Ctrl+click then no longer adds a cursor in the text: Alt+click does."
+msgstr "Comme dans TeXstudio : Ctrl+clic sur un endroit de l’aperçu pour aller à sa ligne dans le texte, et sur une ligne du texte pour voir où elle se trouve dans l’aperçu. Ctrl+clic n’ajoute alors plus de curseur dans le texte : c’est Alt+clic."
+
 msgctxt "phoneSetting"
 msgid "Receive photos from a phone (Folder Camera)"
 msgstr "Recevoir des photos d'un téléphone (Folder Camera)"
@@ -804,6 +840,19 @@ msgctxt "renderedAlt"
 msgid "Rendered page"
 msgstr "Page composée"
 
+#. Tooltip of the preview. Ctrl is the key, as printed on keyboards; as in TeXstudio
+msgctxt "syncTitle"
+msgid "Ctrl+click: go to this line of the text. Ctrl+click a line of the text to find it here."
+msgstr "Ctrl+clic : aller à cette ligne du texte. Ctrl+clic sur une ligne du texte pour la retrouver ici."
+
+msgctxt "noSourceHere"
+msgid "Could not tell which line of the text this is."
+msgstr "Impossible de savoir à quelle ligne du texte correspond cet endroit."
+
+msgctxt "notOnPreview"
+msgid "This line is not on the preview."
+msgstr "Cette ligne n’apparaît pas dans l’aperçu."
+
 msgctxt "preview"
 msgid "Preview"
 msgstr "Aperçu"
@@ -993,6 +1042,10 @@ msgctxt "markTitle"
 msgid "Mark this page as proofread and go to the next one (Enter)"
 msgstr "Marquer cette page comme relue et passer à la suivante (Entrée)"
 
+msgctxt "markCardTitle"
+msgid "Mark this page as proofread"
+msgstr "Marquer cette page comme relue"
+
 msgctxt "allChecked"
 msgid "Every page is checked"
 msgstr "Toutes les pages sont vérifiées"
@@ -1032,6 +1085,14 @@ msgstr "Disposition"
 msgctxt "layoutTitle"
 msgid "Side by side, or one above the other (L)"
 msgstr "Côte à côte, ou l'un au-dessus de l'autre (L)"
+
+msgctxt "swap"
+msgid "Swap"
+msgstr "Inverser"
+
+msgctxt "swapTitle"
+msgid "Put the handwritten page on the other side (S)"
+msgstr "Mettre la page manuscrite de l'autre côté (S)"
 
 msgctxt "editorTitle"
 msgid "Show or hide the text (E)"
@@ -1080,9 +1141,23 @@ msgctxt "hintLayout"
 msgid "layout"
 msgstr "disposition"
 
+msgctxt "hintSwap"
+msgid "swap sides"
+msgstr "inverser les côtés"
+
 msgctxt "hintEditor"
 msgid "editor"
 msgstr "éditeur"
+
+#. Keyboard help: Ctrl+click goes from a spot of the preview to its line in the text, and from a line to the preview
+msgctxt "hintSyncClick"
+msgid "click: from the preview to the text and back"
+msgstr "clic : de l’aperçu au texte, et retour"
+
+#. Tooltip of the edge between the pictures and the text editor (or the chat), in the Compare view
+msgctxt "resizeTitle"
+msgid "Drag to change the width. Double-click: the usual width."
+msgstr "Glisser pour changer la largeur. Double-clic : la largeur habituelle."
 
 msgctxt "hintClose"
 msgid "close"
@@ -1435,6 +1510,58 @@ msgid "Read {n} page"
 msgid_plural "Read {n} pages"
 msgstr[0] "Lire {n} page"
 msgstr[1] "Lire {n} pages"
+
+msgctxt "readAgainMany"
+msgid "Read again…"
+msgstr "Relire…"
+
+msgctxt "readAgainManyTitle"
+msgid "Choose pages to read again"
+msgstr "Choisir des pages à relire"
+
+msgctxt "readAgainHead"
+msgid "Read pages again"
+msgstr "Relire des pages"
+
+msgctxt "readAgainText"
+msgid "Each page you choose is read again from its picture, with the current instructions and model."
+msgstr "Chaque page choisie est relue depuis son image, avec les instructions et le modèle actuels."
+
+msgctxt "pickLabel"
+msgid "Choose:"
+msgstr "Choisir :"
+
+msgctxt "pickAll"
+msgid "All"
+msgstr "Toutes"
+
+msgctxt "pickUnchecked"
+msgid "Not checked"
+msgstr "Non vérifiées"
+
+msgctxt "pickUnclear"
+msgid "With unclear spots"
+msgstr "Avec des passages illisibles"
+
+msgctxt "pickNone"
+msgid "None"
+msgstr "Aucune"
+
+msgctxt "modeReplace"
+msgid "Replace their text"
+msgstr "Remplacer leur texte"
+
+msgctxt "modeReplaceHelp"
+msgid "The text they have now is kept as a version you can go back to."
+msgstr "Le texte actuel est gardé comme une version, que vous pouvez reprendre."
+
+msgctxt "modeCompare"
+msgid "Keep both, to compare"
+msgstr "Garder les deux, pour comparer"
+
+msgctxt "modeCompareHelp"
+msgid "The new reading waits beside the text: compare the two, then keep the one you prefer."
+msgstr "La nouvelle lecture attend à côté du texte : comparez les deux, puis gardez celle que vous préférez."
 
 msgctxt "trialNone"
 msgid "Choose pages"
