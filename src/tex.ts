@@ -1,12 +1,13 @@
 // Compiling a page for its preview. "Automatic": the TeX installed on this computer when one is found and passes
 // a small test for the language in use (so the preview matches what you compile your thesis with), otherwise
-// Tectonic, a self-contained LaTeX that Inktyset downloads once (it fetches the packages a page needs, then works
-// offline). "Installed" and "Built-in" force one or the other.
+// Tectonic, a self-contained LaTeX that Inktyset downloads once, or the package ships (the Flatpak, where an installed
+// TeX can't be seen: src/components.ts bundled); it fetches the packages a page needs, then works offline.
+// "Installed" and "Built-in" force one or the other.
 
 import { existsSync, readdirSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { dirOf, findFile, install, supported } from "./components.ts";
+import { install, programPath, supported } from "./components.ts";
 import { type Family, familyFor, pageDocument } from "./pipeline.ts";
 import { run, which } from "./run.ts";
 import { arabicInLatin } from "./scripts.ts";
@@ -84,10 +85,7 @@ export class Tex {
   }
 
   async tectonic(): Promise<string | null> {
-    return await findFile(
-      dirOf(this.#base, "tectonic"),
-      process.platform === "win32" ? "tectonic.exe" : "tectonic",
-    );
+    return await programPath(this.#base, "tectonic");
   }
 
   /** The installed program to use for this language: pdflatex where it fits, else xelatex. */

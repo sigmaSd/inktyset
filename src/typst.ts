@@ -1,11 +1,12 @@
 // Typst output (docs/scope.md): the Typst around a page (pages are converted from the model's LaTeX by
 // src/convert.ts), and compiling it for the preview: with a `typst` installed on this computer when it works, otherwise the
-// pinned Typst release downloaded once (src/components.ts). The LaTeX side is pipeline.ts and tex.ts.
+// pinned Typst release, downloaded once or shipped by the package (src/components.ts). The LaTeX side is pipeline.ts
+// and tex.ts.
 
 import { existsSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { dirOf, findFile, install, supported } from "./components.ts";
+import { bundled, install, programPath, supported } from "./components.ts";
 import { theoremNames } from "./pipeline.ts";
 import { run, which } from "./run.ts";
 import { msg } from "./i18n.ts";
@@ -77,7 +78,8 @@ export class Typst {
   using = "";
   installing: Promise<void> | null = null;
   readonly #tested = new Map<string, boolean>();
-  readonly #system = which("typst");
+  // the package's own Typst comes first (it's on PATH in the Flatpak, but it isn't an installed one)
+  readonly #system = bundled("typst") ? null : which("typst");
   readonly #base: string;
   readonly #onInstall: (p: Promise<void>) => void;
 
@@ -91,7 +93,7 @@ export class Typst {
   }
 
   async downloaded(): Promise<string | null> {
-    return await findFile(dirOf(this.#base, "typst"), process.platform === "win32" ? "typst.exe" : "typst");
+    return await programPath(this.#base, "typst");
   }
 
   async #run(program: string, dir: string) {

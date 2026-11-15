@@ -525,6 +525,10 @@ msgctxt "downloaded"
 msgid "Downloaded."
 msgstr "Téléchargé."
 
+msgctxt "included"
+msgid "Included with Inktyset."
+msgstr "Fourni avec Inktyset."
+
 msgctxt "tectonicHelp"
 msgid "Downloaded when first needed ({size}); then it fetches the LaTeX packages a page uses, once."
 msgstr "Téléchargé au premier besoin ({size}) ; il récupère ensuite, une seule fois, les paquets LaTeX qu'une page utilise."

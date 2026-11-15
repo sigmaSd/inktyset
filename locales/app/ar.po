@@ -533,6 +533,10 @@ msgctxt "downloaded"
 msgid "Downloaded."
 msgstr "تم تنزيله."
 
+msgctxt "included"
+msgid "Included with Inktyset."
+msgstr "مُضمَّن في Inktyset."
+
 msgctxt "tectonicHelp"
 msgid "Downloaded when first needed ({size}); then it fetches the LaTeX packages a page uses, once."
 msgstr "يُنزَّل عند أول حاجة إليه ({size})، ثم يجلب مرة واحدة حزم LaTeX التي تستخدمها الصفحة."

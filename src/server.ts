@@ -9,7 +9,7 @@ import { writeFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import type { ComponentId } from "./components.ts";
-import { sizeOf, supported } from "./components.ts";
+import { bundled, sizeOf, supported } from "./components.ts";
 import { currentLang, msg, nativeName } from "./i18n.ts";
 import { type Core, DEFAULT_PROMPT } from "./core.ts";
 import { Model } from "./model.ts";
@@ -122,6 +122,8 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
           typst: sizeOf("typst"),
         },
         supported: { engine: supported("engine"), tectonic: supported("tectonic") },
+        // the programs the package ships (the Flatpak): never downloaded, and shown as included
+        bundled: { engine: !!bundled("engine"), tectonic: !!bundled("tectonic"), typst: !!bundled("typst") },
         modelDir: core.model.modelDir(),
         serverPath: (await core.model.serverPath()) ?? "",
         custom: { serverPath: core.settings.serverPath ?? "", modelDir: core.settings.modelDir ?? "" },

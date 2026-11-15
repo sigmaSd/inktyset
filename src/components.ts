@@ -1,7 +1,9 @@
 // What Inktyset downloads on first use, pinned and checksummed: the engine (llama.cpp's server, the
 // build for this system), the model (two files), Tectonic (a self-contained LaTeX, only when no working TeX
 // is installed) and Typst (for Typst output, when none is installed). Downloads resume after an interruption
-// and are checked (SHA-256) before use.
+// and are checked (SHA-256) before use. A package may ship the three programs instead (bundledDir below: the
+// Flatpak does); then only the model is downloaded. The Flatpak's manifest (flatpak/) builds the versions
+// pinned here: they move together (docs/flathub.md).
 
 import { createHash } from "node:crypto";
 import { msg } from "./i18n.ts";
@@ -149,6 +151,36 @@ export const sizeOf = (id: ComponentId) => component(id)?.files.reduce((n, f) =>
 
 /** Where downloaded components live: <userData>/components/<id>/ */
 export const dirOf = (base: string, id: ComponentId) => join(base, "components", id);
+
+export type ProgramId = Exclude<ComponentId, "model">;
+const PROGRAMS: Record<ProgramId, string> = { engine: "llama-server", tectonic: "tectonic", typst: "typst" };
+const exe = (name: string) => (process.platform === "win32" ? `${name}.exe` : name);
+
+/**
+ * Programs a package ships itself. Flathub doesn't let an app download programs when it runs, so the Flatpak
+ * builds llama-server, Tectonic and Typst into /app/bin and only the model is downloaded. The folder is the one
+ * INKTYSET_BUNDLED names, else /app/bin inside a Flatpak (FLATPAK_ID is set in every Flatpak), else none: the
+ * other packages (AppImage, deb, rpm, Windows, macOS) ship no programs and download them as before.
+ */
+export function bundledDir(env: NodeJS.ProcessEnv = process.env): string | null {
+  return env.INKTYSET_BUNDLED || (env.FLATPAK_ID ? "/app/bin" : null);
+}
+
+/** The package's own copy of this program, when it ships one: used as it is, never downloaded. */
+export function bundled(id: ProgramId, env: NodeJS.ProcessEnv = process.env): string | null {
+  const dir = bundledDir(env);
+  const path = dir && join(dir, exe(PROGRAMS[id]));
+  return path && existsSync(path) ? path : null;
+}
+
+/** The program to run: the package's own copy, else the downloaded one (null: neither is here yet). */
+export async function programPath(
+  base: string,
+  id: ProgramId,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<string | null> {
+  return bundled(id, env) ?? (await findFile(dirOf(base, id), exe(PROGRAMS[id])));
+}
 
 /** A file inside an unpacked component, found by name (archives nest it differently per system). */
 export async function findFile(dir: string, name: string): Promise<string | null> {

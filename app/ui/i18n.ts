@@ -102,6 +102,7 @@ export const UI_SOURCE = {
   noneFound: "None found on this computer.",
   builtin: "Built-in (Tectonic)",
   downloaded: "Downloaded.",
+  included: "Included with Inktyset.",
   tectonicHelp:
     "Downloaded when first needed ({size}); then it fetches the LaTeX packages a page uses, once.",
   usingInstalledTypst: "Using the installed Typst: {d}",

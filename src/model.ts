@@ -4,7 +4,8 @@
 //   files    the same server with any vision model llama.cpp runs: a .gguf and its mmproj .gguf
 //   server   a model server already running on this computer or the local network (Ollama, LM Studio,
 //            llama-server, vLLM…), through its OpenAI-style API. Never a cloud service: src/local.ts.
-// The server program is the downloaded one (components/engine) unless a path is set in the settings.
+// The server program is the package's own (the Flatpak's) or the downloaded one (components/engine), unless a path
+// is set in the settings.
 
 import { msg } from "./i18n.ts";
 import { type ChildProcess, spawn } from "node:child_process";
@@ -13,7 +14,7 @@ import { createWriteStream, existsSync } from "node:fs";
 import { readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { basename, join } from "node:path";
-import { dirOf, findFile, MODEL_FILES } from "./components.ts";
+import { dirOf, MODEL_FILES, programPath } from "./components.ts";
 import { checkLocalUrl } from "./local.ts";
 
 export type ModelStatus = "missing" | "stopped" | "starting" | "ready" | "error";
@@ -97,8 +98,7 @@ export class Model {
 
   async serverPath(): Promise<string | null> {
     if (this.config.serverPath) return existsSync(this.config.serverPath) ? this.config.serverPath : null;
-    const name = process.platform === "win32" ? "llama-server.exe" : "llama-server";
-    return await findFile(dirOf(this.#base, "engine"), name);
+    return await programPath(this.#base, "engine");
   }
 
   modelDir() {

@@ -429,13 +429,13 @@ function renderSettings() {
     <h3>${t("latexForPreviews")}</h3>
     ${radio("auto", t("auto"), t("autoHelp"))}
     ${radio("system", t("installedLatex"), found.length ? t("found", { list: found.map(esc).join(", ") }) : t("noneFound"))}
-    ${radio("builtin", t("builtin"), tx.tectonic ? t("downloaded") : t("tectonicHelp", { size: bytes(su.sizes.tectonic) }))}
+    ${radio("builtin", t("builtin"), su.bundled.tectonic ? t("included") : tx.tectonic ? t("downloaded") : t("tectonicHelp", { size: bytes(su.sizes.tectonic) }))}
     <p class="note">${usingText}</p>
     ${tecJob.status === "running" || tecJob.status === "error" ? `<div class="setup-row"><span class="setup-name">Tectonic</span>${jobHtml(tecJob)}</div>` : ""}
   </section>
   <section class="set">
     <h3>Typst</h3>
-    <p class="note">${S.typst.system ? t("usingInstalledTypst", { d: esc(S.typst.system) }) : S.typst.downloaded ? t("downloaded") : t("typstHelp", { size: bytes(su.sizes.typst) })}</p>
+    <p class="note">${su.bundled.typst ? t("included") : S.typst.system ? t("usingInstalledTypst", { d: esc(S.typst.system) }) : S.typst.downloaded ? t("downloaded") : t("typstHelp", { size: bytes(su.sizes.typst) })}</p>
     ${su.jobs.typst.status === "running" || su.jobs.typst.status === "error" ? `<div class="setup-row"><span class="setup-name">Typst</span>${jobHtml(su.jobs.typst)}</div>` : ""}
   </section>
   <section class="set">
