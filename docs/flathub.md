@@ -95,6 +95,13 @@ Flathub's builders mirror the screenshots and icon themselves, so these two don'
 
 ## Submit it
 
+Flathub's [Generative AI policy](https://docs.flathub.org/docs/for-app-authors/requirements#generative-ai-policy):
+the manifest submitted to Flathub must not contain AI-generated or AI-assisted content, even disclosed; AI tools
+must not open or automate the submission pull request or write its description, commit messages or replies; and
+any other AI-generated material in the app or its packaging must be disclosed (which parts, roughly how much).
+`flatpak/io.github.sigmasd.inktyset.yml` here was written with an AI assistant: it serves local builds, and the
+Flathub manifest has to be written by hand.
+
 1. Release a version whose tag contains `flatpak/` and the bundled-programs change (0.9.8 or later), and point
    the manifest's `inktyset` source at that tag and its commit.
 2. Fork [flathub/flathub](https://github.com/flathub/flathub) and branch from its `new-pr` branch.
