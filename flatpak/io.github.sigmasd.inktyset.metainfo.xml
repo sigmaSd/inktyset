@@ -76,6 +76,16 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.0.0" date="2026-11-15">
+      <description>
+        <p>Go to the source (a Settings option): Ctrl+click the preview to find its line in the text, and a line's place on the preview, for LaTeX and Typst.</p>
+        <ul>
+          <li>Compare: the editor and the chat can be resized, and the sides swapped.</li>
+          <li>Read again works on many pages at once, replacing their text or keeping both.</li>
+          <li>Closing while pages wait to be read asks whether to keep reading.</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.9.8" date="2026-11-15">
       <description>
         <p>Ready for Flathub: a package can include the engine, Tectonic and Typst, and then only the model is downloaded.</p>
