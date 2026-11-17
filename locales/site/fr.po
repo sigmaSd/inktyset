@@ -187,8 +187,8 @@ msgstr "<b>macOS :</b> ouvrez le .dmg et glissez Inktyset dans Applications. La 
 
 #. Keep the HTML tags (links, <b>, <code>) around the same words
 msgctxt "firstLinux"
-msgid "<b>Linux:</b> AppImage: make it executable (<code>chmod +x Inktyset-*.AppImage</code>) and run it; it updates itself. Or install the .deb / .rpm with your package manager."
-msgstr "<b>Linux :</b> AppImage : rendez-la exécutable (<code>chmod +x Inktyset-*.AppImage</code>) et lancez-la ; elle se met à jour toute seule. Ou installez le .deb / .rpm avec votre gestionnaire de paquets."
+msgid "<b>Linux:</b> AppImage: make it executable (<code>chmod +x Inktyset-*.AppImage</code>) and run it; it updates itself. Or install the .deb / .rpm with your package manager; Inktyset tells you when a new one is out."
+msgstr "<b>Linux :</b> AppImage : rendez-la exécutable (<code>chmod +x Inktyset-*.AppImage</code>) et lancez-la ; elle se met à jour toute seule. Ou installez le .deb / .rpm avec votre gestionnaire de paquets ; Inktyset vous prévient quand une nouvelle version sort."
 
 msgctxt "privacyTitle"
 msgid "Privacy"

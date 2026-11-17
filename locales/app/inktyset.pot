@@ -253,6 +253,14 @@ msgctxt "updateTitle"
 msgid "Inktyset {v} is downloaded: restart to use it"
 msgstr ""
 
+msgctxt "downloadUpdate"
+msgid "Download {v}"
+msgstr ""
+
+msgctxt "downloadUpdateTitle"
+msgid "Inktyset {v} is out: download its {p} and open it to install it"
+msgstr ""
+
 #. {f} is LaTeX or Typst
 msgctxt "copyAll"
 msgid "Copy all {f}"
@@ -671,6 +679,10 @@ msgstr ""
 
 msgctxt "aboutUpdate"
 msgid "Version {v} is downloaded: restart to use it."
+msgstr ""
+
+msgctxt "aboutDownload"
+msgid "Version {v} is out: download its {p} and open it to install it."
 msgstr ""
 
 msgctxt "freeSoftware"

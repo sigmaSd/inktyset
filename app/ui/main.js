@@ -173,8 +173,15 @@ function renderHeader() {
   }
   $("#version").textContent = S.appVersion ? S.appVersion : "";
   $("#version").title = S.appVersion ? `Inktyset ${S.appVersion}` : "";
-  $("#updateBtn").hidden = !S.update;
-  if (S.update) $("#updateBtn").title = t("updateTitle", { v: S.update });
+  // a downloaded update: restart into it; a newer .deb or .rpm: download it (the user installs it)
+  $("#updateBtn").hidden = !S.update && !S.release;
+  if (S.update) {
+    $("#updateBtn").textContent = t("restartToUpdate");
+    $("#updateBtn").title = t("updateTitle", { v: S.update });
+  } else if (S.release) {
+    $("#updateBtn").textContent = t("downloadUpdate", { v: S.release.version });
+    $("#updateBtn").title = t("downloadUpdateTitle", { v: S.release.version, p: pkgExt(S.release) });
+  }
   const fmt = S.settings.format ?? "latex";
   if (document.activeElement !== $("#format")) $("#format").value = fmt;
   $("#copyAll").textContent = t("copyAll", { f: FORMAT_NAME[fmt] });
@@ -473,6 +480,7 @@ function renderSettings() {
   <section class="set">
     <h3>${t("about")}</h3>
     <p class="note">Inktyset <bdi>${esc(S.appVersion)}</bdi>. ${S.update ? t("aboutUpdate", { v: esc(S.update) }) : ""}
+      ${!S.update && S.release ? `<a href="${esc(S.release.url)}" target="_blank">${t("aboutDownload", { v: esc(S.release.version), p: pkgExt(S.release) })}</a>` : ""}
       ${t("freeSoftware")}</p>
     <p class="note"><a href="${websiteUrl()}" target="_blank">${t("website")}</a> ·
       <a href="https://github.com/sigmaSd/inktyset" target="_blank">${t("source")}</a> ·
@@ -486,7 +494,11 @@ function renderSettings() {
   }
 }
 
+/** A newer release's package to download: ".deb" or ".rpm". */
+const pkgExt = (release) => (release.url.endsWith(".rpm") ? ".rpm" : ".deb");
+
 $("#updateBtn").onclick = async () => {
+  if (!S.update && S.release) return void open(S.release.url, "_blank"); // in the browser (windows.ts)
   if (S.pages.some((p) => p.status === "working" || p.status === "queued") && !confirm(t("restartConfirm")))
     return;
   try {

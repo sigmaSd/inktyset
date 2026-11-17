@@ -261,6 +261,14 @@ msgctxt "updateTitle"
 msgid "Inktyset {v} is downloaded: restart to use it"
 msgstr "تم تنزيل Inktyset {v}: أعد التشغيل لاستخدامه"
 
+msgctxt "downloadUpdate"
+msgid "Download {v}"
+msgstr "تنزيل {v}"
+
+msgctxt "downloadUpdateTitle"
+msgid "Inktyset {v} is out: download its {p} and open it to install it"
+msgstr "صدر Inktyset {v}: نزّل حزمة {p} وافتحها لتثبيتها"
+
 #. {f} is LaTeX or Typst
 msgctxt "copyAll"
 msgid "Copy all {f}"
@@ -684,6 +692,10 @@ msgstr "حول"
 msgctxt "aboutUpdate"
 msgid "Version {v} is downloaded: restart to use it."
 msgstr "تم تنزيل الإصدار {v}: أعد التشغيل لاستخدامه."
+
+msgctxt "aboutDownload"
+msgid "Version {v} is out: download its {p} and open it to install it."
+msgstr "صدر الإصدار {v}: نزّل حزمة {p} وافتحها لتثبيتها."
 
 msgctxt "freeSoftware"
 msgid "Free software under the GPL-3.0."

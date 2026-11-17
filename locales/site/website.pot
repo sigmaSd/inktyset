@@ -187,7 +187,7 @@ msgstr ""
 
 #. Keep the HTML tags (links, <b>, <code>) around the same words
 msgctxt "firstLinux"
-msgid "<b>Linux:</b> AppImage: make it executable (<code>chmod +x Inktyset-*.AppImage</code>) and run it; it updates itself. Or install the .deb / .rpm with your package manager."
+msgid "<b>Linux:</b> AppImage: make it executable (<code>chmod +x Inktyset-*.AppImage</code>) and run it; it updates itself. Or install the .deb / .rpm with your package manager; Inktyset tells you when a new one is out."
 msgstr ""
 
 msgctxt "privacyTitle"

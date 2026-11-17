@@ -131,6 +131,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       },
       machine: core.settings,
       update: core.update,
+      release: core.release,
       appVersion: core.appVersion,
       ui: {
         lang: currentLang(),

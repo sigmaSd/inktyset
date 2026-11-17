@@ -238,10 +238,16 @@ async function main() {
   core.localesDir = join(app.getAppPath(), "locales", "app");
   await core.init();
   if (unavailable) notify(msg("folderUnavailable", { p: unavailable.dir, e: unavailable.error, d: dataDir }));
-  watchUpdates((version) => {
-    core.update = version; // offered in the window: "Restart to update"
-    core.changed();
-  });
+  watchUpdates(
+    (version) => {
+      core.update = version; // offered in the window: "Restart to update"
+      core.changed();
+    },
+    (version, url) => {
+      core.release = { version, url }; // a .deb or .rpm: offered in the window to download
+      core.changed();
+    },
+  );
 
   app.on("before-quit", () => {
     quitting = true;

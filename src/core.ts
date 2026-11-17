@@ -133,6 +133,8 @@ export class Core {
   hardware: Hardware | null = null;
   /** A downloaded, verified update waiting for a restart (its version), or null. */
   update: string | null = null;
+  /** A .deb or .rpm copy: a newer version released, and its package of the same kind to download; or null. */
+  release: { version: string; url: string } | null = null;
   /** This copy's version (Electron's, from package.json), shown in the window. */
   appVersion = "";
   /** The computer's preferred languages (from the shell), for the app language "auto". */
