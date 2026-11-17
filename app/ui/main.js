@@ -128,6 +128,7 @@ function fillHint() {
     `${k("+")} ${k("−")} ${esc(t("hintOr"))} ${k("Ctrl")}+${esc(t("hintScroll"))} ${esc(t("hintZoom"))}`,
     `${k("L")} ${esc(t("hintLayout"))}`,
     `${k("S")} ${esc(t("hintSwap"))}`,
+    `${k("K")} ${esc(t("hintLink"))}`,
     `${k("E")} ${esc(t("hintEditor"))}`,
     ...(syncOn() ? [`${k("Ctrl")}+${esc(t("hintSyncClick"))}`] : []),
     `${k(t("keyEsc"))} ${esc(t("hintClose"))}`,
@@ -1365,6 +1366,8 @@ const cmp = {
   layout: null,
   editor: store.get("cmpEditor", true),
   swap: store.get("cmpSwap", false), // the handwritten page after the preview (on the other side, or below)
+  link: store.get("cmpLink", true), // scrolling one picture scrolls the others
+  last: null, // the picture scrolled last: linked again, the others come to the same place
   syncing: false,
 };
 const donePages = () => S.pages.filter((p) => p.status === "done");
@@ -1392,6 +1395,7 @@ function openCompare(id, opts = {}) {
   } // a layout picked by hand stays while paging
   renderCompare();
   for (const pane of panes()) pane.scrollTo(0, 0);
+  cmp.last = null;
   if (!cmpEd.hasFocus()) d.focus(); // keys to the view (Enter = checked), unless typing in the editor
 }
 
@@ -1403,6 +1407,7 @@ function applyLayout() {
   box.classList.toggle("stack", layout === "stack");
   box.classList.toggle("swap", cmp.swap);
   $("#cmpSwap").classList.toggle("on", cmp.swap);
+  $("#cmpLink").classList.toggle("on", cmp.link);
   $("#cmpLayout").textContent = layout === "stack" ? t("sideBySide") : t("stacked");
 }
 
@@ -1771,6 +1776,11 @@ async function cmpAction(act, btn) {
     cmp.swap = !cmp.swap;
     store.set("cmpSwap", cmp.swap);
     applyLayout();
+  } else if (act === "link") {
+    cmp.link = !cmp.link;
+    store.set("cmpLink", cmp.link);
+    if (cmp.link) follow(cmp.last && !cmp.last.hidden ? cmp.last : $("#paneScan"));
+    applyLayout();
   } else if (act === "editor") {
     cmp.editor = !cmp.editor;
     store.set("cmpEditor", cmp.editor);
@@ -1845,6 +1855,8 @@ $("#compare").addEventListener("keydown", (e) => {
     L: "layout",
     s: "swap",
     S: "swap",
+    k: "link",
+    K: "link",
     e: "editor",
     E: "editor",
     c: "chat",
@@ -1865,22 +1877,30 @@ $("#cmpImages").addEventListener(
   },
   { passive: false },
 );
-// scrolling one image scrolls the other to the same relative place
+/** How far a pane is scrolled, from 0 (start) to 1 (end), across and down. */
+const scrollPlace = (el) => ({
+  x: el.scrollLeft / Math.max(1, el.scrollWidth - el.clientWidth),
+  y: el.scrollTop / Math.max(1, el.scrollHeight - el.clientHeight),
+});
+/** The other pictures to the same relative place as this one. */
+function follow(A) {
+  cmp.syncing = true;
+  const at = scrollPlace(A);
+  for (const B of panes())
+    if (B !== A) {
+      B.scrollTop = at.y * (B.scrollHeight - B.clientHeight);
+      B.scrollLeft = at.x * (B.scrollWidth - B.clientWidth);
+    }
+  requestAnimationFrame(() => {
+    cmp.syncing = false;
+  });
+}
+// while linked, scrolling one image scrolls the others to the same relative place
 for (const a of ["#paneScan", "#panePrev", "#paneOther"]) {
   $(a).addEventListener("scroll", () => {
     if (cmp.syncing) return;
-    cmp.syncing = true;
-    const A = $(a);
-    const fy = A.scrollTop / Math.max(1, A.scrollHeight - A.clientHeight);
-    const fx = A.scrollLeft / Math.max(1, A.scrollWidth - A.clientWidth);
-    for (const B of panes())
-      if (B !== A) {
-        B.scrollTop = fy * (B.scrollHeight - B.clientHeight);
-        B.scrollLeft = fx * (B.scrollWidth - B.clientWidth);
-      }
-    requestAnimationFrame(() => {
-      cmp.syncing = false;
-    });
+    cmp.last = $(a);
+    if (cmp.link) follow(cmp.last);
   });
 }
 $("#compare").addEventListener("close", () => {

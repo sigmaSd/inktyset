@@ -1094,6 +1094,14 @@ msgctxt "swapTitle"
 msgid "Put the handwritten page on the other side (S)"
 msgstr ""
 
+msgctxt "link"
+msgid "Link"
+msgstr ""
+
+msgctxt "linkTitle"
+msgid "Scroll the pictures together, or each on its own (K)"
+msgstr ""
+
 msgctxt "editorTitle"
 msgid "Show or hide the text (E)"
 msgstr ""
@@ -1143,6 +1151,10 @@ msgstr ""
 
 msgctxt "hintSwap"
 msgid "swap sides"
+msgstr ""
+
+msgctxt "hintLink"
+msgid "scroll together or apart"
 msgstr ""
 
 msgctxt "hintEditor"

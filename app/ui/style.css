@@ -147,6 +147,10 @@ header :is(button, input, select, textarea, a, label) {
 .cmp-head :is(button, input, select, a, label) {
   -webkit-app-region: no-drag;
 }
+/* title bars and labels: their words are not selected by a drag or a double-click */
+:is(header, .cmp-head, .pane-label) {
+  user-select: none;
+}
 /* macOS: its own window buttons sit at the top left */
 .mac :is(header, .cmp-head) {
   padding-left: 84px;

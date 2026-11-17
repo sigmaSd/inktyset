@@ -1122,6 +1122,14 @@ msgctxt "swapTitle"
 msgid "Put the handwritten page on the other side (S)"
 msgstr "ضع الصفحة المكتوبة بخط اليد في الجهة الأخرى (S)"
 
+msgctxt "link"
+msgid "Link"
+msgstr "ربط"
+
+msgctxt "linkTitle"
+msgid "Scroll the pictures together, or each on its own (K)"
+msgstr "تمرير الصور معًا، أو كل واحدة وحدها (K)"
+
 msgctxt "editorTitle"
 msgid "Show or hide the text (E)"
 msgstr "إظهار النص أو إخفاؤه (E)"
@@ -1172,6 +1180,10 @@ msgstr "التخطيط"
 msgctxt "hintSwap"
 msgid "swap sides"
 msgstr "تبديل الجهتين"
+
+msgctxt "hintLink"
+msgid "scroll together or apart"
+msgstr "التمرير معًا أو كلٌّ على حدة"
 
 msgctxt "hintEditor"
 msgid "editor"
