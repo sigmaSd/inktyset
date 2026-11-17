@@ -76,6 +76,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.0.3" date="2026-11-17">
+      <description>
+        <p>The new-version notice of the .deb and .rpm can be hidden until the next version.</p>
+      </description>
+    </release>
     <release version="1.0.2" date="2026-11-17">
       <description>
         <p>Installed from the .deb or .rpm, Inktyset tells you when a new version is out and gives you its package to download.</p>
