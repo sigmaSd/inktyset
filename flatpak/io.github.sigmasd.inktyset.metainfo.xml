@@ -76,6 +76,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.0.1" date="2026-11-17">
+      <description>
+        <p>Compare: Link (K) scrolls the handwritten page and the preview together, or each on its own; linking them again lines them up.</p>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-11-15">
       <description>
         <p>Go to the source (a Settings option): Ctrl+click the preview to find its line in the text, and a line's place on the preview, for LaTeX and Typst.</p>
