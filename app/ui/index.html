@@ -28,7 +28,20 @@
           <option value="typst">Typst</option>
         </select>
       </label>
-      <button id="updateBtn" class="primary" hidden>Restart to update</button>
+      <span class="update-group">
+        <button id="updateBtn" class="primary" hidden>Restart to update</button
+        ><button
+          id="updateHide"
+          class="primary"
+          hidden
+          title="Hide until the next version"
+          aria-label="Hide until the next version"
+          data-i18n-title="updateHide"
+          data-i18n-aria="updateHide"
+        >
+          ×
+        </button>
+      </span>
       <button id="copyAll" title="Copy the LaTeX of every finished page">Copy all LaTeX</button>
       <button id="saveTex" title="Save one .tex file with every finished page">Save .tex file</button>
       <button

@@ -261,6 +261,10 @@ msgctxt "downloadUpdateTitle"
 msgid "Inktyset {v} is out: download its {p} and open it to install it"
 msgstr "Inktyset {v} est sortie : téléchargez son {p} et ouvrez-le pour l’installer"
 
+msgctxt "updateHide"
+msgid "Hide until the next version"
+msgstr "Masquer jusqu’à la prochaine version"
+
 #. {f} is LaTeX or Typst
 msgctxt "copyAll"
 msgid "Copy all {f}"

@@ -23,6 +23,7 @@ export const UI_SOURCE = {
   updateTitle: "Inktyset {v} is downloaded: restart to use it",
   downloadUpdate: "Download {v}",
   downloadUpdateTitle: "Inktyset {v} is out: download its {p} and open it to install it",
+  updateHide: "Hide until the next version",
   copyAll: "Copy all {f}",
   copyAllTitle: "Copy the {f} of every finished page",
   saveFile: "Save {ext} file",

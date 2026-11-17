@@ -173,8 +173,11 @@ function renderHeader() {
   }
   $("#version").textContent = S.appVersion ? S.appVersion : "";
   $("#version").title = S.appVersion ? `Inktyset ${S.appVersion}` : "";
-  // a downloaded update: restart into it; a newer .deb or .rpm: download it (the user installs it)
-  $("#updateBtn").hidden = !S.update && !S.release;
+  // a downloaded update: restart into it; a newer .deb or .rpm: download it (the user installs it), or hide
+  // the button until the next version (About still says it)
+  const offered = S.release && store.get("hiddenRelease", null) !== S.release.version;
+  $("#updateBtn").hidden = !S.update && !offered;
+  $("#updateHide").hidden = !!S.update || !offered;
   if (S.update) {
     $("#updateBtn").textContent = t("restartToUpdate");
     $("#updateBtn").title = t("updateTitle", { v: S.update });
@@ -506,6 +509,10 @@ $("#updateBtn").onclick = async () => {
   } catch (err) {
     toast(err.message);
   }
+};
+$("#updateHide").onclick = () => {
+  store.set("hiddenRelease", S.release.version);
+  renderHeader();
 };
 $("#settingsBtn").onclick = () => {
   $("#settingsDialog").showModal();

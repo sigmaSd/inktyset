@@ -935,6 +935,20 @@ button.checked {
 .add {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
+/* Download x.y.z and its ×, one button in two parts */
+.update-group {
+  display: inline-flex;
+}
+#updateBtn:has(+ #updateHide:not([hidden])) {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+#updateHide {
+  padding: 6px 9px;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  border-inline-start-color: color-mix(in srgb, var(--accent-ink) 35%, var(--accent));
+}
 button.icon {
   padding: 6px;
   display: inline-flex;
