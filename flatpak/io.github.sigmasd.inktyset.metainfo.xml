@@ -76,6 +76,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.0.2" date="2026-11-17">
+      <description>
+        <p>Installed from the .deb or .rpm, Inktyset tells you when a new version is out and gives you its package to download.</p>
+      </description>
+    </release>
     <release version="1.0.1" date="2026-11-17">
       <description>
         <p>Compare: Link (K) scrolls the handwritten page and the preview together, or each on its own; linking them again lines them up.</p>
