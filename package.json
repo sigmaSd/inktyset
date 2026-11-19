@@ -1,6 +1,6 @@
 {
   "name": "inktyset",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "private": true,
   "description": "Turn photos and scans of handwritten math into LaTeX or Typst, on your own computer",
   "homepage": "https://github.com/sigmaSd/inktyset",

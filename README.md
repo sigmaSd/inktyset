@@ -52,6 +52,10 @@ A chat model reads one photo. Inktyset is built for the whole stack of pages:
   to point at something, or send the preview. A rewrite is shown against the text, and Apply makes it a new
   version. Chats are kept with the pages; a question goes before the next page is read, or at once with
   *Answer now*. Local like the rest.
+- **Sessions:** one per course, homework or chapter, each with its own pages, writing language and format.
+  Switch from the sidebar (Ctrl+B hides it): the model stays loaded, and a page being read finishes in its own
+  session while you proofread another. Each new session is a folder in `sessions/` inside the pages folder; a
+  deleted one goes to the system's trash.
 - **Your pages where you want them:** in Documents/Inktyset, or any folder you choose in Settings (a private
   one, another drive). Switch between folders whenever you like; each keeps its own pages, and Inktyset keeps
   no list of them. `inktyset --folder=<path>` opens a folder for that run only: a launcher of its own for a
