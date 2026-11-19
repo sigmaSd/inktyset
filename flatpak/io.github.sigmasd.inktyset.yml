@@ -172,8 +172,8 @@ modules:
     sources:
       - type: git
         url: https://github.com/sigmaSd/inktyset.git
-        tag: v1.0.3
-        commit: eb85df16a28dc9a3a4f3d495a84bd1c51af20089
+        tag: v1.1.0
+        commit: 0d62c9c080970c48dbb2ec8672a02d01202d29c7
         x-checker-data:
           type: git
           tag-pattern: ^v([\d.]+)$
