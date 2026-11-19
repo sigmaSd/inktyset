@@ -10,7 +10,7 @@
 // chosen in Settings (src/folders.ts) wins over INKTYSET_DATA only when INKTYSET_USERDATA is set too: a test
 // with its own pages folder never opens the folder chosen in the real settings.
 
-import { app, type BrowserWindow, dialog, Menu, Notification, session } from "electron";
+import { app, type BrowserWindow, dialog, Menu, Notification, session, shell } from "electron";
 import { createWriteStream, mkdirSync, readFileSync, statSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -56,7 +56,7 @@ function createWindow(served: Served, core: Core) {
   const win = openWindow(served.origin, ICON); // windows.ts: our own title bar, locked down, remembered place
   let asking = false;
   win.on("close", (e) => {
-    if (quitting || !core.lib.busy()) return;
+    if (quitting || !core.busy()) return;
     // pages still waiting: ask whether to keep reading them with the window hidden, or to stop (a page cut
     // off mid-read waits again, library.ts: every waiting page is read the next time Inktyset opens)
     e.preventDefault();
@@ -76,11 +76,11 @@ function createWindow(served: Served, core: Core) {
       .then(({ response }) => {
         asking = false;
         if (response === 2) return;
-        if (response === 1 || !core.lib.busy()) return app.quit(); // stopped, or finished while asking
+        if (response === 1 || !core.busy()) return app.quit(); // stopped, or finished while asking
         win.hide();
         notify(msg("finishing", { n }));
-        const off = core.lib.onChange(() => {
-          if (core.lib.busy() || win.isVisible()) return;
+        const off = core.onChange(() => {
+          if (core.busy() || win.isVisible()) return;
           off();
           notify(msg("allDone"));
           app.quit();
@@ -228,6 +228,7 @@ async function main() {
     },
     notify,
     installUpdate: installNow,
+    trash: (path) => shell.trashItem(path),
     relaunch() {
       // the folder in the settings now: without the --folder this run was started with (the same launcher's)
       restart([...ARGS.rest, ...launchedWith({ cls: ARGS.cls })]);
@@ -260,7 +261,7 @@ async function main() {
     // (all of argv: Chromium may put its own switches before the app's folder)
     const again = launchArgs(argv.slice(1), cwd);
     const wanted = again.folder ?? pagesFolder(defaultDir)[0];
-    if (wanted !== core.lib.dir || again.cls !== ARGS.cls) {
+    if (wanted !== core.folder || again.cls !== ARGS.cls) {
       if (!again.cls && USUAL_DESKTOP) process.env.CHROME_DESKTOP = USUAL_DESKTOP; // as Electron would set it
       return restart([...ARGS.rest, ...launchedWith(again)]);
     }

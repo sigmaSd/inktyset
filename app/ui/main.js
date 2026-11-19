@@ -1191,6 +1191,11 @@ function tick() {
 }
 
 function render() {
+  if (S.session !== shownSession) {
+    if (shownSession !== undefined) leaveSession();
+    shownSession = S.session;
+  }
+  renderSessions();
   renderHeader();
   renderSetup();
   renderSettings();
@@ -1201,6 +1206,179 @@ function render() {
   renderCompare();
   tick();
 }
+
+// ---------------------------------------------------------------- sessions (the sidebar)
+// Each session has its own pages (src/core.ts: the first is the pages folder's own, the others are folders in
+// its sessions/); the open one is the one shown. Page ids repeat from one session to another, so the list's
+// cards, editors and cached text are dropped when another opens, and unsaved text is saved before.
+let shownSession; // the session the window shows
+let renaming = null; // the session whose name is being typed
+const narrow = () => matchMedia("(max-width: 760px)").matches;
+const sessionsShown = () => !document.body.classList.contains("no-sessions");
+function showSessions(on, remember = true) {
+  document.body.classList.toggle("no-sessions", !on);
+  $("#sessionsBtn").setAttribute("aria-expanded", String(on));
+  if (remember && !narrow()) store.set("sessions", on);
+}
+const sessionName = (s) => s.name || t("firstSession");
+
+const PENCIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>`;
+const BIN = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>`;
+
+function renderSessions() {
+  if (renaming !== null) return; // the name being typed stays as it is
+  const html = S.sessions
+    .map((s) => {
+      const meta = [];
+      if (s.reading) meta.push(`<span class="dot busy"></span>${esc(t("sessionReading"))}`);
+      if (!s.pages) meta.push(esc(t("sessionEmpty")));
+      else {
+        meta.push(esc(t("sessionPages", { n: s.pages })));
+        if (s.waiting && !s.reading) meta.push(esc(t("sessionWaiting", { n: s.waiting })));
+        else if (s.checked) meta.push(esc(t("sessionChecked", { n: s.checked })));
+      }
+      const open = s.id === S.session;
+      return `<li class="session${open ? " open" : ""}" data-id="${esc(s.id)}">
+        <button class="session-main" data-session="open"${open ? ' aria-current="true"' : ""}>
+          <span class="session-name">${esc(sessionName(s))}</span>
+          <span class="session-meta">${meta.join(" · ")}</span>
+        </button>
+        <span class="session-acts">
+          <button class="ghost icon" data-session="rename" title="${esc(t("renameSession"))}" aria-label="${esc(t("renameSession"))}">${PENCIL}</button>
+          ${s.id ? `<button class="ghost icon" data-session="delete" title="${esc(t("deleteSession"))}" aria-label="${esc(t("deleteSession"))}">${BIN}</button>` : ""}
+        </span>
+      </li>`;
+    })
+    .join("");
+  const list = $("#sessionList");
+  if (list.dataset.html !== html) {
+    list.innerHTML = html;
+    list.dataset.html = html;
+  }
+}
+
+/** Another session is shown: what the window kept of the one left goes. */
+function leaveSession() {
+  for (const d of ["#compare", "#pictureDialog", "#trialDialog", "#expandDialog"])
+    if ($(d)?.open) $(d).close();
+  for (const [id, c] of cards) {
+    dropEditor(id, c.el);
+    c.el.remove();
+  }
+  cards.clear();
+  texCache.clear();
+  for (const timer of dirty.values()) clearTimeout(timer);
+  dirty.clear();
+  pendingTex.clear();
+  for (const k of Object.keys(chatOf)) delete chatOf[k];
+  openThoughts.clear();
+  $("main").scrollTop = 0;
+}
+
+/** Text typed and not saved yet: saved now (before another session opens, where the same page ids mean other pages). */
+async function saveTyped() {
+  for (const [id, timer] of dirty) {
+    clearTimeout(timer);
+    dirty.delete(id);
+    if (!pendingTex.has(id)) continue;
+    await api(`/api/page/${id}/tex`, { tex: pendingTex.get(id) });
+    pendingTex.delete(id);
+  }
+}
+
+async function openSession(id) {
+  if (narrow()) showSessions(false, false);
+  if (id === S.session) return;
+  try {
+    await saveTyped();
+    await api("/api/session/open", { id });
+  } catch (e) {
+    toast(e.message, 5000);
+  }
+}
+
+function startRename(id) {
+  const li = [...document.querySelectorAll("#sessionList .session")].find((x) => x.dataset.id === id);
+  const s = S.sessions.find((x) => x.id === id);
+  if (!li || !s) return;
+  renaming = id;
+  const input = document.createElement("input");
+  input.className = "session-rename";
+  input.value = sessionName(s);
+  input.setAttribute("aria-label", t("sessionNameAria"));
+  let done = false;
+  const finish = async (keep) => {
+    if (done) return;
+    done = true;
+    const name = input.value.trim();
+    renaming = null;
+    if (keep && name && name !== sessionName(s)) {
+      try {
+        await api("/api/session/rename", { id, name });
+      } catch (e) {
+        toast(e.message, 5000);
+      }
+    }
+    $("#sessionList").dataset.html = "";
+    renderSessions();
+  };
+  input.addEventListener("keydown", (e) => {
+    e.stopPropagation();
+    if (e.key === "Enter") finish(true);
+    else if (e.key === "Escape") finish(false);
+  });
+  input.addEventListener("blur", () => finish(true));
+  $(".session-main", li).replaceWith(input);
+  $(".session-acts", li).hidden = true;
+  input.focus();
+  input.select();
+}
+
+$("#sessionList").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-session]");
+  const id = b?.closest(".session")?.dataset.id;
+  if (!b || id === undefined) return;
+  const act = b.dataset.session;
+  if (act === "open") openSession(id);
+  else if (act === "rename") startRename(id);
+  else if (act === "delete") {
+    const s = S.sessions.find((x) => x.id === id);
+    if (!s || !confirm(t("confirmDeleteSession", { name: sessionName(s) }))) return;
+    try {
+      if (id === S.session) await saveTyped();
+      await api("/api/session/delete", { id });
+      toast(t("sessionDeleted"));
+    } catch (err) {
+      toast(err.message, 5000);
+    }
+  }
+});
+$("#sessionList").addEventListener("dblclick", (e) => {
+  const id = e.target.closest(".session-main")?.closest(".session")?.dataset.id;
+  if (id !== undefined) startRename(id);
+});
+$("#newSession").onclick = async () => {
+  try {
+    await saveTyped();
+    const { id } = await api("/api/session/new", { name: t("sessionN", { n: S.sessions.length + 1 }) });
+    for (let i = 0; i < 40 && !S.sessions.some((s) => s.id === id); i++)
+      await new Promise((r) => setTimeout(r, 50)); // the new state, asked for by api()
+    startRename(id); // named at once, as in a file manager
+  } catch (e) {
+    toast(e.message, 5000);
+  }
+};
+$("#sessionsBtn").onclick = () => showSessions(!sessionsShown());
+addEventListener("keydown", (e) => {
+  if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== "b") return;
+  if (document.querySelector("dialog[open]")) return;
+  e.preventDefault();
+  showSessions(!sessionsShown());
+});
+// a narrow window: the sidebar is over the pages, a click on them closes it
+$("main").addEventListener("pointerdown", () => {
+  if (narrow() && sessionsShown()) showSessions(false, false);
+});
 
 // ---------------------------------------------------------------- actions
 // the button itself says it worked, for a moment
@@ -2443,5 +2621,9 @@ setInterval(async () => {
     if (!S || v !== S.version) refresh();
   } catch {}
 }, 5000);
+// shown as last left in a wide window; a narrow one starts without it (it would cover the pages)
+const placeSessions = () => showSessions(narrow() ? false : store.get("sessions", true), false);
+matchMedia("(max-width: 760px)").addEventListener("change", placeSessions);
+placeSessions();
 refresh();
 connect();

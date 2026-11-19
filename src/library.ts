@@ -10,12 +10,14 @@
 //                      model is a new version, so nothing is ever lost and two can be compared.
 //   build/<id>/        the preview: doc.tex, doc.pdf, render-N.png
 //   originals/         files as they were added; phone/ what the phone sent
-//   chats/<id>.json    the page's chat (src/chat.ts), and chats/<id>/ the pictures attached to it
+//   chats/<id>/        the page's chats (src/chat.ts) and the pictures attached to them
+// A pages folder holds sessions: the first one's files are the folder's own, each other one is a folder of the
+// same kind in sessions/ (src/core.ts).
 
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { copyFile, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import type { PictureEdit } from "./picture.ts";
 
 /** "stopped": not read, and not read until the user asks (Stop on the page, or Stop all). */
@@ -82,6 +84,9 @@ interface Saved {
   seen_phone: string[];
   /** The instructions versions were read with, by key (the same text is kept once). */
   prompts?: Record<string, string>;
+  /** The session's name in the sidebar (the first session's is "" until renamed), and when it was made. */
+  name?: string;
+  created?: number;
 }
 
 export class Library {
@@ -90,8 +95,12 @@ export class Library {
   settings: Saved["settings"] = { language: "english", format: "latex" };
   seenPhone = new Set<string>();
   prompts: Record<string, string> = {};
+  name = "";
+  created = 0;
   /** Files still being prepared (a PDF being split, a photo being resized). */
   intake = 0;
+  /** The session was deleted: nothing more is written to its folder. */
+  closed = false;
   version = 0;
   readonly dir: string;
   readonly #listeners = new Set<() => void>();
@@ -108,6 +117,8 @@ export class Library {
         this.settings = { ...this.settings, ...d.settings };
         this.seenPhone = new Set(d.seen_phone ?? []);
         this.prompts = d.prompts ?? {};
+        this.name = d.name ?? "";
+        this.created = d.created ?? 0;
       } catch {
         void copyFile(file, join(dir, "state.broken.json"));
       }
@@ -140,12 +151,15 @@ export class Library {
   save() {
     // one write at a time, always the latest state
     this.#saving = this.#saving.then(async () => {
+      if (this.closed) return;
       const data: Saved = {
         pages: this.pages,
         counter: this.counter,
         settings: this.settings,
         seen_phone: [...this.seenPhone].sort(),
         prompts: this.prompts,
+        ...(this.name ? { name: this.name } : {}),
+        ...(this.created ? { created: this.created } : {}),
       };
       const tmp = join(this.dir, "state.tmp");
       await writeFile(tmp, JSON.stringify(data, null, 1));
@@ -153,6 +167,14 @@ export class Library {
     });
     return this.#saving;
   }
+
+  /** A file of this session, as its pages keep it: from the session's folder. */
+  rel(path: string) {
+    return relative(this.dir, path).split("\\").join("/");
+  }
+
+  chatDir = (page: string) => join(this.dir, "chats", page);
+  chatPath = (page: string, chat: string) => join(this.chatDir(page), `${chat}.json`);
 
   get(id: string) {
     return this.pages.find((p) => p.id === id);

@@ -9,6 +9,27 @@
   </head>
   <body>
     <header>
+      <button
+        id="sessionsBtn"
+        class="ghost icon"
+        title="Show or hide the sessions (Ctrl+B)"
+        aria-label="Show or hide the sessions (Ctrl+B)"
+        data-i18n-title="toggleSessions"
+        data-i18n-aria="toggleSessions"
+        aria-controls="sessions"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="3" y="4" width="18" height="16" rx="2.5" />
+          <path d="M9 4v16" />
+        </svg>
+      </button>
       <div class="brand">
         <img src="./icon.svg" alt="" />Inktyset<span class="version" id="version"></span>
       </div>
@@ -68,72 +89,83 @@
       </button>
     </header>
 
-    <main>
-      <section class="setup" id="setup" hidden></section>
-      <section class="add">
-        <button class="tile" id="pick">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M12 16V4m0 0L7 9m5-5 5 5" />
-            <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+    <div class="frame">
+      <aside class="sessions" id="sessions" aria-label="Sessions" data-i18n-aria="sessions">
+        <button class="new-session" id="newSession">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M12 5v14M5 12h14" />
           </svg>
-          <span
-            ><b data-i18n="addTitle">Add photos or PDF</b
-            ><small data-i18n="addHint">Or drag files anywhere onto this window</small></span
-          >
+          <span data-i18n="newSession">New session</span>
         </button>
-        <div class="tile" id="scanTile" hidden>
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect x="3" y="11" width="18" height="8" rx="2" />
-            <path d="M6 11V5h12v6M7 15h2" />
-          </svg>
-          <span style="flex: 1; min-width: 0"
-            ><b data-i18n="scanner">Scanner</b><small id="scanInfo">Looking for scanners…</small>
-            <span class="tile-row" id="scanRow"></span
-          ></span>
-        </div>
-        <button class="tile" id="phoneTile" hidden>
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
-            <circle cx="12" cy="11" r="3" />
-            <path d="M11 18.5h2" />
-          </svg>
-          <span><b data-i18n="phone">Phone</b><small id="phoneInfo">Starting…</small></span>
-        </button>
-      </section>
-      <input type="file" id="files" multiple accept="image/*,.pdf,application/pdf" hidden />
+        <ul class="session-list" id="sessionList"></ul>
+      </aside>
+      <main>
+        <section class="setup" id="setup" hidden></section>
+        <section class="add">
+          <button class="tile" id="pick">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 16V4m0 0L7 9m5-5 5 5" />
+              <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+            </svg>
+            <span
+              ><b data-i18n="addTitle">Add photos or PDF</b
+              ><small data-i18n="addHint">Or drag files anywhere onto this window</small></span
+            >
+          </button>
+          <div class="tile" id="scanTile" hidden>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="8" rx="2" />
+              <path d="M6 11V5h12v6M7 15h2" />
+            </svg>
+            <span style="flex: 1; min-width: 0"
+              ><b data-i18n="scanner">Scanner</b><small id="scanInfo">Looking for scanners…</small>
+              <span class="tile-row" id="scanRow"></span
+            ></span>
+          </div>
+          <button class="tile" id="phoneTile" hidden>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
+              <circle cx="12" cy="11" r="3" />
+              <path d="M11 18.5h2" />
+            </svg>
+            <span><b data-i18n="phone">Phone</b><small id="phoneInfo">Starting…</small></span>
+          </button>
+        </section>
+        <input type="file" id="files" multiple accept="image/*,.pdf,application/pdf" hidden />
 
-      <div class="status-line" id="statusLine"></div>
-      <div id="pages"></div>
-      <div class="empty" id="empty" hidden>
-        <b data-i18n="noPages">No pages yet</b>
-        <span data-i18n="emptyText1">Add photos or a PDF: drag them here, or use the button above.</span
-        ><br />
-        <span data-i18n="emptyText2"
-          >Each page is read on this computer and turned into LaTeX you can copy.</span
-        >
-      </div>
-    </main>
+        <div class="status-line" id="statusLine"></div>
+        <div id="pages"></div>
+        <div class="empty" id="empty" hidden>
+          <b data-i18n="noPages">No pages yet</b>
+          <span data-i18n="emptyText1">Add photos or a PDF: drag them here, or use the button above.</span
+          ><br />
+          <span data-i18n="emptyText2"
+            >Each page is read on this computer and turned into LaTeX you can copy.</span
+          >
+        </div>
+      </main>
+    </div>
 
     <dialog id="settingsDialog" aria-label="Settings" data-i18n-aria="settings">
       <h2 data-i18n="settings">Settings</h2>

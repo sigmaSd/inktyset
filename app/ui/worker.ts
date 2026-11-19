@@ -1,5 +1,5 @@
 // The hidden page that does Inktyset's image and PDF work (called from shell/electron/render.ts): files are
-// fetched from the data folder (/files/...), results returned as base64.
+// fetched from the data folder (/data/..., any session's), results returned as base64.
 
 import * as pdfjs from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -68,7 +68,7 @@ async function renderPdf(
   only?: number,
   rows?: Row[][],
 ): Promise<HTMLCanvasElement[]> {
-  const task = pdfjs.getDocument({ url: `/files/${rel}` });
+  const task = pdfjs.getDocument({ url: `/data/${rel}` });
   const doc = await task.promise;
   const out: HTMLCanvasElement[] = [];
   try {
@@ -104,7 +104,7 @@ async function textRows(page: pdfjs.PDFPageProxy, base: pdfjs.PageViewport): Pro
 const render = {
   /** A photo or scan → JPEG, upright, long side at most maxSide. */
   async image(rel: string, maxSide: number): Promise<string> {
-    const blob = await (await fetch(`/files/${rel}`)).blob();
+    const blob = await (await fetch(`/data/${rel}`)).blob();
     const bmp = await createImageBitmap(blob, { imageOrientation: "from-image" });
     const s = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
     const { c, ctx } = canvas(bmp.width * s, bmp.height * s);
@@ -129,7 +129,7 @@ const render = {
 
   /** A page's base picture as the user edited it (src/picture.ts) → JPEG, long side at most maxSide. */
   async edited(rel: string, edit: PictureEdit, maxSide: number): Promise<string> {
-    const blob = await (await fetch(`/files/${rel}`)).blob();
+    const blob = await (await fetch(`/data/${rel}`)).blob();
     const bmp = await createImageBitmap(blob, { imageOrientation: "from-image" });
     const c = drawEdited(bmp, edit, maxSide);
     bmp.close();

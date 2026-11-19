@@ -85,7 +85,9 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       ]),
     );
     return {
-      version: core.lib.version,
+      version: core.version,
+      sessions: await core.sessions(),
+      session: core.session,
       pages: core.lib.pages,
       intake: core.lib.intake,
       settings: core.lib.settings,
@@ -111,7 +113,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         scanning: core.scanner.scanning,
         error: core.scanner.error,
       },
-      folder: core.lib.dir,
+      folder: core.folder,
       folders: { default: core.defaultFolder, given: core.folderGiven },
       setup: {
         missing: core.missing,
@@ -154,13 +156,18 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
     };
   };
 
-  /** A file under the data folder (scans, previews, and for the renderer: originals and phone photos). */
-  const dataFile = (rel: string) => {
-    const root = resolve(core.lib.dir);
+  /**
+   * A file of a session (scans, previews, and for the renderer: originals and phone photos): the window asks
+   * for the open session's (/files/), the renderer for any session's, from the pages folder (/data/: the work
+   * it does may be for a session left meanwhile).
+   */
+  const dataFile = (rel: string, from: "session" | "folder") => {
+    const root = resolve(from === "session" ? core.lib.dir : core.folder);
     const f = resolve(root, normalize(decodeURIComponent(rel)));
+    const inside = from === "session" ? "" : "(?:sessions[\\\\/][^\\\\/]+[\\\\/])?";
     if (
       !f.startsWith(root + sep) ||
-      !/^(scans|build|originals|phone|chats)[\\/]/.test(f.slice(root.length + 1))
+      !new RegExp(`^${inside}(scans|build|originals|phone|chats)[\\\\/]`).test(f.slice(root.length + 1))
     )
       return null;
     return existsSync(f) && statSync(f).isFile() ? f : null;
@@ -176,13 +183,13 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
     clients++;
     let seen = -1;
     const push = () => {
-      if (core.lib.version !== seen) {
-        seen = core.lib.version;
+      if (core.version !== seen) {
+        seen = core.version;
         res.write(`data: ${seen}\n\n`);
       }
     };
     push();
-    const off = core.lib.onChange(push);
+    const off = core.onChange(push);
     const ping = setInterval(() => res.write(": ping\n\n"), 15_000);
     req.on("close", () => {
       clients--;
@@ -205,7 +212,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
           .slice(0, 120) || "file";
       const dest = join(lib.dir, "originals", `${randomBytes(4).toString("hex")}-${name}`);
       await writeFile(dest, await readBody(req));
-      void core.addFile(dest, name, "file");
+      void core.addFile(dest, name, "file", lib);
       return { ok: true };
     }
     const body = JSON.parse((await readBody(req, 5 << 20)).toString() || "{}") as Record<string, unknown>;
@@ -319,6 +326,15 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       const saved = await core.shell.saveFile(typst ? "inktyset.typ" : "inktyset.tex", text);
       return { path: saved };
     }
+    if (path === "/api/session/new") return { id: await core.newSession(String(body.name ?? "")) };
+    const sa = /^\/api\/session\/(open|rename|delete)$/.exec(path);
+    if (sa) {
+      const id = String(body.id ?? "");
+      if (sa[1] === "open") await core.openSession(id);
+      else if (sa[1] === "rename") return { id: await core.renameSession(id, String(body.name ?? "")) };
+      else await core.deleteSession(id);
+      return { ok: true };
+    }
     if (path === "/api/phone/pair") return (await core.phone.pair(), { ok: true });
     if (path === "/api/phone/revoke") return (await core.phone.revoke(String(body.id)), { ok: true });
     if (path === "/api/scanner/find") return (void core.scanner.find(), { ok: true });
@@ -329,7 +345,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       void core.scanner
         .scan(device, out)
         .then(() =>
-          core.addFile(out, msg("scanLabel", { time: new Date().toTimeString().slice(0, 5) }), "scan"),
+          core.addFile(out, msg("scanLabel", { time: new Date().toTimeString().slice(0, 5) }), "scan", lib),
         )
         .catch(() => {});
       return { ok: true };
@@ -440,7 +456,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       }
 
       if (path === "/api/state") return send(res, 200, await state());
-      if (path === "/api/version") return send(res, 200, { version: core.lib.version });
+      if (path === "/api/version") return send(res, 200, { version: core.version });
       // the window's words in the app's language (its English is in the window itself)
       if (path === "/api/i18n")
         return send(res, 200, { lang: currentLang(), catalog: core.locales[currentLang()] ?? null });
@@ -485,8 +501,9 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         const tex = typst ? (await core.lib.versionText(p, v.id, "typ")) || latexToTypst(latex) : latex;
         return send(res, 200, { tex, prompt: core.lib.prompts[v.prompt] ?? "" });
       }
-      if (path.startsWith("/files/")) {
-        const f = dataFile(path.slice("/files/".length));
+      if (path.startsWith("/files/") || path.startsWith("/data/")) {
+        const files = path.startsWith("/files/");
+        const f = dataFile(path.slice(files ? 7 : 6), files ? "session" : "folder");
         if (!f) return send(res, 404, { error: "not found" });
         // no-store: a page's scan or preview is never copied to Chromium's cache, outside the pages folder
         res.writeHead(200, {

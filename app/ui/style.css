@@ -246,8 +246,16 @@ body {
   flex-direction: column;
   overflow: hidden;
 }
+/* Below the header: the sessions (a sidebar that can be hidden) and the open session's pages. */
+.frame {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  position: relative;
+}
 main {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow-y: auto;
   padding: 18px max(20px, calc((100% - 1460px) / 2)) 80px;
@@ -1582,4 +1590,132 @@ button.small {
   color: var(--muted);
   max-height: 200px;
   overflow-y: auto;
+}
+
+/* ---------------------------------------------------------------- sessions (the sidebar) */
+.sessions {
+  flex: none;
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 8px;
+  overflow-y: auto;
+  background: var(--bg);
+  border-inline-end: 1px solid var(--line);
+  scrollbar-width: thin;
+}
+.no-sessions .sessions {
+  display: none;
+}
+#sessionsBtn[aria-expanded="true"] {
+  color: var(--ink);
+}
+.new-session {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  font-weight: 600;
+}
+.new-session svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.session-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.session {
+  position: relative;
+  border-radius: 8px;
+}
+.session:hover {
+  background: var(--surface-2);
+}
+.session.open {
+  background: var(--accent-soft);
+}
+.session-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+  min-width: 0;
+  padding: 7px 10px;
+  padding-inline-end: 62px; /* room for the buttons shown on hover */
+  border: 0;
+  background: transparent;
+  text-align: start;
+}
+.session-main:active:not(:disabled) {
+  transform: none;
+}
+.session-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.session.open .session-name {
+  font-weight: 600;
+}
+.session-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.session-meta .dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+}
+.session-acts {
+  position: absolute;
+  top: 50%;
+  inset-inline-end: 4px;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 0;
+  opacity: 0;
+}
+.session:is(:hover, :focus-within) .session-acts {
+  opacity: 1;
+}
+.session-acts button {
+  padding: 5px;
+}
+.session-acts svg {
+  width: 15px;
+  height: 15px;
+}
+.session-rename {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--surface);
+}
+/* a narrow window: the sidebar opens over the pages, and closes once a session is chosen */
+@media (max-width: 760px) {
+  .sessions {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: 4;
+    box-shadow: var(--shadow);
+  }
 }

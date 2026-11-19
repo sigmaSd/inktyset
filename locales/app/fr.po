@@ -288,6 +288,78 @@ msgctxt "settings"
 msgid "Settings"
 msgstr "Paramètres"
 
+msgctxt "sessions"
+msgid "Sessions"
+msgstr "Sessions"
+
+#. Ctrl+B is a keyboard shortcut: Ctrl as printed on keyboards
+msgctxt "toggleSessions"
+msgid "Show or hide the sessions (Ctrl+B)"
+msgstr "Afficher ou masquer les sessions (Ctrl+B)"
+
+msgctxt "newSession"
+msgid "New session"
+msgstr "Nouvelle session"
+
+#. The name of the first session, the pages Inktyset had before sessions, until the user renames it
+msgctxt "firstSession"
+msgid "My pages"
+msgstr "Mes pages"
+
+#. The name given to a new session; {n} is a number
+msgctxt "sessionN"
+msgid "Session {n}"
+msgstr "Session {n}"
+
+msgctxt "sessionPages"
+msgid "{n} page"
+msgid_plural "{n} pages"
+msgstr[0] "{n} page"
+msgstr[1] "{n} pages"
+
+#. {n} pages marked as checked (proofread)
+msgctxt "sessionChecked"
+msgid "{n} checked"
+msgid_plural "{n} checked"
+msgstr[0] "{n} vérifiée"
+msgstr[1] "{n} vérifiées"
+
+#. {n} pages waiting to be read
+msgctxt "sessionWaiting"
+msgid "{n} waiting"
+msgid_plural "{n} waiting"
+msgstr[0] "{n} en attente"
+msgstr[1] "{n} en attente"
+
+msgctxt "sessionReading"
+msgid "Reading…"
+msgstr "Lecture…"
+
+msgctxt "sessionEmpty"
+msgid "No pages yet"
+msgstr "Aucune page pour l’instant"
+
+msgctxt "sessionNameAria"
+msgid "Name of the session"
+msgstr "Nom de la session"
+
+msgctxt "renameSession"
+msgid "Rename"
+msgstr "Renommer"
+
+msgctxt "deleteSession"
+msgid "Delete the session"
+msgstr "Supprimer la session"
+
+#. {name} is the session's name
+msgctxt "confirmDeleteSession"
+msgid "Move the session {name} and its pages to the trash?"
+msgstr "Mettre la session {name} et ses pages à la corbeille ?"
+
+msgctxt "sessionDeleted"
+msgid "Moved to the trash."
+msgstr "Mise à la corbeille."
+
 msgctxt "addTitle"
 msgid "Add photos or PDF"
 msgstr "Ajouter des photos ou un PDF"
