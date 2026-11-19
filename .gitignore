@@ -15,3 +15,5 @@ test/src/*.pdf
 _site/
 # the Flatpak's generated offline sources (flatpak/generate-sources.sh): they live in the Flathub repo
 flatpak/*-sources.json
+# a local experiment, not decided yet
+tools/read.ts
