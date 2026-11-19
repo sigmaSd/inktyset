@@ -102,6 +102,11 @@ msgid "<b>Compare view:</b> one above the other for a formula, side by side for 
 msgstr "<b>عرض المقارنة:</b> واحدة فوق الأخرى للمعادلة، وجنبًا إلى جنب للصفحة الكاملة؛ مفتاح Enter يعلّم الصفحة كمُراجَعة وينتقل إلى التالية."
 
 #. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featSessions"
+msgid "<b>Sessions:</b> one per course, homework or thesis chapter, each with its own pages, a click apart in the sidebar. A page being read finishes in its own session while you proofread another."
+msgstr "<b>الجلسات:</b> جلسة لكل مقرر أو واجب أو فصل من الأطروحة، لكل منها صفحاتها، وبينها نقرة واحدة في الشريط الجانبي. تُكمل الصفحة التي تُقرأ قراءتها في جلستها بينما تراجع أنت جلسة أخرى."
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
 msgctxt "featLanguages"
 msgid "<b>Languages:</b> English by default; French, Arabic (right to left), German, Spanish, Italian, Portuguese, Turkish or any other for the prose. Pages mixing French or English with Arabic work too, each word in its own direction. Nothing is translated."
 msgstr "<b>اللغات:</b> الإنجليزية افتراضيًا؛ والفرنسية والعربية (من اليمين إلى اليسار) والألمانية والإسبانية والإيطالية والبرتغالية والتركية أو أي لغة أخرى للنص. الصفحات التي تمزج الفرنسية أو الإنجليزية بالعربية تعمل أيضًا، كل كلمة في اتجاهها. لا يُترجَم شيء."
@@ -223,6 +228,10 @@ msgstr "عرض المقارنة: معادلة بخط اليد فوق نتيجت�
 msgctxt "shotList"
 msgid "The page list: scans, their LaTeX in a highlighting editor, and compiled previews"
 msgstr "قائمة الصفحات: الصور، ونصوص LaTeX الخاصة بها في محرّر ملوَّن، والمعاينات المترجَمة"
+
+msgctxt "shotSessions"
+msgid "Sessions in the sidebar: proofreading a lecture while a thesis chapter is read in another session"
+msgstr "الجلسات في الشريط الجانبي: مراجعة محاضرة بينما يُقرأ فصل من أطروحة في جلسة أخرى"
 
 msgctxt "js.downloadFor"
 msgid "Download for {os}"

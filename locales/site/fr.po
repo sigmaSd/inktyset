@@ -102,6 +102,11 @@ msgid "<b>Compare view:</b> one above the other for a formula, side by side for 
 msgstr "<b>Vue Comparer :</b> l'un au-dessus de l'autre pour une formule, côte à côte pour une page entière ; Entrée marque une page comme vérifiée et passe à la suivante."
 
 #. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featSessions"
+msgid "<b>Sessions:</b> one per course, homework or thesis chapter, each with its own pages, a click apart in the sidebar. A page being read finishes in its own session while you proofread another."
+msgstr "<b>Sessions :</b> une par cours, devoir ou chapitre de thèse, chacune avec ses pages, à un clic l'une de l'autre dans la barre latérale. Une page en cours de lecture se termine dans sa session pendant que vous en relisez une autre."
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
 msgctxt "featLanguages"
 msgid "<b>Languages:</b> English by default; French, Arabic (right to left), German, Spanish, Italian, Portuguese, Turkish or any other for the prose. Pages mixing French or English with Arabic work too, each word in its own direction. Nothing is translated."
 msgstr "<b>Langues :</b> anglais par défaut ; français, arabe (de droite à gauche), allemand, espagnol, italien, portugais, turc ou toute autre langue pour le texte. Les pages qui mêlent le français ou l'anglais à l'arabe fonctionnent aussi, chaque mot dans son sens. Rien n'est traduit."
@@ -223,6 +228,10 @@ msgstr "La vue Comparer : une formule manuscrite au-dessus de son LaTeX compilé
 msgctxt "shotList"
 msgid "The page list: scans, their LaTeX in a highlighting editor, and compiled previews"
 msgstr "La liste des pages : les scans, leur LaTeX dans un éditeur avec coloration, et les aperçus compilés"
+
+msgctxt "shotSessions"
+msgid "Sessions in the sidebar: proofreading a lecture while a thesis chapter is read in another session"
+msgstr "Les sessions dans la barre latérale : la relecture d'un cours pendant qu'un chapitre de thèse est lu dans une autre session"
 
 msgctxt "js.downloadFor"
 msgid "Download for {os}"

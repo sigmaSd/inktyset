@@ -102,6 +102,11 @@ msgid "<b>Compare view:</b> one above the other for a formula, side by side for 
 msgstr ""
 
 #. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "featSessions"
+msgid "<b>Sessions:</b> one per course, homework or thesis chapter, each with its own pages, a click apart in the sidebar. A page being read finishes in its own session while you proofread another."
+msgstr ""
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
 msgctxt "featLanguages"
 msgid "<b>Languages:</b> English by default; French, Arabic (right to left), German, Spanish, Italian, Portuguese, Turkish or any other for the prose. Pages mixing French or English with Arabic work too, each word in its own direction. Nothing is translated."
 msgstr ""
@@ -222,6 +227,10 @@ msgstr ""
 
 msgctxt "shotList"
 msgid "The page list: scans, their LaTeX in a highlighting editor, and compiled previews"
+msgstr ""
+
+msgctxt "shotSessions"
+msgid "Sessions in the sidebar: proofreading a lecture while a thesis chapter is read in another session"
 msgstr ""
 
 msgctxt "js.downloadFor"
