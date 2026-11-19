@@ -1650,7 +1650,6 @@ button.small {
   width: 100%;
   min-width: 0;
   padding: 7px 10px;
-  padding-inline-end: 62px; /* room for the buttons shown on hover */
   border: 0;
   background: transparent;
   text-align: start;
@@ -1694,6 +1693,9 @@ button.small {
 }
 .session:is(:hover, :focus-within) .session-acts {
   opacity: 1;
+}
+.session:is(:hover, :focus-within) .session-main {
+  padding-inline-end: 62px; /* room for the buttons */
 }
 .session-acts button {
   padding: 5px;

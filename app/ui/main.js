@@ -1240,7 +1240,7 @@ function renderSessions() {
       const open = s.id === S.session;
       return `<li class="session${open ? " open" : ""}" data-id="${esc(s.id)}">
         <button class="session-main" data-session="open"${open ? ' aria-current="true"' : ""}>
-          <span class="session-name">${esc(sessionName(s))}</span>
+          <span class="session-name" dir="auto">${esc(sessionName(s))}</span>
           <span class="session-meta">${meta.join(" · ")}</span>
         </button>
         <span class="session-acts">
