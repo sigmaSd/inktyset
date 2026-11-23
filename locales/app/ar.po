@@ -204,6 +204,26 @@ msgctxt "selectAll"
 msgid "Select all"
 msgstr "تحديد الكل"
 
+msgctxt "copyFilePath"
+msgid "Copy file path"
+msgstr "نسخ مسار الملف"
+
+msgctxt "copyPdfPath"
+msgid "Copy PDF path"
+msgstr "نسخ مسار ملف PDF"
+
+msgctxt "showdownFilesNeeded"
+msgid "Choose the model's file and its vision file (both .gguf)."
+msgstr "اختر ملف النموذج وملف الرؤية الخاص به (كلاهما .gguf)."
+
+msgctxt "showdownUrlNeeded"
+msgid "Type the model server's address."
+msgstr "اكتب عنوان خادم النماذج."
+
+msgctxt "showdownFileGone"
+msgid "This model's file isn't there any more: {file}. Download it again, or choose where it is now with Edit."
+msgstr "ملف هذا النموذج لم يعد موجودًا: {file}. نزّله من جديد، أو اختر مكانه الحالي عبر تعديل."
+
 msgctxt "starting"
 msgid "Starting…"
 msgstr "جارٍ التشغيل…"
@@ -1825,3 +1845,387 @@ msgstr "النصان متطابقان."
 msgctxt "nowShowing"
 msgid "Now showing {v}."
 msgstr "يُعرض الآن {v}."
+
+#. Opens a view where several AI models read the same pages, to compare them
+msgctxt "compareModels"
+msgid "Compare models"
+msgstr "مقارنة النماذج"
+
+msgctxt "compareModelsTitle"
+msgid "Read the pages with other models, side by side, scored against the pages you checked"
+msgstr "قراءة الصفحات بنماذج أخرى جنبًا إلى جنب، وتقييمها مقارنةً بالصفحات التي راجعتها"
+
+msgctxt "sdAdd"
+msgid "Add a model…"
+msgstr "إضافة نموذج…"
+
+msgctxt "sdReadMissing"
+msgid "Read {n} missing"
+msgid_plural "Read {n} missing"
+msgstr[0] "قراءة الناقص ({n})"
+msgstr[1] "قراءة الناقص ({n})"
+msgstr[2] "قراءة الناقص ({n})"
+msgstr[3] "قراءة الناقص ({n})"
+msgstr[4] "قراءة الناقص ({n})"
+msgstr[5] "قراءة الناقص ({n})"
+
+msgctxt "sdStop"
+msgid "Stop"
+msgstr "إيقاف"
+
+msgctxt "sdLeft"
+msgid "{n} reading left"
+msgid_plural "{n} readings left"
+msgstr[0] "القراءات المتبقية: {n}"
+msgstr[1] "القراءات المتبقية: {n}"
+msgstr[2] "القراءات المتبقية: {n}"
+msgstr[3] "القراءات المتبقية: {n}"
+msgstr[4] "القراءات المتبقية: {n}"
+msgstr[5] "القراءات المتبقية: {n}"
+
+msgctxt "sdAllRead"
+msgid "All read"
+msgstr "قُرئ كل شيء"
+
+msgctxt "sdNoChecked"
+msgid "No checked pages yet. Each model's reading is scored against the pages you checked: proofread a few pages and mark them checked to see which model reads your writing best."
+msgstr "لا صفحات مُراجَعة بعد. تُقيَّم قراءة كل نموذج مقارنةً بالصفحات التي راجعتها: راجع بعض الصفحات وعلِّمها كمُراجَعة لترى أيّ نموذج يقرأ خطّك أفضل."
+
+msgctxt "sdLegend"
+msgid "Scores count only checked pages. The distance is the share of the LaTeX (spaces aside) that differs from your checked text: lower is closer. While the models read, yours waits, and comes back after."
+msgstr "لا تُحسب في التقييم إلا الصفحات المُراجَعة. الفرق هو نسبة ما يختلف من LaTeX (دون المسافات) عن نصّك المُراجَع: كلما قلّ كانت القراءة أقرب. أثناء قراءة النماذج ينتظر نموذجك، ثم يعود بعدها."
+
+msgctxt "sdOver"
+msgid "Over {n} checked page"
+msgid_plural "Over {n} checked pages"
+msgstr[0] "على الصفحات المُراجَعة ({n})"
+msgstr[1] "على الصفحات المُراجَعة ({n})"
+msgstr[2] "على الصفحات المُراجَعة ({n})"
+msgstr[3] "على الصفحات المُراجَعة ({n})"
+msgstr[4] "على الصفحات المُراجَعة ({n})"
+msgstr[5] "على الصفحات المُراجَعة ({n})"
+
+#. After a percentage, e.g. 4.8% off your text: how far a model's reading is from the user's checked text
+msgctxt "sdOff"
+msgid "off your text"
+msgstr "فرقًا عن نصّك"
+
+#. {p} is a percentage, e.g. 4.8%: how far this reading is from the user's checked text
+msgctxt "sdOffN"
+msgid "{p} off"
+msgstr "فرق {p}"
+
+#. {t} is a time like 0:12 (minutes:seconds)
+msgctxt "sdPerPage"
+msgid "{t} a page"
+msgstr "{t} للصفحة"
+
+#. {n} of {d} readings compile and aren't empty
+msgctxt "sdUsable"
+msgid "{n}/{d} usable"
+msgstr "{n}/{d} صالحة"
+
+#. Spots the model marked [??] because it couldn't read them
+msgctxt "sdUnclear"
+msgid "{n} unclear"
+msgid_plural "{n} unclear"
+msgstr[0] "غير مقروء: {n}"
+msgstr[1] "غير مقروء: {n}"
+msgstr[2] "غير مقروء: {n}"
+msgstr[3] "غير مقروء: {n}"
+msgstr[4] "غير مقروء: {n}"
+msgstr[5] "غير مقروء: {n}"
+
+msgctxt "sdEmptyN"
+msgid "{n} empty"
+msgid_plural "{n} empty"
+msgstr[0] "فارغة: {n}"
+msgstr[1] "فارغة: {n}"
+msgstr[2] "فارغة: {n}"
+msgstr[3] "فارغة: {n}"
+msgstr[4] "فارغة: {n}"
+msgstr[5] "فارغة: {n}"
+
+msgctxt "sdClosest"
+msgid "closest"
+msgstr "الأقرب"
+
+#. The model thinks before it writes (a setting of the model being compared)
+msgctxt "sdThinking"
+msgid "thinking"
+msgstr "بتفكير"
+
+msgctxt "sdPlain"
+msgid "no thinking"
+msgstr "دون تفكير"
+
+msgctxt "sdYourModel"
+msgid "your model"
+msgstr "نموذجك"
+
+msgctxt "sdUse"
+msgid "Use this model"
+msgstr "استخدام هذا النموذج"
+
+msgctxt "sdUseTitle"
+msgid "Read new pages with this model (Settings → Model). Pages are read without thinking."
+msgstr "قراءة الصفحات الجديدة بهذا النموذج (الإعدادات ← النموذج). تُقرأ الصفحات دون تفكير."
+
+#. {name} is a model's name
+msgctxt "sdUsed"
+msgid "Inktyset now reads with {name}."
+msgstr "يقرأ Inktyset الآن بـ {name}."
+
+#. {name} is a model's name
+msgctxt "sdConfirmRemove"
+msgid "Stop comparing {name}? Its readings of this session's pages are deleted."
+msgstr "إيقاف مقارنة {name}؟ ستُحذف قراءاته لصفحات هذه الجلسة."
+
+msgctxt "sdChecked"
+msgid "checked"
+msgstr "مُراجَعة"
+
+msgctxt "sdNotChecked"
+msgid "not checked"
+msgstr "غير مُراجَعة"
+
+msgctxt "sdNotScored"
+msgid "This page isn't checked: not counted in the score"
+msgstr "هذه الصفحة غير مُراجَعة: لا تُحسب في التقييم"
+
+msgctxt "sdNotRead"
+msgid "Not read"
+msgstr "لم تُقرأ"
+
+msgctxt "sdRead"
+msgid "Read"
+msgstr "قراءة"
+
+msgctxt "sdQueued"
+msgid "Waiting"
+msgstr "في الانتظار"
+
+#. {t} is a time like 0:12 (minutes:seconds)
+msgctxt "sdReading"
+msgid "Reading… {t}"
+msgstr "جارٍ القراءة… {t}"
+
+msgctxt "sdFailed"
+msgid "Failed"
+msgstr "فشلت"
+
+msgctxt "sdEmpty"
+msgid "Empty: it wrote nothing"
+msgstr "فارغة: لم يكتب شيئًا"
+
+msgctxt "sdEmptyCut"
+msgid "Empty: it thought until its limit and never wrote the page"
+msgstr "فارغة: فكّر حتى بلغ حدّه ولم يكتب الصفحة"
+
+msgctxt "sdNoPreview"
+msgid "No preview"
+msgstr "لا معاينة"
+
+msgctxt "sdCompiles"
+msgid "compiles"
+msgstr "بلا أخطاء"
+
+msgctxt "sdError"
+msgid "doesn't compile"
+msgstr "فيها أخطاء"
+
+msgctxt "sdCut"
+msgid "cut off"
+msgstr "مقطوعة"
+
+msgctxt "sdOutdated"
+msgid "outdated"
+msgstr "قديمة"
+
+msgctxt "sdOutdatedTitle"
+msgid "Read before the instructions or the picture changed"
+msgstr "قُرئت قبل تغيّر التعليمات أو الصورة"
+
+msgctxt "sdPrevTitle"
+msgid "Previous model (←)"
+msgstr "النموذج السابق (→)"
+
+msgctxt "sdNextTitle"
+msgid "Next model (→)"
+msgstr "النموذج التالي (←)"
+
+msgctxt "sdKeep"
+msgid "Keep as a version"
+msgstr "الاحتفاظ بها كنسخة"
+
+msgctxt "sdKeepTitle"
+msgid "Add this reading to the page's versions, to compare in the Compare view (the page's text stays)"
+msgstr "إضافة هذه القراءة إلى نسخ الصفحة لمقارنتها في عرض المقارنة (يبقى نص الصفحة كما هو)"
+
+#. {v} is a version name like v2
+msgctxt "sdKept"
+msgid "Kept as {v}: the page's Compare view shows it."
+msgstr "حُفظت كنسخة {v}: يعرضها عرض المقارنة للصفحة."
+
+msgctxt "sdAgainstYours"
+msgid "Its LaTeX, against your text"
+msgstr "نصّ LaTeX الخاص به مقارنةً بنصّك"
+
+msgctxt "sdItsText"
+msgid "Its LaTeX"
+msgstr "نصّ LaTeX الخاص به"
+
+msgctxt "sdItsThinking"
+msgid "Its thinking"
+msgstr "تفكيره"
+
+msgctxt "sdAddHead"
+msgid "Add a model to compare"
+msgstr "إضافة نموذج للمقارنة"
+
+msgctxt "sdKindBuiltin"
+msgid "Inktyset's model (Qwen3.5 9B)"
+msgstr "نموذج Inktyset (Qwen3.5 9B)"
+
+msgctxt "sdKindFiles"
+msgid "Model files"
+msgstr "ملفات نموذج"
+
+msgctxt "sdKindFilesHelp"
+msgid "Any vision model llama.cpp runs: its .gguf and its vision file (mmproj .gguf)."
+msgstr "أيّ نموذج رؤية يشغّله llama.cpp: ملفه .gguf وملف الرؤية الخاص به (mmproj .gguf)."
+
+msgctxt "sdKindServer"
+msgid "A model server"
+msgstr "خادم نماذج"
+
+msgctxt "sdKindServerHelp"
+msgid "On this computer or your local network (Ollama, LM Studio, llama-server…)."
+msgstr "على هذا الحاسوب أو على شبكتك المحلية (Ollama وLM Studio وllama-server…)."
+
+msgctxt "sdChooseModel"
+msgid "Model…"
+msgstr "النموذج…"
+
+msgctxt "sdChooseMmproj"
+msgid "Vision file…"
+msgstr "ملف الرؤية…"
+
+msgctxt "sdNoFile"
+msgid "No file chosen"
+msgstr "لم يُختر ملف"
+
+msgctxt "sdNamePh"
+msgid "Model (empty: the server's own)"
+msgstr "النموذج (فارغ: نموذج الخادم)"
+
+msgctxt "sdKeyPh"
+msgid "Key (if it needs one)"
+msgstr "المفتاح (إن لزم)"
+
+msgctxt "sdThinkLabel"
+msgid "Let it think before it writes"
+msgstr "دعه يفكّر قبل أن يكتب"
+
+msgctxt "sdThinkHelp"
+msgid "Much slower (minutes a page), sometimes reads better."
+msgstr "أبطأ بكثير (دقائق للصفحة)، وقد يقرأ أفضل أحيانًا."
+
+msgctxt "sdAddOnly"
+msgid "Add"
+msgstr "إضافة"
+
+#. How fast the model writes: {n} tokens (pieces of words) a second
+msgctxt "sdTps"
+msgid "{n} tok/s"
+msgstr "{n} رمز/ث"
+
+msgctxt "sdGone"
+msgid "model file not found"
+msgstr "ملف النموذج غير موجود"
+
+msgctxt "sdBlocked"
+msgid "waiting for the engine or the model: download it from the pages view"
+msgstr "بانتظار المحرّك أو النموذج: نزّله من عرض الصفحات"
+
+msgctxt "sdEdit"
+msgid "Edit"
+msgstr "تعديل"
+
+msgctxt "sdEditHead"
+msgid "Change this column"
+msgstr "تعديل هذا العمود"
+
+msgctxt "sdEditNote"
+msgid "Its readings stay, marked outdated, until you read them again."
+msgstr "تبقى قراءاته، معلَّمة كقديمة، حتى تعيد قراءتها."
+
+msgctxt "sdSave"
+msgid "Save"
+msgstr "حفظ"
+
+msgctxt "sdDuplicate"
+msgid "Duplicate"
+msgstr "نسخ"
+
+msgctxt "sdDuplicateTitle"
+msgid "A copy of this column beside it, to change one thing and compare"
+msgstr "نسخة من هذا العمود بجانبه، لتغيير شيء واحد والمقارنة"
+
+#. A tag on a column: it reads with instructions of its own, not the ones in Settings
+msgctxt "sdOwnPrompt"
+msgid "own instructions"
+msgstr "تعليمات خاصة"
+
+msgctxt "sdInstructions"
+msgid "Instructions"
+msgstr "التعليمات"
+
+msgctxt "sdPromptSettings"
+msgid "The ones in Settings"
+msgstr "تعليمات الإعدادات"
+
+msgctxt "sdPromptSettingsHelp"
+msgid "As the app reads. Change them in Settings, and its readings become outdated."
+msgstr "كما يقرأ التطبيق. غيّرها في الإعدادات فتصبح قراءاته قديمة."
+
+msgctxt "sdPromptOwn"
+msgid "Its own"
+msgstr "تعليماته الخاصة"
+
+msgctxt "sdPromptOwnHelp"
+msgid "For this column alone. The rule for the writing language is still added."
+msgstr "لهذا العمود وحده. تُضاف قاعدة لغة الكتابة دائمًا."
+
+msgctxt "sdPromptReset"
+msgid "Start again from the ones in Settings"
+msgstr "البدء من جديد من تعليمات الإعدادات"
+
+msgctxt "sdUseCombo"
+msgid "Use this model and instructions"
+msgstr "استخدام هذا النموذج وهذه التعليمات"
+
+msgctxt "sdUseComboTitle"
+msgid "Read new pages with this model and these instructions (Settings → Model and Instructions). Pages are read without thinking."
+msgstr "قراءة الصفحات الجديدة بهذا النموذج وهذه التعليمات (الإعدادات ← النموذج والتعليمات). تُقرأ الصفحات دون تفكير."
+
+#. {name} is a model's name
+msgctxt "sdConfirmUseCombo"
+msgid "Read new pages with {name} and this column's instructions? Settings' instructions are replaced by them (your notes are part of them now)."
+msgstr "قراءة الصفحات الجديدة بـ {name} وتعليمات هذا العمود؟ ستحلّ محلّ تعليمات الإعدادات (وملاحظاتك صارت جزءًا منها)."
+
+#. {name} is a model's name
+msgctxt "sdUsedCombo"
+msgid "Inktyset now reads with {name} and these instructions."
+msgstr "يقرأ Inktyset الآن بـ {name} وهذه التعليمات."
+
+#. Tokens are the pieces of words a model writes
+msgctxt "sdTokens"
+msgid "{n} token"
+msgid_plural "{n} tokens"
+msgstr[0] "الرموز: {n}"
+msgstr[1] "الرموز: {n}"
+msgstr[2] "الرموز: {n}"
+msgstr[3] "الرموز: {n}"
+msgstr[4] "الرموز: {n}"
+msgstr[5] "الرموز: {n}"

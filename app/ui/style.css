@@ -1721,3 +1721,363 @@ button.small {
     box-shadow: var(--shadow);
   }
 }
+
+/* ---------------- compare models (app/ui/showdown.ts): a full-window view, like Compare */
+#showdown {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  display: none;
+  flex-direction: column;
+  background: var(--bg);
+}
+#showdown[open] {
+  display: flex;
+}
+#showdown:focus {
+  outline: none;
+}
+html:has(#showdown[open]) {
+  overflow: hidden;
+}
+.sd-body {
+  flex: 1;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 16px 18px 40px;
+}
+.sd-grid {
+  display: grid;
+  gap: 10px;
+  align-items: start;
+}
+.sd-hint {
+  background: var(--accent-soft);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 0 0 14px;
+  max-width: 80ch;
+}
+.sd-legend {
+  margin: 16px 2px 0;
+  max-width: 90ch;
+}
+.sd-corner {
+  align-self: end;
+  padding: 0 4px 6px;
+}
+.sd-col,
+.sd-sum,
+.sd-cell,
+.sd-page {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+.sd-col {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: stretch;
+}
+.sd-name b {
+  font-size: 14.5px;
+  overflow-wrap: anywhere;
+}
+.sd-tags,
+.sd-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.sd-acts {
+  margin-top: auto;
+}
+.tag {
+  font-size: 11.5px;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.tag.think {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: transparent;
+}
+.tag.app {
+  background: var(--ok-soft);
+  color: var(--ok);
+  border-color: transparent;
+}
+.sd-sum {
+  padding: 10px 12px;
+  align-self: stretch;
+}
+.sd-sum.none {
+  border-style: dashed;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+}
+.sd-sum.best {
+  outline: 2px solid var(--ok);
+  outline-offset: -1px;
+}
+.sd-sum .big {
+  font-size: 22px;
+  font-weight: 650;
+}
+.sd-sum .big small {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-inline-start: 5px;
+}
+.sd-sum .kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.sd-grid .ok {
+  color: var(--ok);
+}
+.sd-grid .warn {
+  color: var(--warn);
+}
+.sd-grid .bad {
+  color: var(--bad);
+}
+.sd-grid .muted {
+  color: var(--muted);
+  opacity: 0.75;
+}
+.sd-page {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sd-pt {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+.sd-page img {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  display: block;
+}
+.sd-cell {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sd-cell[data-sd="open"] {
+  cursor: pointer;
+}
+.sd-cell[data-sd="open"]:hover {
+  border-color: var(--accent);
+}
+.sd-cell.sd-wait {
+  border-style: dashed;
+  box-shadow: none;
+}
+.sd-cell .pv {
+  flex: 1;
+}
+.sd-cell .pv,
+#sdcPreview .pv {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  min-height: 90px;
+  max-height: 340px;
+  overflow: hidden;
+}
+.sd-cell .pv img {
+  width: 100%;
+  display: block;
+}
+.pv.empty {
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  text-align: center;
+}
+.pv.empty.bad {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+.sd-cell .foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+/* one reading, beside the scan */
+.sd-cell-dialog {
+  max-width: none;
+  width: min(1400px, 96vw);
+  height: 90vh;
+  padding: 0;
+  display: none;
+  flex-direction: column;
+}
+.sd-cell-dialog[open] {
+  display: flex;
+}
+.sdc-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.sdc-head h2 {
+  margin: 0 6px 0 0;
+  font-size: 16px;
+}
+.sdc-head .spacer {
+  flex: 1;
+}
+.sdc-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px 14px;
+}
+.sdc-pane {
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sdc-pane img {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.sdc-pane pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 12.5px/1.55 var(--mono);
+  margin: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+}
+.sdc-pane del {
+  background: color-mix(in srgb, var(--bad) 22%, transparent);
+  text-decoration: line-through;
+}
+.sdc-pane ins {
+  background: color-mix(in srgb, var(--ok) 26%, transparent);
+  text-decoration: none;
+}
+.sd-err {
+  color: var(--bad);
+  max-height: 200px;
+  overflow: auto;
+}
+@media (max-width: 1000px) {
+  .sdc-body {
+    grid-template-columns: 1fr;
+  }
+}
+/* adding a model */
+#sdAddDialog .sd-add-more {
+  margin: 0 0 8px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+[dir="rtl"] #sdAddDialog .sd-add-more {
+  margin: 0 28px 8px 0;
+}
+#sdAddDialog .file-row {
+  justify-content: flex-start;
+}
+.sd-think {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  cursor: pointer;
+}
+.sd-think input {
+  margin-top: 4px;
+  accent-color: var(--accent);
+}
+.sd-think b {
+  display: block;
+}
+.sd-think small {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+.bad-text {
+  color: var(--bad);
+  font-size: 13px;
+  min-height: 1em;
+  margin: 6px 0 0;
+}
+#sdAddDialog {
+  max-height: 92vh;
+  overflow: auto;
+}
+.sd-prompt {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+#sdPromptText {
+  width: 100%;
+  font: 12.5px/1.5 var(--mono);
+  resize: vertical;
+}
+.tag.own {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: transparent;
+}
+.tag.gone {
+  background: var(--bad-soft);
+  color: var(--bad);
+  border-color: transparent;
+}

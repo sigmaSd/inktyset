@@ -196,6 +196,26 @@ msgctxt "selectAll"
 msgid "Select all"
 msgstr ""
 
+msgctxt "copyFilePath"
+msgid "Copy file path"
+msgstr ""
+
+msgctxt "copyPdfPath"
+msgid "Copy PDF path"
+msgstr ""
+
+msgctxt "showdownFilesNeeded"
+msgid "Choose the model's file and its vision file (both .gguf)."
+msgstr ""
+
+msgctxt "showdownUrlNeeded"
+msgid "Type the model server's address."
+msgstr ""
+
+msgctxt "showdownFileGone"
+msgid "This model's file isn't there any more: {file}. Download it again, or choose where it is now with Edit."
+msgstr ""
+
 msgctxt "starting"
 msgid "Starting…"
 msgstr ""
@@ -1761,3 +1781,363 @@ msgstr ""
 msgctxt "nowShowing"
 msgid "Now showing {v}."
 msgstr ""
+
+#. Opens a view where several AI models read the same pages, to compare them
+msgctxt "compareModels"
+msgid "Compare models"
+msgstr ""
+
+msgctxt "compareModelsTitle"
+msgid "Read the pages with other models, side by side, scored against the pages you checked"
+msgstr ""
+
+msgctxt "sdAdd"
+msgid "Add a model…"
+msgstr ""
+
+msgctxt "sdReadMissing"
+msgid "Read {n} missing"
+msgid_plural "Read {n} missing"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "sdStop"
+msgid "Stop"
+msgstr ""
+
+msgctxt "sdLeft"
+msgid "{n} reading left"
+msgid_plural "{n} readings left"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "sdAllRead"
+msgid "All read"
+msgstr ""
+
+msgctxt "sdNoChecked"
+msgid "No checked pages yet. Each model's reading is scored against the pages you checked: proofread a few pages and mark them checked to see which model reads your writing best."
+msgstr ""
+
+msgctxt "sdLegend"
+msgid "Scores count only checked pages. The distance is the share of the LaTeX (spaces aside) that differs from your checked text: lower is closer. While the models read, yours waits, and comes back after."
+msgstr ""
+
+msgctxt "sdOver"
+msgid "Over {n} checked page"
+msgid_plural "Over {n} checked pages"
+msgstr[0] ""
+msgstr[1] ""
+
+#. After a percentage, e.g. 4.8% off your text: how far a model's reading is from the user's checked text
+msgctxt "sdOff"
+msgid "off your text"
+msgstr ""
+
+#. {p} is a percentage, e.g. 4.8%: how far this reading is from the user's checked text
+msgctxt "sdOffN"
+msgid "{p} off"
+msgstr ""
+
+#. {t} is a time like 0:12 (minutes:seconds)
+msgctxt "sdPerPage"
+msgid "{t} a page"
+msgstr ""
+
+#. {n} of {d} readings compile and aren't empty
+msgctxt "sdUsable"
+msgid "{n}/{d} usable"
+msgstr ""
+
+#. Spots the model marked [??] because it couldn't read them
+msgctxt "sdUnclear"
+msgid "{n} unclear"
+msgid_plural "{n} unclear"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "sdEmptyN"
+msgid "{n} empty"
+msgid_plural "{n} empty"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "sdClosest"
+msgid "closest"
+msgstr ""
+
+#. The model thinks before it writes (a setting of the model being compared)
+msgctxt "sdThinking"
+msgid "thinking"
+msgstr ""
+
+msgctxt "sdPlain"
+msgid "no thinking"
+msgstr ""
+
+msgctxt "sdYourModel"
+msgid "your model"
+msgstr ""
+
+msgctxt "sdUse"
+msgid "Use this model"
+msgstr ""
+
+msgctxt "sdUseTitle"
+msgid "Read new pages with this model (Settings → Model). Pages are read without thinking."
+msgstr ""
+
+#. {name} is a model's name
+msgctxt "sdUsed"
+msgid "Inktyset now reads with {name}."
+msgstr ""
+
+#. {name} is a model's name
+msgctxt "sdConfirmRemove"
+msgid "Stop comparing {name}? Its readings of this session's pages are deleted."
+msgstr ""
+
+msgctxt "sdChecked"
+msgid "checked"
+msgstr ""
+
+msgctxt "sdNotChecked"
+msgid "not checked"
+msgstr ""
+
+msgctxt "sdNotScored"
+msgid "This page isn't checked: not counted in the score"
+msgstr ""
+
+msgctxt "sdNotRead"
+msgid "Not read"
+msgstr ""
+
+msgctxt "sdRead"
+msgid "Read"
+msgstr ""
+
+msgctxt "sdQueued"
+msgid "Waiting"
+msgstr ""
+
+#. {t} is a time like 0:12 (minutes:seconds)
+msgctxt "sdReading"
+msgid "Reading… {t}"
+msgstr ""
+
+msgctxt "sdFailed"
+msgid "Failed"
+msgstr ""
+
+msgctxt "sdEmpty"
+msgid "Empty: it wrote nothing"
+msgstr ""
+
+msgctxt "sdEmptyCut"
+msgid "Empty: it thought until its limit and never wrote the page"
+msgstr ""
+
+msgctxt "sdNoPreview"
+msgid "No preview"
+msgstr ""
+
+msgctxt "sdCompiles"
+msgid "compiles"
+msgstr ""
+
+msgctxt "sdError"
+msgid "doesn't compile"
+msgstr ""
+
+msgctxt "sdCut"
+msgid "cut off"
+msgstr ""
+
+msgctxt "sdOutdated"
+msgid "outdated"
+msgstr ""
+
+msgctxt "sdOutdatedTitle"
+msgid "Read before the instructions or the picture changed"
+msgstr ""
+
+msgctxt "sdPrevTitle"
+msgid "Previous model (←)"
+msgstr ""
+
+msgctxt "sdNextTitle"
+msgid "Next model (→)"
+msgstr ""
+
+msgctxt "sdKeep"
+msgid "Keep as a version"
+msgstr ""
+
+msgctxt "sdKeepTitle"
+msgid "Add this reading to the page's versions, to compare in the Compare view (the page's text stays)"
+msgstr ""
+
+#. {v} is a version name like v2
+msgctxt "sdKept"
+msgid "Kept as {v}: the page's Compare view shows it."
+msgstr ""
+
+msgctxt "sdAgainstYours"
+msgid "Its LaTeX, against your text"
+msgstr ""
+
+msgctxt "sdItsText"
+msgid "Its LaTeX"
+msgstr ""
+
+msgctxt "sdItsThinking"
+msgid "Its thinking"
+msgstr ""
+
+msgctxt "sdAddHead"
+msgid "Add a model to compare"
+msgstr ""
+
+msgctxt "sdKindBuiltin"
+msgid "Inktyset's model (Qwen3.5 9B)"
+msgstr ""
+
+msgctxt "sdKindFiles"
+msgid "Model files"
+msgstr ""
+
+msgctxt "sdKindFilesHelp"
+msgid "Any vision model llama.cpp runs: its .gguf and its vision file (mmproj .gguf)."
+msgstr ""
+
+msgctxt "sdKindServer"
+msgid "A model server"
+msgstr ""
+
+msgctxt "sdKindServerHelp"
+msgid "On this computer or your local network (Ollama, LM Studio, llama-server…)."
+msgstr ""
+
+msgctxt "sdChooseModel"
+msgid "Model…"
+msgstr ""
+
+msgctxt "sdChooseMmproj"
+msgid "Vision file…"
+msgstr ""
+
+msgctxt "sdNoFile"
+msgid "No file chosen"
+msgstr ""
+
+msgctxt "sdNamePh"
+msgid "Model (empty: the server's own)"
+msgstr ""
+
+msgctxt "sdKeyPh"
+msgid "Key (if it needs one)"
+msgstr ""
+
+msgctxt "sdThinkLabel"
+msgid "Let it think before it writes"
+msgstr ""
+
+msgctxt "sdThinkHelp"
+msgid "Much slower (minutes a page), sometimes reads better."
+msgstr ""
+
+msgctxt "sdAddOnly"
+msgid "Add"
+msgstr ""
+
+#. How fast the model writes: {n} tokens (pieces of words) a second
+msgctxt "sdTps"
+msgid "{n} tok/s"
+msgstr ""
+
+msgctxt "sdGone"
+msgid "model file not found"
+msgstr ""
+
+msgctxt "sdBlocked"
+msgid "waiting for the engine or the model: download it from the pages view"
+msgstr ""
+
+msgctxt "sdEdit"
+msgid "Edit"
+msgstr ""
+
+msgctxt "sdEditHead"
+msgid "Change this column"
+msgstr ""
+
+msgctxt "sdEditNote"
+msgid "Its readings stay, marked outdated, until you read them again."
+msgstr ""
+
+msgctxt "sdSave"
+msgid "Save"
+msgstr ""
+
+msgctxt "sdDuplicate"
+msgid "Duplicate"
+msgstr ""
+
+msgctxt "sdDuplicateTitle"
+msgid "A copy of this column beside it, to change one thing and compare"
+msgstr ""
+
+#. A tag on a column: it reads with instructions of its own, not the ones in Settings
+msgctxt "sdOwnPrompt"
+msgid "own instructions"
+msgstr ""
+
+msgctxt "sdInstructions"
+msgid "Instructions"
+msgstr ""
+
+msgctxt "sdPromptSettings"
+msgid "The ones in Settings"
+msgstr ""
+
+msgctxt "sdPromptSettingsHelp"
+msgid "As the app reads. Change them in Settings, and its readings become outdated."
+msgstr ""
+
+msgctxt "sdPromptOwn"
+msgid "Its own"
+msgstr ""
+
+msgctxt "sdPromptOwnHelp"
+msgid "For this column alone. The rule for the writing language is still added."
+msgstr ""
+
+msgctxt "sdPromptReset"
+msgid "Start again from the ones in Settings"
+msgstr ""
+
+msgctxt "sdUseCombo"
+msgid "Use this model and instructions"
+msgstr ""
+
+msgctxt "sdUseComboTitle"
+msgid "Read new pages with this model and these instructions (Settings → Model and Instructions). Pages are read without thinking."
+msgstr ""
+
+#. {name} is a model's name
+msgctxt "sdConfirmUseCombo"
+msgid "Read new pages with {name} and this column's instructions? Settings' instructions are replaced by them (your notes are part of them now)."
+msgstr ""
+
+#. {name} is a model's name
+msgctxt "sdUsedCombo"
+msgid "Inktyset now reads with {name} and these instructions."
+msgstr ""
+
+#. Tokens are the pieces of words a model writes
+msgctxt "sdTokens"
+msgid "{n} token"
+msgid_plural "{n} tokens"
+msgstr[0] ""
+msgstr[1] ""

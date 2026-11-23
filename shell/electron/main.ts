@@ -53,7 +53,7 @@ let mainWindow: BrowserWindow | null = null;
 let quitting = false;
 
 function createWindow(served: Served, core: Core) {
-  const win = openWindow(served.origin, ICON); // windows.ts: our own title bar, locked down, remembered place
+  const win = openWindow(served.origin, ICON, served.fileAt); // windows.ts: our own title bar, locked down, remembered place
   let asking = false;
   win.on("close", (e) => {
     if (quitting || !core.busy()) return;

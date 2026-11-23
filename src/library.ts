@@ -20,6 +20,9 @@ import { copyFile, mkdir, readFile, rename, rm, writeFile } from "node:fs/promis
 import { join, relative } from "node:path";
 import type { PictureEdit } from "./picture.ts";
 
+/** Instructions' key: the same text, the same key (Library.prompts, and the showdown's readings). */
+export const keyOf = (text: string) => createHash("sha256").update(text).digest("hex").slice(0, 12);
+
 /** "stopped": not read, and not read until the user asks (Stop on the page, or Stop all). */
 export type PageStatus = "queued" | "working" | "done" | "failed" | "stopped";
 
@@ -234,7 +237,7 @@ export class Library {
 
   /** Keep instructions once; versions point to them by key. */
   promptKey(text: string) {
-    const key = createHash("sha256").update(text).digest("hex").slice(0, 12);
+    const key = keyOf(text);
     this.prompts[key] ??= text;
     return key;
   }

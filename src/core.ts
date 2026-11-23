@@ -27,6 +27,7 @@ import {
 import { isNoEdit, type PictureEdit, sanitizeEdit } from "./picture.ts";
 import { cleanLatex, type Format, langInfo, langPrompt, PROMPT } from "./pipeline.ts";
 import { Scanner } from "./scanner.ts";
+import { Showdown } from "./showdown.ts";
 import { isArabicLang } from "./scripts.ts";
 import {
   type Anchor,
@@ -164,6 +165,8 @@ export class Core {
   readonly typst: Typst;
   readonly phone: Phone;
   readonly scanner: Scanner;
+  /** Compare models on the session's pages (src/showdown.ts). */
+  readonly showdown: Showdown;
   settings: Settings = { phone: false, tex: "auto" };
   jobs: Record<ComponentId | "verify", Job> = {
     engine: { status: "idle", progress: null, error: "" },
@@ -207,6 +210,7 @@ export class Core {
     this.tex = new Tex(userData, (p) => this.#track("tectonic", p));
     this.typst = new Typst(userData, (p) => this.#track("typst", p));
     this.scanner = new Scanner(changed);
+    this.showdown = new Showdown(this, userData);
     this.phone = new Phone({
       stateDir: join(userData, "phone"),
       photos: join(dataDir, "phone"),
@@ -237,6 +241,7 @@ export class Core {
       /* first start */
     }
     this.#applySettings();
+    await this.showdown.load();
     // the session open last time, if it's still there
     const last = this.settings.session;
     if (last && this.#isSession(last)) {
@@ -261,12 +266,20 @@ export class Core {
 
   /** What follows the instructions, from the user's settings: the writing language's rule, then their notes. */
   promptAddition(): string {
-    const lib = this.lib;
+    return langPrompt(this.lib.settings.language) + this.#notes();
+  }
+
+  #notes() {
     const notes = this.settings.instructions?.trim();
-    return (
-      langPrompt(lib.settings.language) +
-      (notes ? `\n\nNotes from the person who wrote these pages (follow them):\n${notes}` : "")
-    );
+    return notes ? `\n\nNotes from the person who wrote these pages (follow them):\n${notes}` : "";
+  }
+
+  /**
+   * The instructions as the user sets them, all in one text: Inktyset's (or their own), then their notes; not the
+   * writing language's rule, which every reading adds. What a showdown column with its own instructions starts from.
+   */
+  instructionsText(): string {
+    return (this.settings.prompt?.trim() || PROMPT) + this.#notes();
   }
 
   #applySettings() {
@@ -647,7 +660,8 @@ export class Core {
 
   async #loop() {
     while (!this.#stopped) {
-      // a question in the page chat first (someone is waiting for it), then pages, then trial readings
+      // a question in the page chat first (someone is waiting for it), then pages, then trial readings, then
+      // the showdown's (src/showdown.ts)
       if (this.#asked.length && !this.missing.engine && !this.missing.model) {
         const q = this.#asked.shift()!;
         await (this.#job = this.#answer(q.key, q.lib));
@@ -657,14 +671,16 @@ export class Core {
       const trial = page
         ? undefined
         : this.lib.pages.find((p) => p.trial === "queued" && p.status === "done");
+      const compare = page || trial ? null : this.showdown.next(this.lib);
       // nothing to read, or not set up yet (the engine or the model still to download)
-      if ((!page && !trial) || this.missing.engine || this.missing.model) {
+      if ((!page && !trial && !compare) || this.missing.engine || this.missing.model) {
         // (the model stays loaded while Inktyset is open, idle or not: the owner's choice, 2026-11-13)
         await new Promise<void>((r) => (this.#wake = r));
         this.#wake = null;
         continue;
       }
-      await (this.#job = this.#read(page ? page.id : trial!.id, !page));
+      if (compare) await (this.#job = this.showdown.run(compare));
+      else await (this.#job = this.#read(page ? page.id : trial!.id, !page));
     }
   }
 
@@ -718,7 +734,13 @@ export class Core {
     const typst = (p.format ?? "latex") === "typst";
     let body = await lib.versionText(p, vid, typst ? "typ" : "tex");
     if (typst && !body) body = latexToTypst(await lib.versionText(p, vid));
-    const dir = join(lib.buildDir(id), vid);
+    const { ok, err, pngs } = await this.previewOf(lib, join(lib.buildDir(id), vid), body, typst);
+    Object.assign(v, { ok, err, pngs, rev: (v.rev ?? 0) + 1 });
+    lib.changed();
+  }
+
+  /** A text compiled in `dir` and its preview drawn there: what a version or a showdown reading shows. */
+  async previewOf(lib: Library, dir: string, body: string, typst: boolean) {
     const lang = lib.settings.language;
     let pngs: string[] = [],
       ok = false,
@@ -740,8 +762,7 @@ export class Core {
     } catch (e) {
       err = (e as Error).message;
     }
-    Object.assign(v, { ok, err, pngs, rev: (v.rev ?? 0) + 1 });
-    lib.changed();
+    return { ok, err, pngs };
   }
 
   /** Choose the model and vision files of another model (Settings → Model). */
@@ -758,6 +779,7 @@ export class Core {
   }
 
   async #read(id: string, trial = false) {
+    this.showdown.release(); // the graphics chip for the app's model
     const lib = this.lib;
     const page = lib.get(id)!;
     if (trial) Object.assign(page, { trial: "working", trialErr: "", started: Date.now() / 1000 });
@@ -1085,6 +1107,7 @@ export class Core {
   }
 
   async #answer(key: string, lib: Library) {
+    this.showdown.release();
     const [id, chat] = key.split("/");
     const p = lib.get(id);
     const c = await this.chat(id, chat, lib);
@@ -1338,6 +1361,7 @@ export class Core {
     if (p?.status === "working") p.status = "queued";
     else if (p) p.trial = "queued";
     this.#reading?.abort();
+    this.showdown.quit();
     this.model.stop();
     void this.phone.stop();
   }

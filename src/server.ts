@@ -41,6 +41,8 @@ export interface Served {
   /** How many windows listen to the change stream (a window closed in a browser: it drops to 0). */
   clients: () => number;
   close: () => void;
+  /** The file on disk behind one of this server's addresses (a scan, a preview), for its right-click menu. */
+  fileAt: (url: string) => string | null;
 }
 
 function readBody(req: IncomingMessage, limit = 200 << 20): Promise<Buffer> {
@@ -300,6 +302,56 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       return { ok: true };
     }
     if (path === "/api/trial/cancel") return (core.cancelTrials(), { ok: true });
+    // compare models (src/showdown.ts)
+    if (path === "/api/showdown/add" || path === "/api/showdown/edit") {
+      const kind = String(body.kind);
+      if (kind !== "builtin" && kind !== "files" && kind !== "server") throw new Error("unknown kind");
+      const str = (k: string) => (typeof body[k] === "string" ? (body[k] as string) : undefined);
+      const column = {
+        kind,
+        modelFile: str("modelFile"),
+        mmprojFile: str("mmprojFile"),
+        url: str("url"),
+        name: str("name"),
+        apiKey: str("apiKey"),
+        think: body.think === true,
+        prompt: str("prompt"), // none: Settings' instructions
+      } as const;
+      if (path === "/api/showdown/edit")
+        return (await core.showdown.edit(String(body.id), column), { id: body.id });
+      return { id: await core.showdown.add(column) };
+    }
+    if (path === "/api/showdown/duplicate") return { id: await core.showdown.duplicate(String(body.id)) };
+    if (path === "/api/showdown/choose") {
+      const which = String(body.which);
+      if (which !== "model" && which !== "mmproj") throw new Error("unknown file");
+      const file = await core.shell.chooseFile(
+        msg(which === "model" ? "chooseModelFile" : "chooseMmprojFile"),
+        ["gguf"],
+      );
+      return { file: file ?? "" };
+    }
+    if (path === "/api/showdown/remove")
+      return (await core.showdown.remove(String(body.id), lib), { ok: true });
+    if (path === "/api/showdown/use") return (await core.showdown.use(String(body.id)), { ok: true });
+    if (path === "/api/showdown/read") {
+      const cells = Array.isArray(body.cells)
+        ? (body.cells as { contender: unknown; page: unknown }[]).map((c) => ({
+            contender: String(c.contender),
+            page: String(c.page),
+          }))
+        : "missing";
+      await core.showdown.queue(lib, cells);
+      return { ok: true };
+    }
+    if (path === "/api/showdown/stop") {
+      const cell = body.contender
+        ? { contender: String(body.contender), page: String(body.page) }
+        : undefined;
+      return (core.showdown.stop(lib, cell), { ok: true });
+    }
+    if (path === "/api/showdown/keep")
+      return { version: await core.showdown.keep(lib, String(body.contender), String(body.page)) };
     if (path === "/api/redo") {
       // Read again on the main window: these finished pages are read again, their text replaced (kept as a
       // version)
@@ -488,6 +540,19 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
           return send(res, 200, { line: await core.sourceLine(sm[1], q("sheet"), q("x"), q("y")) });
         return send(res, 200, { spots: await core.previewSpots(sm[1], q("line")) });
       }
+      if (path === "/api/showdown") return send(res, 200, await core.showdown.state(core.lib));
+      // one reading of the showdown: its text, its thinking, and the user's text it is scored against
+      if (path === "/api/showdown/cell") {
+        const c = url.searchParams.get("c") ?? "",
+          pg = url.searchParams.get("p") ?? "";
+        if (!core.showdown.contenders.some((x) => x.id === c) || !core.lib.get(pg))
+          return send(res, 404, { error: "no such reading" });
+        return send(res, 200, {
+          text: await core.showdown.text(core.lib, c, pg),
+          thinking: await core.showdown.thinking(core.lib, c, pg),
+          answer: await core.showdown.answer(core.lib, pg),
+        });
+      }
       const pm = /^\/api\/page\/(page\d+)$/.exec(path);
       if (pm) return send(res, 200, { tex: await core.lib.body(pm[1]) });
       // a version's text (LaTeX, or the Typst shown), and the instructions it was read with
@@ -530,10 +595,23 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
 
   await new Promise<void>((ok) => server.listen(0, "127.0.0.1", ok));
   port = (server.address() as { port: number }).port;
+  const origin = `http://127.0.0.1:${port}`;
   return {
-    origin: `http://127.0.0.1:${port}`,
+    origin,
     secret,
     clients: () => clients,
     close: () => server.close(),
+    fileAt: (url) => {
+      let u: URL;
+      try {
+        u = new URL(url);
+      } catch {
+        return null;
+      }
+      if (u.origin !== origin) return null;
+      if (u.pathname.startsWith("/files/")) return dataFile(u.pathname.slice(7), "session");
+      if (u.pathname.startsWith("/data/")) return dataFile(u.pathname.slice(6), "folder");
+      return null;
+    },
   };
 }

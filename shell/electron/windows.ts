@@ -66,7 +66,11 @@ nativeTheme.on("updated", () => {
 });
 
 /** The main window, showing the server's page. */
-export function openWindow(origin: string, icon: string): BrowserWindow {
+export function openWindow(
+  origin: string,
+  icon: string,
+  fileAt: (url: string) => string | null,
+): BrowserWindow {
   const place = lastPlace();
   const win = new BrowserWindow({
     width: 1400,
@@ -106,7 +110,7 @@ export function openWindow(origin: string, icon: string): BrowserWindow {
     e.preventDefault(); // a dropped file, a link: never in place of the page
     external(url);
   });
-  wc.on("context-menu", (_e, params) => contextMenu(wc, params)?.popup({ window: win }));
+  wc.on("context-menu", (_e, params) => contextMenu(wc, params, fileAt)?.popup({ window: win }));
   void win.loadURL(`${origin}/`);
   return win;
 }

@@ -5,6 +5,7 @@ import { diffWords } from "../../src/diff.ts";
 import { MAX_ANGLE, turnCrop } from "../../src/picture.ts";
 import { withoutEdits } from "../../src/chat.ts";
 import { drawFrame } from "./picture.ts";
+import { initShowdown, openShowdown, showdownChanged } from "./showdown.ts";
 import katex from "katex";
 import "katex/dist/katex.min.css";
 import { bytes, isRtl, languageName, ltr, num, setUiLang, t, uiLang, websiteUrl } from "./i18n.ts";
@@ -16,11 +17,14 @@ const esc = (s) =>
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
   );
 if (navigator.userAgent.includes("Mac")) document.documentElement.classList.add("mac"); // its buttons: left
-// As in MedStation's desktop.ts: no browser context menu outside text fields (in a normal browser, while
-// testing; the app shows its own menu in text fields), and a file dropped outside the drop handling below
-// never replaces the page.
+// As in MedStation's desktop.ts: no browser context menu outside text fields and the pages' pictures (in a
+// normal browser, while testing; the app shows its own menu there: copy, paste, a scan's or a preview's path),
+// and a file dropped outside the drop handling below never replaces the page.
 document.addEventListener("contextmenu", (e) => {
-  if (!e.target.closest?.("input, textarea, [contenteditable]")) e.preventDefault();
+  if (e.target.closest?.("input, textarea, [contenteditable]")) return;
+  const img = e.target.closest?.("img");
+  if (img?.src && /^\/(files|data)\//.test(new URL(img.src).pathname)) return;
+  e.preventDefault();
 });
 const FORMAT_NAME = { latex: "LaTeX", typst: "Typst" };
 const fmtOf = (p) => p.format ?? "latex";
@@ -946,6 +950,8 @@ function renderStatusLine() {
         ? ` <button class="ghost compare" data-act="compareNext">${t("proofreadNext")}</button>`
         : "") +
       ` <button class="ghost" data-act="readAgainMany" title="${t("readAgainManyTitle")}">${t("readAgainMany")}</button>`;
+  if (pages.length)
+    html += ` <button class="ghost" data-act="showdown" title="${t("compareModelsTitle")}">${t("compareModels")}</button>`;
   if (working || queued || S.intake) {
     const elapsed = working ? Date.now() / 1000 - working.started : 0;
     const left = Math.max(0, S.avgSecs - elapsed) + queued * S.avgSecs;
@@ -1204,6 +1210,7 @@ function render() {
   renderStatusLine();
   renderPages();
   renderCompare();
+  showdownChanged(S.version);
   tick();
 }
 
@@ -1259,7 +1266,15 @@ function renderSessions() {
 
 /** Another session is shown: what the window kept of the one left goes. */
 function leaveSession() {
-  for (const d of ["#compare", "#pictureDialog", "#trialDialog", "#expandDialog"])
+  for (const d of [
+    "#compare",
+    "#pictureDialog",
+    "#trialDialog",
+    "#expandDialog",
+    "#showdown",
+    "#sdCell",
+    "#sdAddDialog",
+  ])
     if ($(d)?.open) $(d).close();
   for (const [id, c] of cards) {
     dropEditor(id, c.el);
@@ -1500,6 +1515,7 @@ document.addEventListener("click", async (e) => {
     else if (act === "expand") openExpand(b.dataset.for);
     else if (act === "tryOn") openTrial("settings");
     else if (act === "readAgainMany") openTrial("main");
+    else if (act === "showdown") openShowdown();
     else if (act === "stopTrials") await api("/api/trial/cancel");
     else if (act === "resetPrompt") {
       await api("/api/settings", { prompt: "" });
@@ -2625,5 +2641,6 @@ setInterval(async () => {
 const placeSessions = () => showSessions(narrow() ? false : store.get("sessions", true), false);
 matchMedia("(max-width: 760px)").addEventListener("change", placeSessions);
 placeSessions();
+initShowdown({ api, toast, esc, mmss, pageNumber });
 refresh();
 connect();

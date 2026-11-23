@@ -138,6 +138,12 @@ export const CORE_SOURCE = {
   copy: "Copy",
   paste: "Paste",
   selectAll: "Select all",
+  copyFilePath: "Copy file path",
+  copyPdfPath: "Copy PDF path",
+  showdownFilesNeeded: "Choose the model's file and its vision file (both .gguf).",
+  showdownUrlNeeded: "Type the model server's address.",
+  showdownFileGone:
+    "This model's file isn't there any more: {file}. Download it again, or choose where it is now with Edit.",
 } satisfies Record<string, Source>;
 
 export type MessageKey = keyof typeof CORE_SOURCE;

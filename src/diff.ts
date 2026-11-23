@@ -87,3 +87,16 @@ function myers(a: string[], b: string[]): [Part["op"], string][] {
   }
   return out.reverse();
 }
+
+/**
+ * How far a reading is from the text it should have been (the user's corrected page): the share of their tokens,
+ * spaces aside, that one has and the other hasn't. 0 is the same text, 1 nothing in common.
+ */
+export function distance(a: string, b: string): number {
+  const words = (s: string) => tokenize(s).filter((t) => !/^\s+$/u.test(t));
+  const x = words(a),
+    y = words(b);
+  if (!x.length && !y.length) return 0;
+  const changed = myers(x, y).filter(([op]) => op !== "same").length;
+  return changed / (x.length + y.length);
+}

@@ -433,6 +433,178 @@
       </div>
     </dialog>
     <dialog id="zoom"><img alt="" /></dialog>
+
+    <!-- compare models (app/ui/showdown.ts): the pages read by several models, side by side -->
+    <dialog id="showdown" tabindex="-1" aria-label="Compare models" data-i18n-aria="compareModels">
+      <div class="cmp-head">
+        <button class="back" data-sd="close" title="Back to the pages (Esc)" data-i18n-title="backTitle">
+          <span class="back-arrow" aria-hidden="true">←</span> <span data-i18n="backToPages">Pages</span>
+        </button>
+        <h2 data-i18n="compareModels">Compare models</h2>
+        <span class="chip" id="sdCounts"></span>
+        <span class="note" id="sdProgress"></span>
+        <span class="spacer"></span>
+        <button data-sd="add" data-i18n="sdAdd">Add a model…</button>
+        <button data-sd="stop" id="sdStop" hidden data-i18n="sdStop">Stop</button>
+        <button class="primary" data-sd="read" id="sdRead" hidden></button>
+      </div>
+      <div class="sd-body" id="sdBody"></div>
+    </dialog>
+
+    <dialog id="sdCell" class="sd-cell-dialog">
+      <div class="sdc-head">
+        <h2 id="sdcTitle" dir="auto"></h2>
+        <span id="sdcTags"></span>
+        <span class="spacer"></span>
+        <button class="ghost nav" data-sd="prev" title="Previous model (←)" data-i18n-title="sdPrevTitle">
+          ‹
+        </button>
+        <button class="ghost nav" data-sd="next" title="Next model (→)" data-i18n-title="sdNextTitle">
+          ›
+        </button>
+        <button data-sd="again" data-i18n="readAgain">Read again</button>
+        <button
+          data-sd="keep"
+          id="sdcKeep"
+          title="Add this reading to the page's versions, to compare in the Compare view (the page's text stays)"
+          data-i18n-title="sdKeepTitle"
+          data-i18n="sdKeep"
+        >
+          Keep as a version
+        </button>
+        <button class="primary" data-sd="cellClose" data-i18n="done">Done</button>
+      </div>
+      <div class="sdc-body">
+        <div class="sdc-pane">
+          <div class="pane-label" data-i18n="scan">Scan</div>
+          <img id="sdcScan" alt="Scan of the page" data-i18n-alt="scanAlt" />
+        </div>
+        <div class="sdc-pane">
+          <div class="pane-label" data-i18n="preview">Preview</div>
+          <div id="sdcPreview"></div>
+        </div>
+        <div class="sdc-pane">
+          <div class="pane-label">
+            <span id="sdcTextHead"></span> <span class="note" id="sdcScore"></span>
+          </div>
+          <pre class="diff" id="sdcText" dir="auto"></pre>
+          <details id="sdcThinking" hidden>
+            <summary data-i18n="sdItsThinking">Its thinking</summary>
+            <pre class="sd-thinking" id="sdcThinkingText" dir="auto"></pre>
+          </details>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="sdAddDialog">
+      <h2 id="sdAddTitle">Add a model to compare</h2>
+      <form id="sdAddForm">
+        <label class="choice"
+          ><input type="radio" name="kind" value="builtin" checked />
+          <span><b data-i18n="sdKindBuiltin">Inktyset's model (Qwen3.5 9B)</b></span></label
+        >
+        <label class="choice"
+          ><input type="radio" name="kind" value="files" />
+          <span
+            ><b data-i18n="sdKindFiles">Model files</b
+            ><small data-i18n="sdKindFilesHelp"
+              >Any vision model llama.cpp runs: its .gguf and its vision file (mmproj .gguf).</small
+            ></span
+          ></label
+        >
+        <div class="sd-add-more" id="sdAddFiles" hidden>
+          <div class="file-row">
+            <button
+              type="button"
+              class="ghost small"
+              data-sd="choose"
+              data-which="model"
+              data-i18n="sdChooseModel"
+            >
+              Model…
+            </button>
+            <span class="note" id="sdModelFile" dir="auto"></span>
+          </div>
+          <div class="file-row">
+            <button
+              type="button"
+              class="ghost small"
+              data-sd="choose"
+              data-which="mmproj"
+              data-i18n="sdChooseMmproj"
+            >
+              Vision file…
+            </button>
+            <span class="note" id="sdMmprojFile" dir="auto"></span>
+          </div>
+        </div>
+        <label class="choice"
+          ><input type="radio" name="kind" value="server" />
+          <span
+            ><b data-i18n="sdKindServer">A model server</b
+            ><small data-i18n="sdKindServerHelp"
+              >On this computer or your local network (Ollama, LM Studio, llama-server…).</small
+            ></span
+          ></label
+        >
+        <div class="sd-add-more" id="sdAddServer" hidden>
+          <input id="sdUrl" placeholder="http://localhost:11434" dir="ltr" />
+          <input
+            id="sdName"
+            placeholder="Model (empty: the server's own)"
+            data-i18n-ph="sdNamePh"
+            dir="ltr"
+          />
+          <input id="sdKey" placeholder="Key (if it needs one)" data-i18n-ph="sdKeyPh" dir="ltr" />
+        </div>
+        <label class="sd-think"
+          ><input type="checkbox" id="sdThink" />
+          <span
+            ><b data-i18n="sdThinkLabel">Let it think before it writes</b
+            ><small data-i18n="sdThinkHelp"
+              >Much slower (minutes a page), sometimes reads better.</small
+            ></span
+          ></label
+        >
+        <div class="sd-prompt">
+          <b data-i18n="sdInstructions">Instructions</b>
+          <label class="choice"
+            ><input type="radio" name="sdPrompt" value="settings" checked />
+            <span
+              ><b data-i18n="sdPromptSettings">The ones in Settings</b
+              ><small data-i18n="sdPromptSettingsHelp"
+                >As the app reads. Change them in Settings, and its readings become outdated.</small
+              ></span
+            ></label
+          >
+          <label class="choice"
+            ><input type="radio" name="sdPrompt" value="own" />
+            <span
+              ><b data-i18n="sdPromptOwn">Its own</b
+              ><small data-i18n="sdPromptOwnHelp"
+                >For this column alone. The rule for the writing language is still added.</small
+              ></span
+            ></label
+          >
+          <div class="sd-add-more" id="sdPromptBox" hidden>
+            <textarea id="sdPromptText" rows="10" dir="auto" spellcheck="false"></textarea>
+            <div>
+              <button type="button" class="ghost small" data-sd="promptReset" data-i18n="sdPromptReset">
+                Start again from the ones in Settings
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="note" id="sdEditNote" hidden data-i18n="sdEditNote">
+          Its readings stay, marked outdated, until you read them again.
+        </p>
+        <p class="bad-text" id="sdAddErr"></p>
+      </form>
+      <div class="dialog-foot">
+        <button type="button" data-sd="addCancel" data-i18n="cancel">Cancel</button>
+        <button type="button" class="primary" data-sd="addGo" id="sdAddGo">Add</button>
+      </div>
+    </dialog>
     <div class="drop" data-i18n="dropHere">Drop photos or PDFs to add them</div>
     <div class="toast" id="toast"></div>
 

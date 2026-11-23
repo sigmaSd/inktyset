@@ -34,6 +34,8 @@ export interface ModelConfig {
   url?: string;
   name?: string;
   apiKey?: string;
+  /** How many tokens the engine holds (the instructions, the picture and the answer): more to think first. */
+  ctx?: number;
 }
 
 /** "http://host:11434" or ".../v1/" → "http://host:11434/v1": where the OpenAI-style API is. */
@@ -63,6 +65,8 @@ export class Model {
   readonly #key = randomBytes(24).toString("hex");
   readonly #base: string;
   readonly #changed: () => void;
+  /** Its files in `base`: <name>.log and <name>.pid ("engine"; the showdown's own engine is another). */
+  readonly #name: string;
   config: ModelConfig = {};
 
   get kind(): ModelKind {
@@ -84,7 +88,8 @@ export class Model {
     return "Qwen3.5 9B";
   }
 
-  constructor(base: string, changed: () => void) {
+  constructor(base: string, changed: () => void, name = "engine") {
+    this.#name = name;
     this.#base = base;
     this.#changed = changed;
   }
@@ -148,7 +153,7 @@ export class Model {
     await this.#killStale();
     const port = await freePort();
     const dir = this.modelDir();
-    const log = createWriteStream(join(this.#base, "engine.log"), { flags: "a" });
+    const log = createWriteStream(join(this.#base, `${this.#name}.log`), { flags: "a" });
     log.write(`\n--- ${new Date().toISOString()} ${bin}\n`);
     const own = this.kind === "files";
     const args = [
@@ -159,7 +164,7 @@ export class Model {
       "-ngl",
       "99", // everything on the graphics chip when there is one (Vulkan, Metal); the CPU otherwise
       "-c",
-      "12288",
+      String(this.config.ctx ?? 12288),
       "-np",
       "1",
       "--host",
@@ -249,7 +254,7 @@ export class Model {
   }
 
   #pidFile() {
-    return join(this.#base, "engine.pid");
+    return join(this.#base, `${this.#name}.pid`);
   }
 
   /** A server left running by a Inktyset that crashed: stop it (only if it's the program we started). */
@@ -302,7 +307,8 @@ export class Model {
           top_k: 1,
           repeat_penalty: 1.05,
           max_tokens: 4096,
-          chat_template_kwargs: { enable_thinking: false }, // Qwen3.5 thinks by default: we want the transcription
+          // Qwen3.5 thinks by default, and so does Inkling 2 (its switch is the effort): we want the transcription
+          chat_template_kwargs: { enable_thinking: false, reasoning_effort: "none" },
         };
     const r = await fetch(`${url}/chat/completions`, {
       method: "POST",
@@ -314,8 +320,12 @@ export class Model {
       throw new Error(msg("engineAnswered", { status: r.status, text: (await r.text()).slice(0, 200) }));
     const resp = (await r.json()) as {
       choices: { message: { content?: string }; finish_reason?: string }[];
+    } & Usage;
+    return {
+      text: resp.choices[0]?.message.content ?? "",
+      finish: resp.choices[0]?.finish_reason ?? "",
+      ...speed(resp),
     };
-    return { text: resp.choices[0]?.message.content ?? "", finish: resp.choices[0]?.finish_reason ?? "" };
   }
 
   /**
@@ -341,13 +351,17 @@ export class Model {
       : {
           messages,
           stream: true,
+          stream_options: { include_usage: true }, // how much it wrote, in the last event
           max_tokens: opts.maxTokens,
           // Qwen's advice with thinking; without, steadier than its advice (0.7): the chat's fixes must keep to
           // the change format, and at 0.7 one try in three didn't (tested, 2026-11-13)
           temperature: opts.think ? 0.6 : 0.3,
           top_p: opts.think ? 0.95 : 0.8,
           top_k: 20,
-          chat_template_kwargs: { enable_thinking: opts.think },
+          chat_template_kwargs: {
+            enable_thinking: opts.think,
+            reasoning_effort: opts.think ? "high" : "none",
+          },
         };
     const r = await fetch(`${url}/chat/completions`, {
       method: "POST",
@@ -360,7 +374,8 @@ export class Model {
     let raw = "",
       thinking = "",
       finish = "",
-      rest = "";
+      rest = "",
+      used: Usage = {};
     const decoder = new TextDecoder();
     for await (const chunk of r.body as unknown as AsyncIterable<Uint8Array>) {
       rest += decoder.decode(chunk, { stream: true });
@@ -370,7 +385,10 @@ export class Model {
         const data = line.startsWith("data:") ? line.slice(5).trim() : "";
         if (!data || data === "[DONE]") continue;
         try {
-          const c = (JSON.parse(data) as { choices?: StreamChoice[] }).choices?.[0];
+          const event = JSON.parse(data) as { choices?: StreamChoice[] } & Usage;
+          if (event.usage) used = { ...used, usage: event.usage };
+          if (event.timings) used = { ...used, timings: event.timings };
+          const c = event.choices?.[0];
           raw += c?.delta?.content ?? "";
           thinking += c?.delta?.reasoning_content ?? c?.delta?.reasoning ?? "";
           if (c?.finish_reason) finish = c.finish_reason;
@@ -380,7 +398,12 @@ export class Model {
       }
       opts.onDelta(splitThinking(raw, thinking));
     }
-    return { ...splitThinking(raw, thinking), finish };
+    return { ...splitThinking(raw, thinking), finish, ...speed(used) };
+  }
+
+  /** Is our own engine running (loaded, or loading)? */
+  get running() {
+    return !!this.#proc;
   }
 
   stop() {
@@ -391,6 +414,20 @@ export class Model {
     this.#url = "";
     this.status = "stopped";
   }
+}
+
+/** What an answer tells of its making: the tokens written (OpenAI's usage), and llama.cpp's own timings. */
+interface Usage {
+  usage?: { completion_tokens?: number };
+  timings?: { predicted_n?: number; predicted_per_second?: number };
+}
+
+/** Tokens written, and how fast (tokens a second, the writing alone): null where the server doesn't say. */
+function speed(u: Usage): { tokens: number | null; tps: number | null } {
+  return {
+    tokens: u.timings?.predicted_n ?? u.usage?.completion_tokens ?? null,
+    tps: u.timings?.predicted_per_second ?? null,
+  };
 }
 
 interface StreamChoice {
