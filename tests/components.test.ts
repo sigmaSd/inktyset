@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "vite-plus/test";
 import { scratch } from "./_env.ts";
@@ -10,6 +10,7 @@ import {
   MODEL_FILES,
   programPath,
   sizeOf,
+  supported,
   verifyModelDir,
 } from "../src/components.ts";
 
@@ -61,6 +62,40 @@ test("bundled programs: used before a downloaded copy, and only the ones the pac
     join(dirOf(base, "tectonic"), "nested", exe("tectonic")),
   );
   // without a bundled folder (AppImage, deb, rpm, Windows, macOS): the downloaded copies, or nothing yet
+  writeFileSync(join(dirOf(base, "engine"), ".installed"), pinned("engine"));
   expect(await programPath(base, "engine", {})).toBe(join(dirOf(base, "engine"), exe("llama-server")));
   expect(await programPath(base, "typst", {})).toBeNull();
+});
+
+/** The archive this system downloads for a program (what install writes in .installed). */
+const pinned = (id: "engine" | "tectonic") => {
+  const os = { linux: "ubuntu-vulkan-x64", win32: "win-vulkan-x64", darwin: `macos-${process.arch}` }[
+    process.platform as "linux"
+  ];
+  return id === "engine"
+    ? `llama-${LLAMA}-bin-${os}${process.platform === "win32" ? ".zip" : ".tar.gz"}\n`
+    : "";
+};
+const LLAMA = /const LLAMA = "(b\d+)"/.exec(
+  readFileSync(new URL("../src/components.ts", import.meta.url), "utf8"),
+)![1];
+
+test("downloads: an engine from another llama.cpp release counts as missing, to download the pinned one", async () => {
+  if (!supported("engine")) return; // nothing is downloaded for this system
+  const base = scratch("engine-release");
+  const exe = (n: string) => (process.platform === "win32" ? `${n}.exe` : n);
+  const dir = dirOf(base, "engine");
+  mkdirSync(join(dir, "llama-old"), { recursive: true });
+  writeFileSync(join(dir, "llama-old", exe("llama-server")), "");
+  // installed before the release was written down: an older engine
+  expect(await programPath(base, "engine", {})).toBeNull();
+  writeFileSync(join(dir, ".installed"), "llama-b1-bin-ubuntu-vulkan-x64.tar.gz\n");
+  expect(await programPath(base, "engine", {})).toBeNull();
+  writeFileSync(join(dir, ".installed"), pinned("engine"));
+  expect(await programPath(base, "engine", {})).toBe(join(dir, "llama-old", exe("llama-server")));
+  // Tectonic from before: its pin hasn't moved, it's kept
+  mkdirSync(dirOf(base, "tectonic"), { recursive: true });
+  writeFileSync(join(dirOf(base, "tectonic"), exe("tectonic")), "");
+  if (supported("tectonic"))
+    expect(await programPath(base, "tectonic", {})).toBe(join(dirOf(base, "tectonic"), exe("tectonic")));
 });

@@ -57,7 +57,7 @@ modules:
         -DBUILD_SHARED_LIBS=OFF
         -DGGML_VULKAN=ON
         -DGGML_NATIVE=OFF
-        -DLLAMA_BUILD_NUMBER=12061
+        -DLLAMA_BUILD_NUMBER=12651
         -DLLAMA_BUILD_TESTS=OFF
         -DLLAMA_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_APP=OFF
@@ -67,8 +67,8 @@ modules:
       - install -Dm755 build/bin/llama-server /app/bin/llama-server
     sources:
       - type: archive
-        url: https://github.com/ggml-org/llama.cpp/archive/refs/tags/b12061.tar.gz
-        sha256: 08ce2d8a63e06dca817cdf207721fb56091927b7eedb3486949e84a2d70b6966
+        url: https://github.com/ggml-org/llama.cpp/archive/refs/tags/b12651.tar.gz
+        sha256: f98dbe546ef7633d38400648244b981e9ef36edf4ac140c3c9721fb37f483702
         x-checker-data:
           type: json
           url: https://api.github.com/repos/ggml-org/llama.cpp/releases/latest

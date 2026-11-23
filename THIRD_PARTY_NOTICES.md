@@ -40,7 +40,7 @@ are not part of the installers.
 
 | Component | License | Source |
 |---|---|---|
-| [llama.cpp](https://github.com/ggml-org/llama.cpp) server, release b12061 | MIT, © The ggml authors | GitHub releases of ggml-org/llama.cpp |
+| [llama.cpp](https://github.com/ggml-org/llama.cpp) server, release b12651 | MIT, © The ggml authors | GitHub releases of ggml-org/llama.cpp |
 | [Qwen3.5-9B](https://huggingface.co/Qwen) vision model, Q4_K_M quantization and its image encoder | Apache-2.0, © Alibaba Cloud (Qwen team); GGUF files by [Unsloth](https://huggingface.co/unsloth/Qwen3.5-9B-GGUF) | Hugging Face, unsloth/Qwen3.5-9B-GGUF |
 | [Tectonic](https://tectonic-typesetting.github.io) 0.17.0 (only when no working LaTeX is installed) | MIT, © the Tectonic Project | GitHub releases of tectonic-typesetting/tectonic |
 | [Typst](https://typst.app) 0.15.1 (only for Typst output, when none is installed) | Apache-2.0, © the Typst authors | GitHub releases of typst/typst |

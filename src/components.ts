@@ -8,7 +8,7 @@
 import { createHash } from "node:crypto";
 import { msg } from "./i18n.ts";
 import { createReadStream, createWriteStream, existsSync } from "node:fs";
-import { chmod, mkdir, readdir, rename, rm, stat } from "node:fs/promises";
+import { chmod, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { run } from "./run.ts";
 
@@ -29,7 +29,7 @@ interface Component {
   unpack: boolean;
 }
 
-const LLAMA = "b12061"; // llama.cpp release: Vulkan builds (Linux, Windows) and Metal (macOS)
+const LLAMA = "b12651"; // llama.cpp release: Vulkan builds (Linux, Windows) and Metal (macOS)
 const LLAMA_URL = `https://github.com/ggml-org/llama.cpp/releases/download/${LLAMA}/`;
 const TECTONIC_URL = "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.17.0/";
 const MODEL_URL =
@@ -38,26 +38,26 @@ const MODEL_URL =
 const ENGINES: Record<string, Download> = {
   "linux-x64": {
     file: `llama-${LLAMA}-bin-ubuntu-vulkan-x64.tar.gz`,
-    size: 35738172,
-    sha256: "c03da3667d77dfcab3fb4d9a0bd0f3a067101cad94959ad08107a7ca299ca6d3",
+    size: 36976824,
+    sha256: "0bbcf2093f15c64c8a9bf54b809c9b2c812b982992dc2fbc9b36720c1d32cf13",
     url: "",
   },
   "win32-x64": {
     file: `llama-${LLAMA}-bin-win-vulkan-x64.zip`,
-    size: 37550614,
-    sha256: "6273df0ac33de2d4d18c77d4787fc8630bb815e8c691a9fbb3ab4df5f0f2e9cc",
+    size: 38939211,
+    sha256: "e58fa9a137d8046c69334005ad6fb3e904ddc7e56f2a61ad1b844335826ef3f4",
     url: "",
   },
   "darwin-arm64": {
     file: `llama-${LLAMA}-bin-macos-arm64.tar.gz`,
-    size: 16542711,
-    sha256: "b107a8373f7af640ff2744521792d3bc4742b9a86e73f52aa8636b30e3e7c554",
+    size: 16644358,
+    sha256: "264fd872de61679c45ad57e1e21c2a2a54e29b35734ecf3d50f24166447ab8d2",
     url: "",
   },
   "darwin-x64": {
     file: `llama-${LLAMA}-bin-macos-x64.tar.gz`,
-    size: 12281949,
-    sha256: "e5790e87e886f621b857514699ffc797b6df8b518a1fc2acd0d0a2d9c60e42c3",
+    size: 12434934,
+    sha256: "34c19771545479a783d3b68c446383ab703033890c052d3ff0b860a5c9f59e56",
     url: "",
   },
 };
@@ -179,7 +179,25 @@ export async function programPath(
   id: ProgramId,
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<string | null> {
-  return bundled(id, env) ?? (await findFile(dirOf(base, id), exe(PROGRAMS[id])));
+  const own = bundled(id, env);
+  if (own) return own;
+  return (await upToDate(base, id)) ? await findFile(dirOf(base, id), exe(PROGRAMS[id])) : null;
+}
+
+/** What an unpacked component was installed from (written by install, read by upToDate). */
+const INSTALLED = ".installed";
+const archives = (c: Component) => c.files.map((f) => f.file).join("\n");
+
+/**
+ * Is the downloaded copy the one pinned here? One installed from another release (an older engine) counts as
+ * missing, so the window offers the pinned one to download (install replaces the folder). Copies from before
+ * INSTALLED was written: the engine was older than its pin is now; Tectonic and Typst haven't changed since.
+ */
+export async function upToDate(base: string, id: ProgramId): Promise<boolean> {
+  const c = component(id);
+  if (!c) return true; // nothing to download for this system: whatever is there
+  const was = await readFile(join(dirOf(base, id), INSTALLED), "utf8").catch(() => null);
+  return was === null ? id !== "engine" : was.trim() === archives(c);
 }
 
 /** A file inside an unpacked component, found by name (archives nest it differently per system). */
@@ -267,6 +285,7 @@ export async function install(
       }
     }
   }
+  if (c.unpack) await writeFile(join(dir, INSTALLED), archives(c) + "\n");
 }
 
 async function fetchResuming(f: Download, part: string, onBytes: (n: number) => void, signal: AbortSignal) {
