@@ -2076,6 +2076,35 @@ html:has(#showdown[open]) {
   color: var(--warn);
   border-color: transparent;
 }
+.sd-examples {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.sd-examples b,
+.sd-examples small {
+  display: block;
+}
+.sd-examples small {
+  color: var(--muted);
+  font-size: 13px;
+}
+.sd-examples small.sd-max {
+  color: var(--accent);
+  margin-top: 2px;
+}
+#sdExamples {
+  width: 5em;
+}
+.tag.examples {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: transparent;
+}
 .tag.gone {
   background: var(--bad-soft);
   color: var(--bad);

@@ -212,6 +212,10 @@ msgctxt "showdownUrlNeeded"
 msgid "Type the model server's address."
 msgstr "Tapez l'adresse du serveur de modèles."
 
+msgctxt "showdownTooManyExamples"
+msgid "With its examples, this model may need more memory than the graphics chip has: try fewer examples."
+msgstr "Avec ses exemples, ce modèle demande peut-être plus de mémoire que la carte graphique n'en a : essayez moins d'exemples."
+
 msgctxt "showdownFileGone"
 msgid "This model's file isn't there any more: {file}. Download it again, or choose where it is now with Edit."
 msgstr "Le fichier de ce modèle n'est plus là : {file}. Téléchargez-le à nouveau, ou indiquez où il se trouve maintenant avec Modifier."
@@ -2059,6 +2063,36 @@ msgstr "{n} jetons/s"
 msgctxt "sdGone"
 msgid "model file not found"
 msgstr "fichier du modèle introuvable"
+
+msgctxt "sdExamples"
+msgid "Examples"
+msgstr "Exemples"
+
+msgctxt "sdExamplesHelp"
+msgid "Before each page, show it some of your checked pages with their text, so it sees how you write (never the page itself). Slower: each example is another picture to read, and takes memory."
+msgstr "Avant chaque page, lui montrer quelques-unes de vos pages vérifiées avec leur texte, pour qu'il voie comment vous écrivez (jamais la page elle-même). Plus lent : chaque exemple est une image de plus à lire, et prend de la mémoire."
+
+#. A tag on a column: before each page, the model is shown this many of the user's checked pages
+msgctxt "sdExamplesTag"
+msgid "{n} example"
+msgid_plural "{n} examples"
+msgstr[0] "{n} exemple"
+msgstr[1] "{n} exemples"
+
+msgctxt "sdExamplesMax"
+msgid "Up to {n}: the checked page of this session."
+msgid_plural "Up to {n}: the checked pages of this session."
+msgstr[0] "Jusqu'à {n} : la page vérifiée de cette session."
+msgstr[1] "Jusqu'à {n} : les pages vérifiées de cette session."
+
+msgctxt "sdExamplesNoChecked"
+msgid "No checked pages in this session yet: check some pages to show them as examples."
+msgstr "Aucune page vérifiée dans cette session pour l'instant : vérifiez des pages pour les montrer en exemple."
+
+#. {pages} is a list of pages, e.g. Page 1, Page 3: the checked pages shown to the model before it read this one
+msgctxt "sdShownPages"
+msgid "shown first: {pages}"
+msgstr "montrées d'abord : {pages}"
 
 msgctxt "sdBlocked"
 msgid "waiting for the engine or the model: download it from the pages view"

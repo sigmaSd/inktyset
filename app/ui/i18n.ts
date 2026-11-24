@@ -482,6 +482,16 @@ export const UI_SOURCE = {
   sdAddOnly: "Add",
   sdTps: "{n} tok/s",
   sdGone: "model file not found",
+  sdExamples: "Examples",
+  sdExamplesHelp:
+    "Before each page, show it some of your checked pages with their text, so it sees how you write (never the page itself). Slower: each example is another picture to read, and takes memory.",
+  sdExamplesTag: { one: "{n} example", other: "{n} examples" },
+  sdExamplesMax: {
+    one: "Up to {n}: the checked page of this session.",
+    other: "Up to {n}: the checked pages of this session.",
+  },
+  sdExamplesNoChecked: "No checked pages in this session yet: check some pages to show them as examples.",
+  sdShownPages: "shown first: {pages}",
   sdBlocked: "waiting for the engine or the model: download it from the pages view",
   sdEdit: "Edit",
   sdEditHead: "Change this column",
@@ -560,6 +570,10 @@ export const UI_NOTES: Partial<Record<keyof typeof UI_SOURCE, string>> = {
   sdKept: "{v} is a version name like v2",
   sdConfirmRemove: "{name} is a model's name",
   sdUsed: "{name} is a model's name",
+  sdShownPages:
+    "{pages} is a list of pages, e.g. Page 1, Page 3: the checked pages shown to the model before it read this one",
+  sdExamplesTag:
+    "A tag on a column: before each page, the model is shown this many of the user's checked pages",
   sdOwnPrompt: "A tag on a column: it reads with instructions of its own, not the ones in Settings",
   sdConfirmUseCombo: "{name} is a model's name",
   sdUsedCombo: "{name} is a model's name",

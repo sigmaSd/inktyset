@@ -7,6 +7,8 @@ import { MODEL_FILES } from "../src/components.ts";
 import { Core } from "../src/core.ts";
 import { distance } from "../src/diff.ts";
 import { keyOf } from "../src/library.ts";
+import { pageMessages } from "../src/model.ts";
+import { comboKey } from "../src/showdown.ts";
 
 test("distance: spacing aside, the share of tokens that differ", () => {
   expect(distance("\\frac{a}{b}", "\\frac { a } { b }")).toBe(0);
@@ -230,4 +232,50 @@ test("showdown: a column outlives its model's files: kept, says why, skipped by 
   await expect(
     sd.edit(col, { kind: "files", modelFile: join(models, "other.gguf"), mmprojFile: mmproj, think: false }),
   ).rejects.toThrow();
+});
+
+test("showdown examples: checked pages shown first, never the page read; any count from 0", async () => {
+  const { core, lib, page } = await setup("showdown-examples");
+  const sd = core.showdown;
+  const more = [1, 2, 3].map((i) => {
+    const p = lib.add(lib.nextId(), `${i}.jpg`, "file");
+    writeFileSync(lib.scanPath(p.id), "jpg");
+    writeFileSync(lib.texPath(p.id), `page ${i}`);
+    Object.assign(p, { status: "done", checked: i !== 2 }); // the second isn't checked
+    return p.id;
+  });
+  const two = await sd.add({ kind: "builtin", think: false, examples: 2 });
+  const col = sd.contenders.find((c) => c.id === two)!;
+  // the first checked pages, but never the page itself
+  expect(sd.examplesFor(lib, col, more[2])).toEqual([page, more[0]]);
+  expect(sd.examplesFor(lib, col, page)).toEqual([more[0], more[2]]);
+  // no cap (memory is the limit), never below 0
+  const many = await sd.add({ kind: "builtin", think: true, examples: 9 });
+  expect(sd.contenders.find((c) => c.id === many)!.examples).toBe(9);
+  expect(
+    sd.examplesFor(
+      lib,
+      sd.contenders.find((c) => c.id === many)!,
+      page,
+    ),
+  ).toHaveLength(2); // as many as there are
+  const none = await sd.add({ kind: "builtin", think: true, prompt: "x", examples: -1 });
+  expect(sd.contenders.find((c) => c.id === none)!.examples).toBeUndefined();
+});
+
+test("showdown examples: the engine sees each as a page answered with its text, then the page", () => {
+  const m = pageMessages(Buffer.from("p"), "Read it.", [
+    { jpeg: Buffer.from("a"), text: "$a$" },
+    { jpeg: Buffer.from("b"), text: "$b$" },
+  ]);
+  expect(m.map((x) => x.role)).toEqual(["user", "assistant", "user", "assistant", "user"]);
+  expect(m[1].content).toBe("$a$");
+  expect(JSON.stringify(m.at(-1))).toContain(Buffer.from("p").toString("base64"));
+  expect(pageMessages(Buffer.from("p"), "Read it.")).toHaveLength(1);
+});
+
+test("showdown examples: a column's key is the same without them, another with them", () => {
+  const plain = { kind: "builtin" as const, think: false };
+  expect(comboKey({ ...plain, examples: 0 })).toBe(comboKey(plain)); // readings from before stay current
+  expect(comboKey({ ...plain, examples: 2 })).not.toBe(comboKey(plain));
 });

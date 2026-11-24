@@ -279,30 +279,22 @@ export class Model {
     }
   }
 
-  /** Read one page image (JPEG bytes). */
-  async read(jpeg: Buffer, prompt: string, signal: AbortSignal) {
+  /** Read one page image (JPEG bytes); `examples`: pages read before, with their text, shown to it first. */
+  async read(jpeg: Buffer, prompt: string, signal: AbortSignal, examples: Example[] = []) {
     const url = await this.ensure();
     const server = this.kind === "server";
     if (server) await checkLocalUrl(this.config.url ?? ""); // still on the user's network
-    const image = {
-      type: "image_url",
-      image_url: { url: `data:image/jpeg;base64,${jpeg.toString("base64")}` },
-    };
+    const messages = pageMessages(jpeg, prompt, examples);
     // another program's server: only the standard fields (some refuse the others)
     const body = server
       ? {
           ...(this.config.name ? { model: this.config.name } : {}),
-          messages: [{ role: "user", content: [image, { type: "text", text: prompt }] }],
+          messages,
           temperature: 0,
           max_tokens: 4096,
         }
       : {
-          messages: [
-            {
-              role: "user",
-              content: [image, { type: "text", text: prompt }],
-            },
-          ],
+          messages,
           temperature: 0,
           top_k: 1,
           repeat_penalty: 1.05,
@@ -310,14 +302,18 @@ export class Model {
           // Qwen3.5 thinks by default, and so does Inkling 2 (its switch is the effort): we want the transcription
           chat_template_kwargs: { enable_thinking: false, reasoning_effort: "none" },
         };
-    const r = await fetch(`${url}/chat/completions`, {
-      method: "POST",
-      headers: this.#headers(),
-      body: JSON.stringify(body),
-      signal,
-    });
-    if (!r.ok)
-      throw new Error(msg("engineAnswered", { status: r.status, text: (await r.text()).slice(0, 200) }));
+    // with examples the request is long (minutes before the first word): streamed, it isn't cut off by fetch's
+    // wait for an answer to start (5 minutes)
+    if (examples.length) {
+      const r = await this.#post(
+        url,
+        { ...body, stream: true, ...(server ? {} : { stream_options: { include_usage: true } }) },
+        signal,
+      );
+      const { raw, finish, used } = await streamed(r, () => {});
+      return { text: raw, finish, ...speed(used) };
+    }
+    const r = await this.#post(url, body, signal);
     const resp = (await r.json()) as {
       choices: { message: { content?: string }; finish_reason?: string }[];
     } & Usage;
@@ -363,42 +359,24 @@ export class Model {
             reasoning_effort: opts.think ? "high" : "none",
           },
         };
+    const r = await this.#post(url, body, signal);
+    const { raw, thinking, finish, used } = await streamed(r, (raw, thinking) =>
+      opts.onDelta(splitThinking(raw, thinking)),
+    );
+    return { ...splitThinking(raw, thinking), finish, ...speed(used) };
+  }
+
+  /** Ask the engine; an error answer becomes an error. */
+  async #post(url: string, body: unknown, signal: AbortSignal) {
     const r = await fetch(`${url}/chat/completions`, {
       method: "POST",
       headers: this.#headers(),
       body: JSON.stringify(body),
       signal,
     });
-    if (!r.ok || !r.body)
+    if (!r.ok)
       throw new Error(msg("engineAnswered", { status: r.status, text: (await r.text()).slice(0, 200) }));
-    let raw = "",
-      thinking = "",
-      finish = "",
-      rest = "",
-      used: Usage = {};
-    const decoder = new TextDecoder();
-    for await (const chunk of r.body as unknown as AsyncIterable<Uint8Array>) {
-      rest += decoder.decode(chunk, { stream: true });
-      const lines = rest.split("\n");
-      rest = lines.pop() ?? "";
-      for (const line of lines) {
-        const data = line.startsWith("data:") ? line.slice(5).trim() : "";
-        if (!data || data === "[DONE]") continue;
-        try {
-          const event = JSON.parse(data) as { choices?: StreamChoice[] } & Usage;
-          if (event.usage) used = { ...used, usage: event.usage };
-          if (event.timings) used = { ...used, timings: event.timings };
-          const c = event.choices?.[0];
-          raw += c?.delta?.content ?? "";
-          thinking += c?.delta?.reasoning_content ?? c?.delta?.reasoning ?? "";
-          if (c?.finish_reason) finish = c.finish_reason;
-        } catch {
-          /* a line that isn't an event: not worth failing for */
-        }
-      }
-      opts.onDelta(splitThinking(raw, thinking));
-    }
-    return { ...splitThinking(raw, thinking), finish, ...speed(used) };
+    return r;
   }
 
   /** Is our own engine running (loaded, or loading)? */
@@ -414,6 +392,60 @@ export class Model {
     this.#url = "";
     this.status = "stopped";
   }
+}
+
+/** A streamed answer, read to its end: the text, the thinking, why it ended, what it says of its making. */
+async function streamed(r: Response, onDelta: (raw: string, thinking: string) => void) {
+  let raw = "",
+    thinking = "",
+    finish = "",
+    rest = "",
+    used: Usage = {};
+  if (!r.body) return { raw, thinking, finish, used };
+  const decoder = new TextDecoder();
+  for await (const chunk of r.body as unknown as AsyncIterable<Uint8Array>) {
+    rest += decoder.decode(chunk, { stream: true });
+    const lines = rest.split("\n");
+    rest = lines.pop() ?? "";
+    for (const line of lines) {
+      const data = line.startsWith("data:") ? line.slice(5).trim() : "";
+      if (!data || data === "[DONE]") continue;
+      try {
+        const event = JSON.parse(data) as { choices?: StreamChoice[] } & Usage;
+        if (event.usage) used = { ...used, usage: event.usage };
+        if (event.timings) used = { ...used, timings: event.timings };
+        const c = event.choices?.[0];
+        raw += c?.delta?.content ?? "";
+        thinking += c?.delta?.reasoning_content ?? c?.delta?.reasoning ?? "";
+        if (c?.finish_reason) finish = c.finish_reason;
+      } catch {
+        /* a line that isn't an event: not worth failing for */
+      }
+    }
+    onDelta(raw, thinking);
+  }
+  return { raw, thinking, finish, used };
+}
+
+/** A page read before and its text (the user's, checked): shown to the model before the page to read. */
+export interface Example {
+  jpeg: Buffer;
+  text: string;
+}
+
+/**
+ * The conversation that reads a page: each example as a page asked with the same instructions and answered with
+ * its text, then the page itself.
+ */
+export function pageMessages(jpeg: Buffer, prompt: string, examples: Example[] = []) {
+  const ask = (j: Buffer) => ({
+    role: "user",
+    content: [
+      { type: "image_url", image_url: { url: `data:image/jpeg;base64,${j.toString("base64")}` } },
+      { type: "text", text: prompt },
+    ],
+  });
+  return [...examples.flatMap((e) => [ask(e.jpeg), { role: "assistant", content: e.text }]), ask(jpeg)];
 }
 
 /** What an answer tells of its making: the tokens written (OpenAI's usage), and llama.cpp's own timings. */

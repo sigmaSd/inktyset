@@ -19,6 +19,8 @@ interface Reading {
   empty: boolean;
   outdated: boolean;
   score: number | null;
+  /** The pages it was shown first. */
+  examples?: string[];
 }
 interface Cell {
   state: "none" | "queued" | "working" | "failed" | "done";
@@ -36,6 +38,8 @@ interface Contender {
   prompt: string | null;
   /** Why it can't read now (its model's files are gone), or "". */
   gone: string;
+  /** How many checked pages it's shown first. */
+  examples: number;
   modelFile: string;
   mmprojFile: string;
   url: string;
@@ -96,6 +100,7 @@ export function initShowdown(d: Deps) {
   });
   $("#sdAddDialog").addEventListener("click", (e) => void onClick(e));
   $("#sdAddDialog").addEventListener("change", () => addForm());
+  $("#sdExamples").addEventListener("input", () => clampExamples());
   $("#sdAddForm").addEventListener("submit", (e) => e.preventDefault()); // Enter in a field: not a reload
 }
 
@@ -214,6 +219,7 @@ function draw() {
       <div class="sd-tags">
         <span class="tag${c.think ? " think" : ""}">${t(c.think ? "sdThinking" : "sdPlain")}</span>
         ${c.prompt ? `<span class="tag own" title="${esc(c.prompt.slice(0, 600))}">${t("sdOwnPrompt")}</span>` : ""}
+        ${usable(c) ? `<span class="tag examples">${t("sdExamplesTag", { n: usable(c) })}</span>` : ""}
         ${c.app ? `<span class="tag app">${t("sdYourModel")}</span>` : ""}
         ${c.gone ? `<span class="tag gone" title="${esc(c.gone)}">${t("sdGone")}</span>` : ""}
       </div>
@@ -328,6 +334,9 @@ async function drawCell() {
       mmss(r.secs),
       typeof r.tokens === "number" ? t("sdTokens", { n: r.tokens }) : "",
       typeof r.tps === "number" ? tps(r.tps) : "",
+      r.examples?.length
+        ? t("sdShownPages", { pages: r.examples.map((id) => t("pageN", { n: pageNumber(id) })).join(", ") })
+        : "",
       r.outdated ? t("sdOutdated") : "",
     ]
       .filter(Boolean)
@@ -406,6 +415,7 @@ function openAdd(c?: Contender) {
     $<HTMLInputElement>("#sdUrl").value = c.url;
     $<HTMLInputElement>("#sdName").value = c.model;
     $<HTMLInputElement>("#sdThink").checked = c.think;
+    $<HTMLInputElement>("#sdExamples").value = String(c.examples);
     $<HTMLInputElement>(
       `#sdAddForm input[name="sdPrompt"][value="${c.prompt ? "own" : "settings"}"]`,
     ).checked = true;
@@ -414,7 +424,23 @@ function openAdd(c?: Contender) {
   addForm();
   $<HTMLDialogElement>("#sdAddDialog").showModal();
 }
+/** The most examples a column can show here: the session's checked pages (never the page read, but it may not be checked). */
+const maxExamples = () => sd?.pages.filter((p) => p.checked).length ?? 0;
+/** The examples a column actually shows in this session. */
+const usable = (c: Contender) => Math.min(c.examples, maxExamples());
+
+/** The examples box: never more than can be shown, and says how many that is. */
+function clampExamples() {
+  const box = $<HTMLInputElement>("#sdExamples");
+  const max = maxExamples();
+  box.max = String(max);
+  const n = Math.round(Number(box.value) || 0);
+  if (n > max || n < 0 || String(n) !== box.value) box.value = String(Math.max(0, Math.min(max, n)));
+  $("#sdExamplesMax").textContent = max ? t("sdExamplesMax", { n: max }) : t("sdExamplesNoChecked");
+}
+
 function addForm() {
+  clampExamples();
   const kind = ($<HTMLInputElement>('#sdAddForm input[name="kind"]:checked')?.value ??
     "builtin") as Contender["kind"];
   $("#sdAddFiles").hidden = kind !== "files";
@@ -493,6 +519,7 @@ async function onClick(e: Event) {
           name: val("#sdName"),
           apiKey: val("#sdKey"),
           think: $<HTMLInputElement>("#sdThink").checked,
+          examples: Number($<HTMLInputElement>("#sdExamples").value),
         });
         $<HTMLDialogElement>("#sdAddDialog").close();
       } catch (err) {

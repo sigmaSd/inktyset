@@ -212,6 +212,10 @@ msgctxt "showdownUrlNeeded"
 msgid "Type the model server's address."
 msgstr ""
 
+msgctxt "showdownTooManyExamples"
+msgid "With its examples, this model may need more memory than the graphics chip has: try fewer examples."
+msgstr ""
+
 msgctxt "showdownFileGone"
 msgid "This model's file isn't there any more: {file}. Download it again, or choose where it is now with Edit."
 msgstr ""
@@ -2058,6 +2062,36 @@ msgstr ""
 
 msgctxt "sdGone"
 msgid "model file not found"
+msgstr ""
+
+msgctxt "sdExamples"
+msgid "Examples"
+msgstr ""
+
+msgctxt "sdExamplesHelp"
+msgid "Before each page, show it some of your checked pages with their text, so it sees how you write (never the page itself). Slower: each example is another picture to read, and takes memory."
+msgstr ""
+
+#. A tag on a column: before each page, the model is shown this many of the user's checked pages
+msgctxt "sdExamplesTag"
+msgid "{n} example"
+msgid_plural "{n} examples"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "sdExamplesMax"
+msgid "Up to {n}: the checked page of this session."
+msgid_plural "Up to {n}: the checked pages of this session."
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "sdExamplesNoChecked"
+msgid "No checked pages in this session yet: check some pages to show them as examples."
+msgstr ""
+
+#. {pages} is a list of pages, e.g. Page 1, Page 3: the checked pages shown to the model before it read this one
+msgctxt "sdShownPages"
+msgid "shown first: {pages}"
 msgstr ""
 
 msgctxt "sdBlocked"

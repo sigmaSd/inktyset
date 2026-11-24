@@ -142,6 +142,8 @@ export const CORE_SOURCE = {
   copyPdfPath: "Copy PDF path",
   showdownFilesNeeded: "Choose the model's file and its vision file (both .gguf).",
   showdownUrlNeeded: "Type the model server's address.",
+  showdownTooManyExamples:
+    "With its examples, this model may need more memory than the graphics chip has: try fewer examples.",
   showdownFileGone:
     "This model's file isn't there any more: {file}. Download it again, or choose where it is now with Edit.",
 } satisfies Record<string, Source>;

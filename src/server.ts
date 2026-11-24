@@ -316,6 +316,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         apiKey: str("apiKey"),
         think: body.think === true,
         prompt: str("prompt"), // none: Settings' instructions
+        examples: Number(body.examples) || 0,
       } as const;
       if (path === "/api/showdown/edit")
         return (await core.showdown.edit(String(body.id), column), { id: body.id });

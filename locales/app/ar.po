@@ -220,6 +220,10 @@ msgctxt "showdownUrlNeeded"
 msgid "Type the model server's address."
 msgstr "اكتب عنوان خادم النماذج."
 
+msgctxt "showdownTooManyExamples"
+msgid "With its examples, this model may need more memory than the graphics chip has: try fewer examples."
+msgstr "مع أمثلته، قد يحتاج هذا النموذج ذاكرة أكثر مما في بطاقة الرسوميات: جرّب أمثلة أقل."
+
 msgctxt "showdownFileGone"
 msgid "This model's file isn't there any more: {file}. Download it again, or choose where it is now with Edit."
 msgstr "ملف هذا النموذج لم يعد موجودًا: {file}. نزّله من جديد، أو اختر مكانه الحالي عبر تعديل."
@@ -2143,6 +2147,44 @@ msgstr "{n} رمز/ث"
 msgctxt "sdGone"
 msgid "model file not found"
 msgstr "ملف النموذج غير موجود"
+
+msgctxt "sdExamples"
+msgid "Examples"
+msgstr "أمثلة"
+
+msgctxt "sdExamplesHelp"
+msgid "Before each page, show it some of your checked pages with their text, so it sees how you write (never the page itself). Slower: each example is another picture to read, and takes memory."
+msgstr "قبل كل صفحة، أرِه بعض صفحاتك المُراجَعة مع نصّها ليرى كيف تكتب (وليس الصفحة نفسها أبدًا). أبطأ: كل مثال صورة إضافية يقرؤها، ويأخذ من الذاكرة."
+
+#. A tag on a column: before each page, the model is shown this many of the user's checked pages
+msgctxt "sdExamplesTag"
+msgid "{n} example"
+msgid_plural "{n} examples"
+msgstr[0] "أمثلة: {n}"
+msgstr[1] "أمثلة: {n}"
+msgstr[2] "أمثلة: {n}"
+msgstr[3] "أمثلة: {n}"
+msgstr[4] "أمثلة: {n}"
+msgstr[5] "أمثلة: {n}"
+
+msgctxt "sdExamplesMax"
+msgid "Up to {n}: the checked page of this session."
+msgid_plural "Up to {n}: the checked pages of this session."
+msgstr[0] "حتى {n}: عدد الصفحات المُراجَعة في هذه الجلسة."
+msgstr[1] "حتى {n}: عدد الصفحات المُراجَعة في هذه الجلسة."
+msgstr[2] "حتى {n}: عدد الصفحات المُراجَعة في هذه الجلسة."
+msgstr[3] "حتى {n}: عدد الصفحات المُراجَعة في هذه الجلسة."
+msgstr[4] "حتى {n}: عدد الصفحات المُراجَعة في هذه الجلسة."
+msgstr[5] "حتى {n}: عدد الصفحات المُراجَعة في هذه الجلسة."
+
+msgctxt "sdExamplesNoChecked"
+msgid "No checked pages in this session yet: check some pages to show them as examples."
+msgstr "لا صفحات مُراجَعة في هذه الجلسة بعد: راجع بعض الصفحات لعرضها كأمثلة."
+
+#. {pages} is a list of pages, e.g. Page 1, Page 3: the checked pages shown to the model before it read this one
+msgctxt "sdShownPages"
+msgid "shown first: {pages}"
+msgstr "عُرضت أولًا: {pages}"
 
 msgctxt "sdBlocked"
 msgid "waiting for the engine or the model: download it from the pages view"

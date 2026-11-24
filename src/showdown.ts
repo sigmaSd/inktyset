@@ -21,7 +21,7 @@ import type { Core } from "./core.ts";
 import { distance } from "./diff.ts";
 import { msg } from "./i18n.ts";
 import { keyOf, type Library } from "./library.ts";
-import { Model, type ModelConfig, type ModelKind } from "./model.ts";
+import { type Example, Model, type ModelConfig, type ModelKind, pageMessages } from "./model.ts";
 import { cleanLatex, langPrompt } from "./pipeline.ts";
 
 export interface Contender {
@@ -41,6 +41,9 @@ export interface Contender {
    * writing language's rule is added as always. None: the ones in Settings, as the app reads.
    */
   prompt?: string;
+  /** How many of the session's checked pages it is shown first, with their text (none: 0). No cap: the engine's
+   * memory is the limit, and reading says so when it's reached. */
+  examples?: number;
 }
 
 /** A reading kept (its text is beside it, <page>.tex). */
@@ -54,8 +57,10 @@ export interface Reading {
   finish: string;
   /** The instructions it was read with (their key, Library keyOf) and the picture's version (Page.pic). */
   prompt: string;
-  /** What read it: the model and the thinking (comboKey). Another since (the column was edited): outdated. */
+  /** What read it: the model, the thinking, the examples (comboKey). Another since (column edited): outdated. */
   combo?: string;
+  /** The pages it was shown first, as examples. */
+  examples?: string[];
   pic: number;
   ok: boolean | null;
   err: string;
@@ -96,14 +101,23 @@ const sameModel = (a: Omit<Contender, "id">, b: Omit<Contender, "id">) =>
 
 /** The same model, read the same way, with the same instructions: one column is enough. */
 const sameCombo = (a: Omit<Contender, "id">, b: Omit<Contender, "id">) =>
-  sameModel(a, b) && a.think === b.think && (a.prompt ?? null) === (b.prompt ?? null);
+  sameModel(a, b) &&
+  a.think === b.think &&
+  (a.prompt ?? null) === (b.prompt ?? null) &&
+  (a.examples ?? 0) === (b.examples ?? 0);
 
 /** What a reading was made with, besides the instructions (which have their own key): the model and the thinking. */
 export const comboKey = (c: Omit<Contender, "id">) =>
-  keyOf(JSON.stringify([c.kind, c.modelFile ?? "", c.mmprojFile ?? "", c.url ?? "", c.name ?? "", c.think]));
+  keyOf(
+    JSON.stringify([c.kind, c.modelFile ?? "", c.mmprojFile ?? "", c.url ?? "", c.name ?? "", c.think]) +
+      // none: the key from before examples existed, so the readings made then stay current
+      (c.examples ? `|${c.examples}` : ""),
+  );
 
 /** Room for thinking: the instructions, the picture, a long thinking and the page. */
 const THINK_CTX = 24576;
+/** Room for each example page: its picture (up to about 2,500 tokens) and its text. */
+const EXAMPLE_CTX = 8192;
 const THINK_TOKENS = 16384;
 
 export class Showdown {
@@ -166,6 +180,7 @@ export class Showdown {
       throw new Error(msg("showdownFilesNeeded"));
     if (c.kind === "server" && !c.url?.trim()) throw new Error(msg("showdownUrlNeeded"));
     const prompt = c.prompt?.trim();
+    const examples = Math.max(0, Math.round(Number(c.examples) || 0));
     return {
       kind: c.kind,
       ...(c.kind === "files" ? { modelFile: c.modelFile, mmprojFile: c.mmprojFile } : {}),
@@ -174,6 +189,7 @@ export class Showdown {
         : {}),
       think: !!c.think,
       ...(prompt ? { prompt } : {}),
+      ...(examples ? { examples } : {}),
     };
   }
 
@@ -230,6 +246,18 @@ export class Showdown {
       return MODEL_FILES.every((f) => existsSync(join(dir, f.file))) ? "" : msg("notDownloaded");
     }
     return ""; // a server: only reading tells
+  }
+
+  /**
+   * The pages a column shows before reading `page`: the session's first checked pages, never the page itself (its
+   * own text would be the answer), as many as the column asks for.
+   */
+  examplesFor(lib: Library, c: Contender, page: string): string[] {
+    if (!c.examples) return [];
+    return lib.pages
+      .filter((p) => p.id !== page && p.checked && p.status === "done" && !p.noScan)
+      .slice(0, c.examples)
+      .map((p) => p.id);
   }
 
   /** The instructions a column reads with: its own (and the writing language's rule), or the app's. */
@@ -361,6 +389,7 @@ export class Showdown {
         // the app reads without thinking, with Settings' instructions
         app: !c.think && !c.prompt && sameModel(c, { ...app, think: false }),
         prompt: c.prompt ?? null,
+        examples: c.examples ?? 0,
         gone: this.gone(c),
         // to edit the column as it is
         modelFile: c.modelFile ?? "",
@@ -452,7 +481,9 @@ export class Showdown {
       url: c.url,
       name: c.name,
       apiKey: c.apiKey,
-      ...(c.think ? { ctx: THINK_CTX } : {}),
+      ...(c.think || c.examples
+        ? { ctx: (c.think ? THINK_CTX : 12288) + (c.examples ?? 0) * EXAMPLE_CTX }
+        : {}),
     };
   }
 
@@ -486,6 +517,10 @@ export class Showdown {
       this.#inEngine = c.id;
       const prompt = this.promptFor(c);
       const jpeg = await readFile(lib.scanPath(p.id));
+      const exampleIds = this.examplesFor(lib, c, p.id);
+      const examples: Example[] = [];
+      for (const id of exampleIds)
+        examples.push({ jpeg: await readFile(lib.scanPath(id)), text: (await this.answer(lib, id)).trim() });
       await this.engine.ensure(); // loaded first: a reading's time is the reading's alone
       const t0 = Date.now();
       let raw: string,
@@ -494,18 +529,15 @@ export class Showdown {
         tokens: number | null,
         tps: number | null;
       if (c.think) {
-        const image = {
-          type: "image_url",
-          image_url: { url: `data:image/jpeg;base64,${jpeg.toString("base64")}` },
-        };
         // streamed (a long thinking outlasts a plain request's wait), at Qwen's settings for thinking
         const r = await this.engine.chat(
-          [{ role: "user", content: [image, { type: "text", text: prompt }] }],
+          pageMessages(jpeg, prompt, examples),
           { think: true, maxTokens: THINK_TOKENS, onDelta: () => {} },
           abort.signal,
         );
         ({ text: raw, thinking, finish, tokens, tps } = r);
-      } else ({ text: raw, finish, tokens, tps } = await this.engine.read(jpeg, prompt, abort.signal));
+      } else
+        ({ text: raw, finish, tokens, tps } = await this.engine.read(jpeg, prompt, abort.signal, examples));
       const secs = (Date.now() - t0) / 1000;
       const text = cleanLatex(raw);
       const dir = this.#dir(lib, c.id);
@@ -535,6 +567,7 @@ export class Showdown {
         finish,
         prompt: keyOf(prompt),
         combo: comboKey(c),
+        ...(exampleIds.length ? { examples: exampleIds } : {}),
         pic: p.pic ?? 0,
         ok: shown.ok,
         err: shown.err,
@@ -547,7 +580,12 @@ export class Showdown {
       await writeFile(metaFile, JSON.stringify(reading, null, 2));
       this.#readings.set(metaFile, reading);
     } catch (e) {
-      if (!abort.signal.aborted) this.#failed.set(k, (e as Error).message);
+      if (!abort.signal.aborted) {
+        let why = (e as Error).message;
+        // the engine didn't load, or stopped: with examples, the room they need is the likely cause
+        if (c.examples && this.engine.status === "error") why += " " + msg("showdownTooManyExamples");
+        this.#failed.set(k, why);
+      }
     } finally {
       this.#working = null;
       this.#abort = null;
