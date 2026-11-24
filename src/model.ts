@@ -161,8 +161,9 @@ export class Model {
       own ? this.config.modelFile! : join(dir, MODEL_FILES[0].file),
       "--mmproj",
       own ? this.config.mmprojFile! : join(dir, MODEL_FILES[1].file),
-      "-ngl",
-      "99", // everything on the graphics chip when there is one (Vulkan, Metal); the CPU otherwise
+      // (no -ngl: llama.cpp fits the model to the graphics chip's memory itself, `--fit`: all of it there when
+      // it holds it, and what it can't hold in the computer's memory, a mixture of experts' experts first, so a
+      // 26B-A4B still reads on a 16 GB card; the CPU alone when there is no graphics chip)
       "-c",
       String(this.config.ctx ?? 12288),
       "-np",
