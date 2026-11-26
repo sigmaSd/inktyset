@@ -536,6 +536,21 @@ export const UI_SOURCE = {
     "Read new pages with {name} and this column's instructions? Settings' instructions are replaced by them (your notes are part of them now).",
   sdUsedCombo: "Inktyset now reads with {name} and these instructions.",
   sdTokens: { one: "{n} token", other: "{n} tokens" },
+  sdInOut: "{i} tokens in · {o} out",
+  sdInOutTitle:
+    "Tokens read (the instructions, the examples and the picture) and written (its thinking too). Tokens are the pieces of words a model reads and writes.",
+  sdPhasePrompt: "reading the prompt",
+  sdPhaseThinking: "thinking",
+  sdPhaseWriting: "writing",
+  sdThoughtN: { one: "{n} token thought", other: "{n} tokens thought" },
+  sdWrittenN: { one: "{n} token written", other: "{n} tokens written" },
+  sdSpeed: "{n} tok/s",
+  sdWatchTitle: "Watch it read: its thinking and its LaTeX as they come",
+  sdLiveHead: "Its LaTeX, as it is written",
+  sdLivePreview: "The preview comes when it is done.",
+  sdLiveWaiting:
+    "No words yet: it is reading the prompt (the instructions, the picture, and the examples if any).",
+  sdLiveLoading: "Loading the model…",
   sdEngine: "Engine options",
   sdEngineHelp:
     "How llama.cpp is started for this model: what goes on the graphics card, and what stays in the computer's memory.",

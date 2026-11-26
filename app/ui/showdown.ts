@@ -15,6 +15,8 @@ interface Reading {
   /** The prompt: its tokens read and the seconds that took (the rest of `secs` is the writing). */
   promptTokens?: number | null;
   promptSecs?: number | null;
+  /** All the prompt's tokens, those the engine had kept from the reading before too. */
+  inTokens?: number | null;
   finish: string;
   ok: boolean | null;
   err: string;
@@ -62,7 +64,8 @@ interface State {
   contenders: Contender[];
   /** `from`: the model the page's text started as a reading of ("" not known). */
   pages: { id: string; checked: boolean; status: string; from: string }[];
-  working: { contender: string; page: string; started: number } | null;
+  /** `phase`: what the reading does now (null: its model loading). */
+  working: { contender: string; page: string; started: number; phase: Phase | null } | null;
   queued: number;
   /** The engine or the model isn't downloaded: nothing is read until it is. */
   blocked: boolean;
@@ -70,6 +73,18 @@ interface State {
   engine: { status: string; detail: string; holds: string };
   /** Settings' instructions in one text: what a column's own start from. */
   instructions: string;
+}
+type Phase = "prompt" | "thinking" | "writing";
+/** The reading being made, as it comes (src/showdown.ts live): the words only when asked for. */
+interface Live {
+  contender: string;
+  page: string;
+  phase: Phase;
+  thinkTokens: number;
+  textTokens: number;
+  firstAt: number | null;
+  thinking?: string;
+  text?: string;
 }
 interface Deps {
   api: (path: string, body?: unknown) => Promise<any>;
@@ -89,6 +104,10 @@ let again = false;
 let timer: ReturnType<typeof setInterval> | null = null;
 /** The reading open in the detail view. */
 let cur: { contender: string; page: string } | null = null;
+/** How far the reading being made is (asked each second while one is made); null: none, or not known yet. */
+let live: Live | null = null;
+/** The open cell is the reading being made: its words asked for, often (null: it isn't). */
+let liveTimer: ReturnType<typeof setInterval> | null = null;
 
 /** A writing speed: "41 tok/s". */
 const tps = (n: number) => t("sdTps", { n: Math.round(n) });
@@ -111,6 +130,24 @@ const promptDetail = (r: Reading, mmss: (s: number) => string) =>
     : "";
 const pct = (d: number) =>
   new Intl.NumberFormat(uiLang(), { style: "percent", maximumFractionDigits: 1 }).format(d);
+/** "10,864 tokens in · 1,052 out": the whole prompt, and all it wrote ("" when the engine didn't say). */
+const inOut = (r: Reading) => {
+  const i = r.inTokens ?? r.promptTokens;
+  return typeof i === "number" && typeof r.tokens === "number" ? t("sdInOut", { i, o: r.tokens }) : "";
+};
+/** What the reading being made does now: "thinking", "writing"… (its model loading: null). */
+const phaseWord = (p: Phase | null | undefined) =>
+  p ? t(p === "prompt" ? "sdPhasePrompt" : p === "thinking" ? "sdPhaseThinking" : "sdPhaseWriting") : "";
+/** How far it is: "412 tokens thought · 85 written · 14 tok/s" (the prompt: nothing yet). */
+const liveCounts = (l: Live) => {
+  const n = l.thinkTokens + l.textTokens;
+  const secs = l.firstAt === null ? 0 : Date.now() / 1000 - l.firstAt;
+  return [
+    l.thinkTokens ? t("sdThoughtN", { n: l.thinkTokens }) : "",
+    l.textTokens ? t("sdWrittenN", { n: l.textTokens }) : "",
+    n > 1 && secs > 1 ? t("sdSpeed", { n: Math.round(n / secs) }) : "",
+  ].filter(Boolean);
+};
 
 export function initShowdown(d: Deps) {
   deps = d;
@@ -121,6 +158,7 @@ export function initShowdown(d: Deps) {
     timer = null;
   });
   $("#sdCell").addEventListener("click", (e) => void onClick(e));
+  $("#sdCell").addEventListener("close", () => stopLive());
   $("#sdCell").addEventListener("keydown", (e) => {
     const k = (e as KeyboardEvent).key;
     if (k === "ArrowRight" || k === "ArrowLeft") {
@@ -146,7 +184,9 @@ export function openShowdown() {
   seen = -1;
   void load();
   timer ??= setInterval(() => {
-    if (sd?.working) draw(); // the seconds of the reading being made
+    if (!sd?.working) return;
+    draw(); // the seconds of the reading being made
+    if (!liveTimer) void fetchLive(false); // (the open cell asks for its words, and more often)
   }, 1000);
 }
 
@@ -155,6 +195,17 @@ export function showdownChanged(version: number) {
   if (!$<HTMLDialogElement>("#showdown")?.open || version === seen) return;
   seen = version;
   void load();
+}
+
+/** How far the reading being made is; with its words for the open cell (then drawn there). */
+async function fetchLive(words: boolean) {
+  try {
+    live = (await fetch(`/api/showdown/live${words ? "?words=1" : ""}`).then((r) => r.json())) as Live | null;
+  } catch {
+    return; // the app going away
+  }
+  if (sd) status(sd, missing(sd));
+  if (words) drawLive();
 }
 
 async function load() {
@@ -362,11 +413,14 @@ function status(s: State, miss: number) {
     busy = true;
     const model = name(s.working.contender);
     const page = pageNumber(s.working.page);
+    const l = live?.contender === s.working.contender && live.page === s.working.page ? live : null;
     now.push(
       s.engine.status === "starting"
         ? t("sdStatusLoading", { m: model, p: page })
         : t("sdStatusReading", { m: model, p: page }),
       mmss(Date.now() / 1000 - s.working.started),
+      phaseWord(s.working.phase),
+      ...(l && s.working.phase ? liveCounts(l) : []),
     );
     if (s.queued) now.push(t("sdStatusMore", { n: s.queued }));
   } else if (s.queued) now.push(t("sdLeft", { n: s.queued }));
@@ -404,8 +458,11 @@ function cellHtml(c: Contender, page: string, checked: boolean, s: State) {
   const r = x.reading;
   const at = `data-c="${c.id}" data-p="${page}"`;
   if (x.state === "working") {
+    // opens to its words as they come
     const secs = s.working ? Date.now() / 1000 - s.working.started : 0;
-    return `<div class="sd-cell sd-wait"><div class="pv empty"><span class="chip busy">${t("sdReading", { t: mmss(secs) })}</span>
+    const what = phaseWord(s.working?.phase);
+    return `<div class="sd-cell sd-wait sd-live" data-sd="open" ${at} title="${esc(t("sdWatchTitle"))}"><div class="pv empty"><span class="chip busy">${t("sdReading", { t: mmss(secs) })}</span>
+      ${what ? `<span class="note">${esc(what)}</span>` : ""}
       <button class="ghost small" data-sd="stopCell" ${at}>${t("sdStop")}</button></div></div>`;
   }
   if (x.state === "queued")
@@ -447,6 +504,7 @@ function cellHtml(c: Contender, page: string, checked: boolean, s: State) {
           : "",
         typeof r.tps === "number" ? tps(r.tps) : "",
       ])}
+      ${line([inOut(r) ? `<span title="${esc(t("sdInOutTitle"))}">${inOut(r)}</span>` : ""])}
       <div class="sd-chips">
         ${r.empty ? "" : r.ok ? `<span class="chip ok">${t("sdCompiles")}</span>` : `<span class="chip bad" title="${esc(r.err)}">${t("sdError")}</span>`}
         ${r.unk ? `<span class="chip warn">${t("sdUnclear", { n: r.unk })}</span>` : ""}
@@ -464,18 +522,49 @@ async function drawCell() {
   const { esc, mmss, pageNumber } = deps;
   const c = sd.contenders.find((x) => x.id === cur!.contender);
   const p = sd.pages.find((x) => x.id === cur!.page);
-  const r = c?.cells[cur.page]?.reading;
-  if (!c || !p || !r) {
+  const cell = c?.cells[cur.page];
+  const r = cell?.reading;
+  const making = cell?.state === "working";
+  if (!c || !p || (!r && !making)) {
     $<HTMLDialogElement>("#sdCell").close();
     return;
   }
   $("#sdcTitle").textContent = `${t("pageN", { n: pageNumber(p.id) })} · ${c.name}`;
+  $<HTMLImageElement>("#sdcScan").src = `/files/scans/${p.id}.jpg`;
+  $("#sdcStop").hidden = !making;
+  $("[data-sd=again]", $("#sdCell")).hidden = making;
+  if (making || !r) {
+    // being read: its words as they come (drawLive), until it's done and drawn as any reading
+    $("#sdcKeep").hidden = true;
+    if (!liveTimer) {
+      const box = $("#sdcText");
+      box.dataset.key = "live";
+      box.textContent = "";
+      $("#sdcThinkingText").textContent = "";
+      $<HTMLDetailsElement>("#sdcThinking").open = true;
+      $("#sdcScore").textContent = "";
+      $("#sdcEveryBox").hidden = true;
+      $("#sdcPreview").innerHTML =
+        `<div class="pv empty"><span class="note">${t("sdLivePreview")}</span></div>`;
+      shown = null;
+      liveTimer = setInterval(() => void fetchLive(true), 500);
+      void fetchLive(true);
+    }
+    drawLive();
+    return;
+  }
+  stopLive();
   $("#sdcTags").innerHTML =
     `<span class="tag${c.think ? " think" : ""}">${t(c.think ? "sdThinking" : "sdPlain")}</span>
     <span class="note">${[
       mmss(r.secs),
       promptDetail(r, mmss),
-      typeof r.tokens === "number" ? t("sdTokens", { n: r.tokens }) : "",
+      // the prompt's tokens are said just before: all of them again only when some were kept from before
+      typeof r.inTokens === "number" && r.inTokens !== r.promptTokens
+        ? inOut(r)
+        : typeof r.tokens === "number"
+          ? t("sdTokens", { n: r.tokens })
+          : "",
       typeof r.tps === "number" ? tps(r.tps) : "",
       r.examples?.length
         ? t("sdShownPages", { pages: r.examples.map((id) => t("pageN", { n: pageNumber(id) })).join(", ") })
@@ -484,7 +573,6 @@ async function drawCell() {
     ]
       .filter(Boolean)
       .join(" · ")}</span>`;
-  $<HTMLImageElement>("#sdcScan").src = `/files/scans/${p.id}.jpg`;
   $("#sdcPreview").innerHTML = r.empty
     ? `<div class="pv empty bad">${t(r.finish === "length" ? "sdEmptyCut" : "sdEmpty")}</div>`
     : r.pngs.map((f) => `<img src="/files/${esc(f)}?r=${r.rev}" alt="${esc(t("renderedAlt"))}">`).join("") +
@@ -516,6 +604,54 @@ async function drawCell() {
   const th = $<HTMLDetailsElement>("#sdcThinking");
   th.hidden = !d.thinking.trim();
   $("#sdcThinkingText").textContent = d.thinking;
+}
+
+/** The open cell's reading as it comes: what it does, its thinking and text so far (kept scrolled to the end). */
+function drawLive() {
+  if (!sd || !cur || !liveTimer) return;
+  const { esc, mmss } = deps;
+  const c = sd.contenders.find((x) => x.id === cur!.contender);
+  const w = sd.working?.contender === cur.contender && sd.working.page === cur.page ? sd.working : null;
+  const l = live?.contender === cur.contender && live.page === cur.page ? live : null;
+  const loading = !w?.phase;
+  $("#sdcTags").innerHTML =
+    `<span class="tag${c?.think ? " think" : ""}">${t(c?.think ? "sdThinking" : "sdPlain")}</span>
+    <span class="note">${[
+      w ? mmss(Date.now() / 1000 - w.started) : "",
+      loading ? t("sdLiveLoading") : phaseWord(w?.phase),
+      ...(l && !loading ? liveCounts(l) : []),
+    ]
+      .filter(Boolean)
+      .map(esc)
+      .join(" · ")}</span>`;
+  $("#sdcTextHead").textContent = t("sdLiveHead");
+  const box = $("#sdcText");
+  const th = $<HTMLDetailsElement>("#sdcThinking");
+  const thinking = l?.thinking ?? "";
+  th.hidden = !thinking;
+  const keep = (el: HTMLElement, text: string) => {
+    if (el.textContent === text) return;
+    // at the end (or near): kept there as words come; scrolled up to read: left there
+    const pane = el.closest<HTMLElement>(".sdc-pane")!;
+    const atEnd = pane.scrollHeight - pane.scrollTop - pane.clientHeight < 40;
+    el.textContent = text;
+    if (atEnd) pane.scrollTop = pane.scrollHeight;
+  };
+  box.closest(".sdc-pane")!.classList.add("live");
+  keep($("#sdcThinkingText"), thinking);
+  keep(
+    box,
+    l?.text || (loading ? t("sdLiveLoading") : l?.phase === "prompt" || !l ? t("sdLiveWaiting") : ""),
+  );
+  box.classList.toggle("waiting", !l?.text);
+}
+
+function stopLive() {
+  if (liveTimer) clearInterval(liveTimer);
+  liveTimer = null;
+  $("#sdcText").classList.remove("waiting");
+  $("#sdcText").closest(".sdc-pane")?.classList.remove("live");
+  if ($("#sdcText").dataset.key === "live") $("#sdcText").dataset.key = "";
 }
 
 /** The reading open beside its scan, and the user's text it is compared with. */
@@ -550,6 +686,7 @@ function drawText() {
 function openCell(contender: string, page: string) {
   cur = { contender, page };
   $("#sdcText").dataset.key = "";
+  $<HTMLDetailsElement>("#sdcThinking").open = false;
   const dlg = $<HTMLDialogElement>("#sdCell");
   if (!dlg.open) dlg.showModal();
   void drawCell();
@@ -808,6 +945,7 @@ async function onClick(e: Event) {
       if (confirm(t("sdConfirmRemove", { name }))) await api("/api/showdown/remove", { id: c });
     } else if (act === "add") openAdd();
     else if (act === "cellClose") $<HTMLDialogElement>("#sdCell").close();
+    else if (act === "cellStop" && cur) await api("/api/showdown/stop", cur);
     else if (act === "prev") step(-1);
     else if (act === "next") step(1);
     else if (act === "again" && cur) {

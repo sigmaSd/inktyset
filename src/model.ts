@@ -310,8 +310,18 @@ export class Model {
     }
   }
 
-  /** Read one page image (JPEG bytes); `examples`: pages read before, with their text, shown to it first. */
-  async read(jpeg: Buffer, prompt: string, signal: AbortSignal, examples: Example[] = []) {
+  /**
+   * Read one page image (JPEG bytes); `examples`: pages read before, with their text, shown to it first. Streamed:
+   * `onDelta` gets the text (and any thinking) so far as it comes; and a long request (examples: minutes before the
+   * first word) isn't cut off by fetch's wait for an answer to start (5 minutes).
+   */
+  async read(
+    jpeg: Buffer,
+    prompt: string,
+    signal: AbortSignal,
+    examples: Example[] = [],
+    onDelta: (d: Delta) => void = () => {},
+  ) {
     const url = await this.ensure();
     const server = this.kind === "server";
     if (server) await checkLocalUrl(this.config.url ?? ""); // still on the user's network
@@ -321,11 +331,14 @@ export class Model {
       ? {
           ...(this.config.name ? { model: this.config.name } : {}),
           messages,
+          stream: true,
           temperature: 0,
           max_tokens: 4096,
         }
       : {
           messages,
+          stream: true,
+          stream_options: { include_usage: true }, // how much it read and wrote, in the last event
           temperature: 0,
           top_k: 1,
           repeat_penalty: 1.05,
@@ -333,26 +346,9 @@ export class Model {
           // Qwen3.5 thinks by default, and so does Inkling 2 (its switch is the effort): we want the transcription
           chat_template_kwargs: { enable_thinking: false, reasoning_effort: "none" },
         };
-    // with examples the request is long (minutes before the first word): streamed, it isn't cut off by fetch's
-    // wait for an answer to start (5 minutes)
-    if (examples.length) {
-      const r = await this.#post(
-        url,
-        { ...body, stream: true, ...(server ? {} : { stream_options: { include_usage: true } }) },
-        signal,
-      );
-      const { raw, finish, used } = await streamed(r, () => {});
-      return { text: raw, finish, ...speed(used) };
-    }
     const r = await this.#post(url, body, signal);
-    const resp = (await r.json()) as {
-      choices: { message: { content?: string }; finish_reason?: string }[];
-    } & Usage;
-    return {
-      text: resp.choices[0]?.message.content ?? "",
-      finish: resp.choices[0]?.finish_reason ?? "",
-      ...speed(resp),
-    };
+    const { raw, thinking, finish, used } = await streamed(r, onDelta);
+    return { ...splitThinking(raw, thinking), finish, ...speed(used) };
   }
 
   /**
@@ -361,7 +357,7 @@ export class Model {
    */
   async chat(
     messages: unknown[],
-    opts: { think: boolean; maxTokens: number; onDelta: (d: { text: string; thinking: string }) => void },
+    opts: { think: boolean; maxTokens: number; onDelta: (d: Delta) => void },
     signal: AbortSignal,
   ) {
     const url = await this.ensure();
@@ -391,9 +387,7 @@ export class Model {
           },
         };
     const r = await this.#post(url, body, signal);
-    const { raw, thinking, finish, used } = await streamed(r, (raw, thinking) =>
-      opts.onDelta(splitThinking(raw, thinking)),
-    );
+    const { raw, thinking, finish, used } = await streamed(r, opts.onDelta);
     return { ...splitThinking(raw, thinking), finish, ...speed(used) };
   }
 
@@ -426,17 +420,35 @@ export class Model {
   }
 }
 
-/** A streamed answer, read to its end: the text, the thinking, why it ended, what it says of its making. */
-async function streamed(r: Response, onDelta: (raw: string, thinking: string) => void) {
+/** An answer so far, as it is streamed: its text and thinking (<think> tags taken out), and the tokens of each. */
+export interface Delta {
+  text: string;
+  thinking: string;
+  textTokens: number;
+  thinkTokens: number;
+}
+
+/**
+ * A streamed answer, read to its end: the text, the thinking, why it ended, what it says of its making. `onDelta`
+ * after each piece; the tokens counted as the events that carry one (llama-server sends a token an event). A server
+ * that answers at once instead (it ignored "stream"): read as such.
+ */
+async function streamed(r: Response, onDelta: (d: Delta) => void) {
   let raw = "",
     thinking = "",
     finish = "",
     rest = "",
+    whole = "",
+    events = 0,
+    rawTokens = 0,
+    thinkTokens = 0,
     used: Usage = {};
   if (!r.body) return { raw, thinking, finish, used };
   const decoder = new TextDecoder();
   for await (const chunk of r.body as unknown as AsyncIterable<Uint8Array>) {
-    rest += decoder.decode(chunk, { stream: true });
+    const piece = decoder.decode(chunk, { stream: true });
+    if (!events) whole += piece;
+    rest += piece;
     const lines = rest.split("\n");
     rest = lines.pop() ?? "";
     for (const line of lines) {
@@ -444,17 +456,38 @@ async function streamed(r: Response, onDelta: (raw: string, thinking: string) =>
       if (!data || data === "[DONE]") continue;
       try {
         const event = JSON.parse(data) as { choices?: StreamChoice[] } & Usage;
+        events++;
         if (event.usage) used = { ...used, usage: event.usage };
         if (event.timings) used = { ...used, timings: event.timings };
         const c = event.choices?.[0];
-        raw += c?.delta?.content ?? "";
-        thinking += c?.delta?.reasoning_content ?? c?.delta?.reasoning ?? "";
+        const said = c?.delta?.content ?? "",
+          thought = c?.delta?.reasoning_content ?? c?.delta?.reasoning ?? "";
+        raw += said;
+        thinking += thought;
+        if (said) rawTokens++;
+        if (thought) thinkTokens++;
         if (c?.finish_reason) finish = c.finish_reason;
       } catch {
         /* a line that isn't an event: not worth failing for */
       }
     }
-    onDelta(raw, thinking);
+    const split = splitThinking(raw, thinking);
+    // thinking between <think> tags in the text: its tokens are the thinking's (as near as can be told)
+    const inTags = raw.length ? Math.round((rawTokens * (raw.length - split.text.length)) / raw.length) : 0;
+    onDelta({ ...split, textTokens: rawTokens - inTags, thinkTokens: thinkTokens + inTags });
+  }
+  if (!events && whole.trim().startsWith("{")) {
+    try {
+      const resp = JSON.parse(whole) as {
+        choices?: { message?: { content?: string; reasoning_content?: string }; finish_reason?: string }[];
+      } & Usage;
+      raw = resp.choices?.[0]?.message?.content ?? "";
+      thinking = resp.choices?.[0]?.message?.reasoning_content ?? "";
+      finish = resp.choices?.[0]?.finish_reason ?? "";
+      used = resp;
+    } catch {
+      /* not an answer either: nothing said */
+    }
   }
   return { raw, thinking, finish, used };
 }
@@ -482,7 +515,7 @@ export function pageMessages(jpeg: Buffer, prompt: string, examples: Example[] =
 
 /** What an answer tells of its making: the tokens written (OpenAI's usage), and llama.cpp's own timings. */
 interface Usage {
-  usage?: { completion_tokens?: number };
+  usage?: { completion_tokens?: number; prompt_tokens?: number };
   timings?: { predicted_n?: number; predicted_per_second?: number; prompt_n?: number; prompt_ms?: number };
 }
 
@@ -498,6 +531,8 @@ function speed(u: Usage) {
     tps: u.timings?.predicted_per_second ?? null,
     promptTokens: u.timings?.prompt_n ?? null,
     promptSecs: typeof ms === "number" ? ms / 1000 : null,
+    /** The whole prompt's tokens, those the engine had already from the request before too. */
+    inTokens: u.usage?.prompt_tokens ?? null,
   };
 }
 

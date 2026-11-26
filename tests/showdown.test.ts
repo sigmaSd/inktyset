@@ -367,3 +367,41 @@ test.skipIf(process.platform === "win32")(
   },
   20_000, // an engine started, a second or so
 );
+
+test.skipIf(process.platform === "win32")(
+  "showdown: the reading being made is shown as it comes: the prompt read, then its thinking, then its text",
+  async () => {
+    const { core, lib, page } = await setup("showdown-live");
+    const fake = fakeEngine(scratch("showdown-live-engine"), [
+      { reasoning_content: "a sum" },
+      { reasoning_content: " of two" },
+      { content: "$a + b" },
+      { content: " = c$" },
+    ]);
+    const files = { modelFile: fake.modelFile, mmprojFile: fake.mmprojFile };
+    await core.setSettings({ serverPath: fake.bin });
+    const sd = core.showdown;
+    const c = await sd.add({ kind: "files", ...files, think: false });
+    try {
+      const run = sd.run({ lib, contender: c, page });
+      const seen: { phase: string; thinking?: string; text?: string }[] = [];
+      for (let i = 0; i < 200; i++) {
+        const l = sd.live(lib, true);
+        if (l && seen.at(-1)?.phase !== l.phase) seen.push({ ...l });
+        if (l?.phase === "writing") break;
+        await new Promise((r) => setTimeout(r, 25));
+      }
+      expect(seen.map((x) => x.phase)).toEqual(["prompt", "thinking", "writing"]);
+      expect(seen[1].thinking).toBe("a sum");
+      expect((await sd.state(lib)).working?.phase).toBe("writing");
+      expect(sd.live(lib, false)).not.toHaveProperty("text"); // only how far, for the status bar
+      await run;
+      expect(sd.live(lib, true)).toBeNull();
+      expect((await sd.text(lib, c, page)).trim()).toBe("$a + b = c$");
+      expect(await sd.thinking(lib, c, page)).toBe("a sum of two"); // kept, though it wasn't asked to think
+    } finally {
+      await sd.engine.stop();
+    }
+  },
+  20_000,
+);

@@ -1821,45 +1821,43 @@ msgstr "Tout est lu"
 
 msgctxt "sdStatusReading"
 msgid "Reading page {p} with {m}"
-msgstr ""
+msgstr "Lecture de la page {p} avec {m}"
 
 msgctxt "sdStatusLoading"
 msgid "Loading {m} to read page {p}…"
-msgstr ""
+msgstr "Chargement de {m} pour lire la page {p}…"
 
 msgctxt "sdStatusMore"
 msgid "then {n} more"
 msgid_plural "then {n} more"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "puis {n} autre"
+msgstr[1] "puis {n} autres"
 
 msgctxt "sdStatusMissing"
 msgid "{n} reading missing"
 msgid_plural "{n} readings missing"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "{n} lecture manquante"
+msgstr[1] "{n} lectures manquantes"
 
 msgctxt "sdStatusHolds"
 msgid "in memory: {m}"
-msgstr ""
+msgstr "en mémoire : {m}"
 
 msgctxt "sdOtherSession"
 msgid "another session"
-msgstr ""
+msgstr "une autre session"
 
 msgctxt "sdStatusLast"
 msgid "last: page {p}, {m}, {t}"
-msgstr ""
+msgstr "dernière : page {p}, {m}, {t}"
 
 msgctxt "sdNoChecked"
 msgid "No checked pages yet. Each model's reading is scored against the pages you checked: proofread a few pages and mark them checked to see which model reads your writing best."
 msgstr "Aucune page vérifiée pour l'instant. La lecture de chaque modèle est notée par rapport aux pages que vous avez vérifiées : relisez quelques pages et marquez-les comme vérifiées pour voir quel modèle lit le mieux votre écriture."
 
-#, fuzzy
-#| msgid "Scores count only checked pages. The first is how much of what was read differs from your checked text: symbols, numbers and words, the layout aside. The second counts the layout too (lines, alignment, headings): what you would still change. Lower is closer. While the models read, yours waits, and comes back after."
 msgctxt "sdLegend"
 msgid "Scores count only checked pages. The first is how much of what was read differs from your checked text: symbols, numbers, words and how the math is built, the layout aside. The second counts the layout too (lines, alignment, headings): what you would still change. Then how many of your formulas it got exactly right. Lower is closer. While the models read, yours waits, and comes back after."
-msgstr "Les notes ne comptent que les pages vérifiées. L'écart est la part du LaTeX (espaces à part) qui diffère de votre texte vérifié : plus il est bas, plus la lecture est proche. Pendant que les modèles lisent, le vôtre attend, puis revient."
+msgstr "Les notes ne comptent que les pages vérifiées. La première dit quelle part de ce qui a été lu diffère de votre texte vérifié : symboles, nombres, mots et construction des maths, la mise en page à part. La deuxième compte aussi la mise en page (lignes, alignement, titres) : ce que vous changeriez encore. Puis combien de vos formules sont exactement justes. Plus c'est bas, plus c'est proche. Pendant que les modèles lisent, le vôtre attend, puis revient."
 
 msgctxt "sdOver"
 msgid "Over {n} checked page"
@@ -1880,35 +1878,35 @@ msgstr "{p} d'écart"
 #. {p} is a percentage, e.g. 12.3%: the same distance, counting the layout (lines, alignment) too
 msgctxt "sdOffLayout"
 msgid "{p} with layout"
-msgstr ""
+msgstr "{p} avec la mise en page"
 
 msgctxt "sdFormulasRight"
 msgid "formulas exactly right: {n}/{d}"
-msgstr ""
+msgstr "formules exactement justes : {n}/{d}"
 
 msgctxt "sdEveryDiff"
 msgid "Every difference, layout too"
-msgstr ""
+msgstr "Toutes les différences, mise en page comprise"
 
 msgctxt "sdSource"
 msgid "your text's source"
-msgstr ""
+msgstr "source de votre texte"
 
 msgctxt "sdSourceN"
 msgid "source of {n}/{d} of your pages"
-msgstr ""
+msgstr "source de {n}/{d} de vos pages"
 
 msgctxt "sdSourceTitle"
 msgid "Your checked text started as this model's reading: where it didn't need changing, it keeps this model's own words and layout, so this score looks better than it is"
-msgstr ""
+msgstr "Votre texte vérifié est parti de la lecture de ce modèle : là où il n'a pas fallu le changer, il garde les mots et la mise en page de ce modèle, donc cette note paraît meilleure qu'elle ne l'est"
 
 msgctxt "sdOffContentTitle"
 msgid "How much of what it read differs from your checked text: symbols, numbers, words and how the math is built (what is in an exponent, a fraction), the layout aside"
-msgstr ""
+msgstr "Quelle part de ce qu'il a lu diffère de votre texte vérifié : symboles, nombres, mots et construction des maths (ce qui est en exposant, dans une fraction), la mise en page à part"
 
 msgctxt "sdOffLayoutTitle"
 msgid "Counting the layout too (math signs, line breaks, alignment, headings): how much you would still change to get your text"
-msgstr ""
+msgstr "En comptant aussi la mise en page (signes mathématiques, retours à la ligne, alignement, titres) : ce que vous changeriez encore pour obtenir votre texte"
 
 #. {t} is a time like 0:12 (minutes:seconds)
 msgctxt "sdPerPage"
@@ -2123,21 +2121,19 @@ msgid "Add"
 msgstr "Ajouter"
 
 #. How fast the model writes: {n} tokens (pieces of words) a second
-#, fuzzy
-#| msgid "{n} tok/s"
 msgctxt "sdTps"
 msgid "writing {n} tok/s"
-msgstr "{n} jetons/s"
+msgstr "écriture {n} jetons/s"
 
 msgctxt "sdPromptTime"
 msgid "prompt {t}"
-msgstr ""
+msgstr "invite {t}"
 
 msgctxt "sdPromptDetail"
 msgid "prompt: {n} token in {t} ({s} tok/s)"
 msgid_plural "prompt: {n} tokens in {t} ({s} tok/s)"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "invite : {n} jeton en {t} ({s} jetons/s)"
+msgstr[1] "invite : {n} jetons en {t} ({s} jetons/s)"
 
 msgctxt "sdGone"
 msgid "model file not found"
@@ -2255,122 +2251,178 @@ msgid_plural "{n} tokens"
 msgstr[0] "{n} jeton"
 msgstr[1] "{n} jetons"
 
+msgctxt "sdInOut"
+msgid "{i} tokens in · {o} out"
+msgstr "{i} jetons lus · {o} écrits"
+
+msgctxt "sdInOutTitle"
+msgid "Tokens read (the instructions, the examples and the picture) and written (its thinking too). Tokens are the pieces of words a model reads and writes."
+msgstr "Jetons lus (les instructions, les exemples et l'image) et écrits (sa réflexion comprise). Les jetons sont les morceaux de mots qu'un modèle lit et écrit."
+
+msgctxt "sdPhasePrompt"
+msgid "reading the prompt"
+msgstr "lit l'invite"
+
+msgctxt "sdPhaseThinking"
+msgid "thinking"
+msgstr "réfléchit"
+
+msgctxt "sdPhaseWriting"
+msgid "writing"
+msgstr "écrit"
+
+msgctxt "sdThoughtN"
+msgid "{n} token thought"
+msgid_plural "{n} tokens thought"
+msgstr[0] "{n} jeton de réflexion"
+msgstr[1] "{n} jetons de réflexion"
+
+msgctxt "sdWrittenN"
+msgid "{n} token written"
+msgid_plural "{n} tokens written"
+msgstr[0] "{n} jeton écrit"
+msgstr[1] "{n} jetons écrits"
+
+msgctxt "sdSpeed"
+msgid "{n} tok/s"
+msgstr "{n} jetons/s"
+
+msgctxt "sdWatchTitle"
+msgid "Watch it read: its thinking and its LaTeX as they come"
+msgstr "Le regarder lire : sa réflexion et son LaTeX à mesure qu'ils arrivent"
+
+msgctxt "sdLiveHead"
+msgid "Its LaTeX, as it is written"
+msgstr "Son LaTeX, à mesure qu'il l'écrit"
+
+msgctxt "sdLivePreview"
+msgid "The preview comes when it is done."
+msgstr "L'aperçu viendra quand il aura fini."
+
+msgctxt "sdLiveWaiting"
+msgid "No words yet: it is reading the prompt (the instructions, the picture, and the examples if any)."
+msgstr "Pas encore de mots : il lit l'invite (les instructions, l'image, et les exemples s'il y en a)."
+
+msgctxt "sdLiveLoading"
+msgid "Loading the model…"
+msgstr "Chargement du modèle…"
+
 msgctxt "sdEngine"
 msgid "Engine options"
-msgstr ""
+msgstr "Options du moteur"
 
 msgctxt "sdEngineHelp"
 msgid "How llama.cpp is started for this model: what goes on the graphics card, and what stays in the computer's memory."
-msgstr ""
+msgstr "Comment llama.cpp est lancé pour ce modèle : ce qui va sur la carte graphique, et ce qui reste dans la mémoire de l'ordinateur."
 
 msgctxt "sdCtx"
 msgid "Context (tokens)"
-msgstr ""
+msgstr "Contexte (jetons)"
 
 msgctxt "sdAuto"
 msgid "auto"
-msgstr ""
+msgstr "auto"
 
 msgctxt "sdUbatch"
 msgid "Prompt batch"
-msgstr ""
+msgstr "Lot de l'invite"
 
 msgctxt "sdFlash"
 msgid "Flash attention"
-msgstr ""
+msgstr "Flash attention"
 
 msgctxt "sdKvType"
 msgid "Context memory precision"
-msgstr ""
+msgstr "Précision de la mémoire du contexte"
 
 msgctxt "sdLoadMode"
 msgid "Model file"
-msgstr ""
+msgstr "Fichier du modèle"
 
 msgctxt "sdDefault"
 msgid "default"
-msgstr ""
+msgstr "par défaut"
 
 msgctxt "sdNoOpOffload"
 msgid "Compute the weights in the computer's memory there"
-msgstr ""
+msgstr "Calculer sur place les poids gardés dans la mémoire de l'ordinateur"
 
 msgctxt "sdNoOpOffloadHelp"
 msgid "Instead of copying them to the card to read long prompts, which takes card memory."
-msgstr ""
+msgstr "Au lieu de les copier sur la carte pour lire les longues invites, ce qui prend de la mémoire de la carte."
 
 msgctxt "sdKvCpu"
 msgid "Context memory in the computer's memory"
-msgstr ""
+msgstr "Mémoire du contexte dans la mémoire de l'ordinateur"
 
 msgctxt "sdVisionCpu"
 msgid "Vision part on the processor"
-msgstr ""
+msgstr "Partie vision sur le processeur"
 
 msgctxt "sdExtra"
 msgid "More options"
-msgstr ""
+msgstr "Autres options"
 
 msgctxt "sdFitWorking"
 msgid "Working out where it goes…"
-msgstr ""
+msgstr "Calcul de l'emplacement…"
 
 msgctxt "sdFitCard"
 msgid "{name}: {used} of {total}"
-msgstr ""
+msgstr "{name} : {used} sur {total}"
 
 msgctxt "sdFitModel"
 msgid "model {size}"
-msgstr ""
+msgstr "modèle {size}"
 
 msgctxt "sdFitContext"
 msgid "context {size}"
-msgstr ""
+msgstr "contexte {size}"
 
 msgctxt "sdFitScratch"
 msgid "scratch {size}"
-msgstr ""
+msgstr "calculs {size}"
 
 msgctxt "sdFitVision"
 msgid "vision {size}"
-msgstr ""
+msgstr "vision {size}"
 
 msgctxt "sdFitFree"
 msgid "{free} free now"
-msgstr ""
+msgstr "{free} libres maintenant"
 
 msgctxt "sdFitBusy"
 msgid "An engine is running: the card's free memory doesn't count what it would free."
-msgstr ""
+msgstr "Un moteur tourne : la mémoire libre de la carte ne compte pas ce qu'il libérerait."
 
 msgctxt "sdFitRam"
 msgid "Computer's memory: model {model}, context {context}"
-msgstr ""
+msgstr "Mémoire de l'ordinateur : modèle {model}, contexte {context}"
 
 msgctxt "sdFitAll"
 msgid "All of it on the card."
-msgstr ""
+msgstr "Tout sur la carte."
 
 msgctxt "sdFitLayers"
 msgid "{n} layer on the card, {k} of them with experts in the computer's memory"
 msgid_plural "{n} layers on the card, {k} of them with experts in the computer's memory"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "{n} couche sur la carte, dont {k} avec ses experts dans la mémoire de l'ordinateur"
+msgstr[1] "{n} couches sur la carte, dont {k} avec leurs experts dans la mémoire de l'ordinateur"
 
 msgctxt "sdFitLayersOnly"
 msgid "{n} layer on the card"
 msgid_plural "{n} layers on the card"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "{n} couche sur la carte"
+msgstr[1] "{n} couches sur la carte"
 
 msgctxt "sdFitNoCard"
 msgid "No graphics card: all of it in the computer's memory."
-msgstr ""
+msgstr "Pas de carte graphique : tout dans la mémoire de l'ordinateur."
 
 msgctxt "sdFitSkipped"
 msgid "Not known to this engine, left out: {list}"
-msgstr ""
+msgstr "Inconnues de ce moteur, laissées de côté : {list}"
 
 msgctxt "sdFitCtx"
 msgid "Context: {n} tokens"
-msgstr ""
+msgstr "Contexte : {n} jetons"

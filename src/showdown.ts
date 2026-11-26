@@ -29,7 +29,7 @@ import {
 } from "./engine-profile.ts";
 import { msg } from "./i18n.ts";
 import { keyOf, type Library } from "./library.ts";
-import { type Example, Model, type ModelConfig, type ModelKind, pageMessages } from "./model.ts";
+import { type Delta, type Example, Model, type ModelConfig, type ModelKind, pageMessages } from "./model.ts";
 import { cleanLatex, langPrompt } from "./pipeline.ts";
 import { scorePage } from "./score.ts";
 
@@ -67,6 +67,8 @@ export interface Reading {
   /** The prompt (instructions, examples, picture): its tokens read and the seconds that took; null when not known. */
   promptTokens?: number | null;
   promptSecs?: number | null;
+  /** All the prompt's tokens (the ones the engine had already from the reading before too); null when not known. */
+  inTokens?: number | null;
   /** "length": cut at the most it may write. */
   finish: string;
   /** The instructions it was read with (their key, Library keyOf) and the picture's version (Page.pic). */
@@ -95,6 +97,20 @@ export interface Score {
 }
 
 export type CellState = "none" | "queued" | "working" | "failed" | "done";
+
+/**
+ * The reading being made, as it comes (the open cell shows it): reading the prompt (no word yet), thinking, or
+ * writing; the thinking and text so far, their tokens, and when the first came (the prompt read).
+ */
+export interface Live {
+  phase: "prompt" | "thinking" | "writing";
+  thinking: string;
+  text: string;
+  thinkTokens: number;
+  textTokens: number;
+  /** Seconds since 1970 (as `started`); null while the prompt is read. */
+  firstAt: number | null;
+}
 
 interface Job {
   lib: Library;
@@ -158,6 +174,8 @@ export class Showdown {
   #jobs: Job[] = [];
   #working: (Job & { started: number }) | null = null;
   #abort: AbortController | null = null;
+  /** What the reading being made has said so far (null: none made, or its model still loading). */
+  #live: Live | null = null;
   /** The contender the engine holds now ("" none). */
   #inEngine = "";
   /** A reading stopped the app's model while it was loaded: it's loaded again when the readings are done. */
@@ -458,6 +476,7 @@ export class Showdown {
         contender: this.#working.contender,
         page: this.#working.page,
         started: this.#working.started,
+        phase: this.#live?.phase ?? null,
       },
       queued: this.#jobs.filter((j) => j.lib === lib).length,
       /** Nothing is read until the engine and the model are downloaded (core.ts #loop): the window says so. */
@@ -619,30 +638,52 @@ export class Showdown {
         examples.push({ jpeg: await readFile(lib.scanPath(id)), text: (await this.answer(lib, id)).trim() });
       await this.engine.ensure(); // loaded first: a reading's time is the reading's alone
       const t0 = Date.now();
+      const live: Live = {
+        phase: "prompt",
+        thinking: "",
+        text: "",
+        thinkTokens: 0,
+        textTokens: 0,
+        firstAt: null,
+      };
+      this.#live = live;
+      this.#core.changed();
+      const onDelta = (d: Delta) => {
+        const phase = d.text.trim() ? "writing" : d.thinking ? "thinking" : live.phase;
+        Object.assign(live, d);
+        if ((d.thinkTokens || d.textTokens) && live.firstAt === null) live.firstAt = Date.now() / 1000;
+        if (phase !== live.phase) {
+          live.phase = phase;
+          this.#core.changed(); // the window shows what it does now (the words themselves are asked for: live())
+        }
+      };
       let raw: string,
         thinking = "",
         finish: string,
         tokens: number | null,
         tps: number | null,
         promptTokens: number | null,
-        promptSecs: number | null;
+        promptSecs: number | null,
+        inTokens: number | null;
       if (c.think) {
         // streamed (a long thinking outlasts a plain request's wait), at Qwen's settings for thinking
         const r = await this.engine.chat(
           pageMessages(jpeg, prompt, examples),
-          { think: true, maxTokens: THINK_TOKENS, onDelta: () => {} },
+          { think: true, maxTokens: THINK_TOKENS, onDelta },
           abort.signal,
         );
-        ({ text: raw, thinking, finish, tokens, tps, promptTokens, promptSecs } = r);
+        ({ text: raw, thinking, finish, tokens, tps, promptTokens, promptSecs, inTokens } = r);
       } else
         ({
           text: raw,
+          thinking,
           finish,
           tokens,
           tps,
           promptTokens,
           promptSecs,
-        } = await this.engine.read(jpeg, prompt, abort.signal, examples));
+          inTokens,
+        } = await this.engine.read(jpeg, prompt, abort.signal, examples, onDelta));
       const secs = (Date.now() - t0) / 1000;
       const text = cleanLatex(raw);
       const dir = this.#dir(lib, c.id);
@@ -671,6 +712,7 @@ export class Showdown {
         tps,
         promptTokens,
         promptSecs,
+        inTokens,
         finish,
         prompt: keyOf(prompt),
         combo: comboKey(c),
@@ -696,6 +738,7 @@ export class Showdown {
       }
     } finally {
       this.#working = null;
+      this.#live = null;
       this.#abort = null;
       if (!this.next(lib)) this.#done();
       this.#core.changed();
@@ -731,10 +774,23 @@ export class Showdown {
               started: w.started,
               here: w.lib === this.#core.lib,
               loading: this.engine.status === "starting",
+              phase: this.#live?.phase ?? null,
             }
           : null,
       queued: this.#jobs.length,
     };
+  }
+
+  /**
+   * The reading being made in `lib`, as it comes: what it has said so far (`words`), or only how far it is (the
+   * status bar); null when none is made there, or its model is still loading.
+   */
+  live(lib: Library, words: boolean) {
+    const w = this.#working,
+      l = this.#live;
+    if (!w || !l || w.lib !== lib) return null;
+    const { thinking, text, ...rest } = l;
+    return { contender: w.contender, page: w.page, ...rest, ...(words ? { thinking, text } : {}) };
   }
 
   /** Inktyset quits. */

@@ -2251,6 +2251,62 @@ msgid_plural "{n} tokens"
 msgstr[0] ""
 msgstr[1] ""
 
+msgctxt "sdInOut"
+msgid "{i} tokens in · {o} out"
+msgstr ""
+
+msgctxt "sdInOutTitle"
+msgid "Tokens read (the instructions, the examples and the picture) and written (its thinking too). Tokens are the pieces of words a model reads and writes."
+msgstr ""
+
+msgctxt "sdPhasePrompt"
+msgid "reading the prompt"
+msgstr ""
+
+msgctxt "sdPhaseThinking"
+msgid "thinking"
+msgstr ""
+
+msgctxt "sdPhaseWriting"
+msgid "writing"
+msgstr ""
+
+msgctxt "sdThoughtN"
+msgid "{n} token thought"
+msgid_plural "{n} tokens thought"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "sdWrittenN"
+msgid "{n} token written"
+msgid_plural "{n} tokens written"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "sdSpeed"
+msgid "{n} tok/s"
+msgstr ""
+
+msgctxt "sdWatchTitle"
+msgid "Watch it read: its thinking and its LaTeX as they come"
+msgstr ""
+
+msgctxt "sdLiveHead"
+msgid "Its LaTeX, as it is written"
+msgstr ""
+
+msgctxt "sdLivePreview"
+msgid "The preview comes when it is done."
+msgstr ""
+
+msgctxt "sdLiveWaiting"
+msgid "No words yet: it is reading the prompt (the instructions, the picture, and the examples if any)."
+msgstr ""
+
+msgctxt "sdLiveLoading"
+msgid "Loading the model…"
+msgstr ""
+
 msgctxt "sdEngine"
 msgid "Engine options"
 msgstr ""

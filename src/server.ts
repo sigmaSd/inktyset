@@ -547,6 +547,9 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         return send(res, 200, { spots: await core.previewSpots(sm[1], q("line")) });
       }
       if (path === "/api/showdown") return send(res, 200, await core.showdown.state(core.lib));
+      // the reading being made, as it comes: its words (?words=1, the open cell), or only how far it is
+      if (path === "/api/showdown/live")
+        return send(res, 200, core.showdown.live(core.lib, url.searchParams.get("words") === "1"));
       // one reading of the showdown: its text, its thinking, and the user's text it is scored against
       if (path === "/api/showdown/cell") {
         const c = url.searchParams.get("c") ?? "",

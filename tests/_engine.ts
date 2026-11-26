@@ -1,13 +1,13 @@
 // A stand-in for llama-server, for the tests that start and stop engines: it answers /health and reads every page
 // as nothing, writes "start <pid>" and "exit <pid>" to engine-events.txt beside it (and the options it was started
 // with to engine-args.json), knows two options in its --help, and takes a moment to exit when stopped, as a real
-// engine freeing its memory does.
+// engine freeing its memory does. With `words`, it streams them instead (when asked to), a moment apart.
 
 import { chmodSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const PROGRAM = `#!${process.execPath}
-import { appendFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { dirname, join } from "node:path";
 const events = join(dirname(process.argv[1]), "engine-events.txt");
@@ -22,10 +22,19 @@ const port = Number(args[args.indexOf("--port") + 1]);
 appendFileSync(events, "start " + process.pid + "\\n");
 createServer((req, res) => {
   if (req.url === "/health") return res.end("{}");
-  req.resume();
-  req.on("end", () =>
-    res.end(JSON.stringify({ choices: [{ message: { content: "" }, finish_reason: "stop" }] })),
-  );
+  let body = "";
+  req.on("data", (c) => (body += c));
+  req.on("end", async () => {
+    const words = join(dirname(process.argv[1]), "words.json");
+    if (!JSON.parse(body).stream || !existsSync(words))
+      return res.end(JSON.stringify({ choices: [{ message: { content: "" }, finish_reason: "stop" }] }));
+    res.writeHead(200, { "content-type": "text/event-stream" });
+    for (const delta of JSON.parse(readFileSync(words, "utf8"))) {
+      await new Promise((ok) => setTimeout(ok, 250));
+      res.write("data: " + JSON.stringify({ choices: [{ delta }] }) + "\\n\\n");
+    }
+    res.end("data: " + JSON.stringify({ choices: [{ delta: {}, finish_reason: "stop" }] }) + "\\n\\ndata: [DONE]\\n\\n");
+  });
 }).listen(port, "127.0.0.1");
 setTimeout(() => process.exit(0), 60_000).unref(); // never left running by a test that failed
 process.on("SIGTERM", () =>
@@ -37,9 +46,10 @@ process.on("SIGTERM", () =>
 `;
 
 /** The fake engine in `dir`, with a model and vision file for it to "load". */
-export function fakeEngine(dir: string) {
+export function fakeEngine(dir: string, words?: { content?: string; reasoning_content?: string }[]) {
   const bin = join(dir, "llama-server.mjs");
   writeFileSync(bin, PROGRAM);
+  if (words) writeFileSync(join(dir, "words.json"), JSON.stringify(words));
   chmodSync(bin, 0o755);
   const modelFile = join(dir, "model.gguf");
   const mmprojFile = join(dir, "mmproj.gguf");

@@ -2205,6 +2205,29 @@ html:has(#showdown[open]) {
   border-radius: 8px;
   padding: 10px;
 }
+/* the text pane's label holds the score and a box: a bar across it, so the text doesn't show around it */
+.sdc-pane .pane-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 0;
+  border-radius: 8px;
+}
+/* being read: its thinking above its text, as it comes first */
+.sdc-pane.live > .pane-label {
+  order: -2;
+}
+.sdc-pane.live > #sdcThinking {
+  order: -1;
+}
+.sdc-pane pre.waiting {
+  color: var(--muted);
+  font-style: italic;
+}
+.sd-cell.sd-live {
+  cursor: pointer;
+}
 .sdc-pane del {
   background: color-mix(in srgb, var(--bad) 22%, transparent);
   text-decoration: line-through;

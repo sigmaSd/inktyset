@@ -984,6 +984,15 @@ function compareActivity() {
         t(w.loading ? "sdStatusLoading" : "sdStatusReading", { m: w.model, p: w.page }) +
           (w.here ? "" : ` (${t("sdOtherSession")})`),
         mmss(Date.now() / 1000 - w.started),
+        w.loading || !w.phase
+          ? ""
+          : t(
+              w.phase === "prompt"
+                ? "sdPhasePrompt"
+                : w.phase === "thinking"
+                  ? "sdPhaseThinking"
+                  : "sdPhaseWriting",
+            ),
         c.queued ? t("sdStatusMore", { n: c.queued }) : "",
       ]
         .filter(Boolean)
