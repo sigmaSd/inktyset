@@ -1,6 +1,6 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { expect, test } from "vite-plus/test";
 import { fakeEngine } from "./_engine.ts";
 import { scratch } from "./_env.ts";
@@ -395,10 +395,17 @@ test.skipIf(process.platform === "win32")(
       expect(seen[1].thinking).toBe("a sum");
       expect((await sd.state(lib)).working?.phase).toBe("writing");
       expect(sd.live(lib, false)).not.toHaveProperty("text"); // only how far, for the status bar
+      // stopped there (done, its text would be compiled: no TeX on every computer)
+      sd.stop(lib, { contender: c, page });
       await run;
       expect(sd.live(lib, true)).toBeNull();
-      expect((await sd.text(lib, c, page)).trim()).toBe("$a + b = c$");
-      expect(await sd.thinking(lib, c, page)).toBe("a sum of two"); // kept, though it wasn't asked to think
+      expect(await sd.reading(lib, c, page)).toBeNull();
+
+      // thinking it wasn't asked for is kept (Inkling 2 thinks anyway); a reading that writes nothing isn't compiled
+      writeFileSync(join(dirname(fake.bin), "words.json"), JSON.stringify([{ reasoning_content: "a sum" }]));
+      await sd.run({ lib, contender: c, page });
+      expect(await sd.reading(lib, c, page)).toMatchObject({ empty: true });
+      expect(await sd.thinking(lib, c, page)).toBe("a sum");
     } finally {
       await sd.engine.stop();
     }
