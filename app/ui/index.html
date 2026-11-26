@@ -442,13 +442,13 @@
         </button>
         <h2 data-i18n="compareModels">Compare models</h2>
         <span class="chip" id="sdCounts"></span>
-        <span class="note" id="sdProgress"></span>
         <span class="spacer"></span>
         <button data-sd="add" data-i18n="sdAdd">Add a model…</button>
         <button data-sd="stop" id="sdStop" hidden data-i18n="sdStop">Stop</button>
         <button class="primary" data-sd="read" id="sdRead" hidden></button>
       </div>
       <div class="sd-body" id="sdBody"></div>
+      <div class="sd-status" id="sdStatus" aria-live="polite"></div>
     </dialog>
 
     <dialog id="sdCell" class="sd-cell-dialog">
@@ -486,6 +486,10 @@
         <div class="sdc-pane">
           <div class="pane-label">
             <span id="sdcTextHead"></span> <span class="note" id="sdcScore"></span>
+            <label class="sdc-every" id="sdcEveryBox" hidden
+              ><input type="checkbox" id="sdcEvery" />
+              <span data-i18n="sdEveryDiff">Every difference, layout too</span></label
+            >
           </div>
           <pre class="diff" id="sdcText" dir="auto"></pre>
           <details id="sdcThinking" hidden>
@@ -576,6 +580,93 @@
           ></span>
           <input type="number" id="sdExamples" min="0" step="1" value="0" dir="ltr"
         /></label>
+        <details class="sd-engine" id="sdEngine">
+          <summary>
+            <b data-i18n="sdEngine">Engine options</b
+            ><small data-i18n="sdEngineHelp"
+              >How llama.cpp is started for this model: what goes on the graphics card, and what stays in the
+              computer's memory.</small
+            >
+          </summary>
+          <div class="sd-engine-grid">
+            <label
+              ><span data-i18n="sdCtx">Context (tokens)</span>
+              <input
+                type="number"
+                id="sdCtx"
+                min="1024"
+                step="1024"
+                placeholder="auto"
+                data-i18n-ph="sdAuto"
+                dir="ltr"
+            /></label>
+            <label
+              ><span><span data-i18n="sdUbatch">Prompt batch</span> <code>-ub</code></span>
+              <input type="number" id="sdUbatch" min="1" step="64" placeholder="512" dir="ltr"
+            /></label>
+            <label
+              ><span><span data-i18n="sdFlash">Flash attention</span> <code>-fa</code></span>
+              <select id="sdFlash" dir="ltr">
+                <option value="" data-i18n="sdDefault">default</option>
+                <option value="on">on</option>
+                <option value="off">off</option>
+                <option value="auto">auto</option>
+              </select></label
+            >
+            <label
+              ><span><span data-i18n="sdKvType">Context memory precision</span> <code>-ctk -ctv</code></span>
+              <select id="sdKvType" dir="ltr">
+                <option value="" data-i18n="sdDefault">default</option>
+                <option value="f16">f16</option>
+                <option value="q8_0">q8_0</option>
+                <option value="q4_0">q4_0</option>
+              </select></label
+            >
+            <label
+              ><span><span data-i18n="sdLoadMode">Model file</span> <code>--load-mode</code></span>
+              <select id="sdLoadMode" dir="ltr">
+                <option value="" data-i18n="sdDefault">default</option>
+                <option value="none">none</option>
+                <option value="mmap">mmap</option>
+                <option value="mlock">mlock</option>
+              </select></label
+            >
+          </div>
+          <label class="sd-check"
+            ><input type="checkbox" id="sdNoOpOffload" />
+            <span
+              ><b
+                ><span data-i18n="sdNoOpOffload">Compute the weights in the computer's memory there</span>
+                <code>--no-op-offload</code></b
+              ><small data-i18n="sdNoOpOffloadHelp"
+                >Instead of copying them to the card to read long prompts, which takes card memory.</small
+              ></span
+            ></label
+          >
+          <label class="sd-check"
+            ><input type="checkbox" id="sdKvCpu" />
+            <span
+              ><b
+                ><span data-i18n="sdKvCpu">Context memory in the computer's memory</span>
+                <code>-nkvo</code></b
+              ></span
+            ></label
+          >
+          <label class="sd-check"
+            ><input type="checkbox" id="sdVisionCpu" />
+            <span
+              ><b
+                ><span data-i18n="sdVisionCpu">Vision part on the processor</span>
+                <code>--no-mmproj-offload</code></b
+              ></span
+            ></label
+          >
+          <label class="sd-extra"
+            ><span data-i18n="sdExtra">More options</span>
+            <input id="sdExtra" placeholder="--top-k 20" dir="ltr" spellcheck="false"
+          /></label>
+          <div class="sd-fit" id="sdFit" aria-live="polite"></div>
+        </details>
         <div class="sd-prompt">
           <b data-i18n="sdInstructions">Instructions</b>
           <label class="choice"

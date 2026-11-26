@@ -9,7 +9,7 @@ import { Core } from "../src/core.ts";
 import { distance } from "../src/diff.ts";
 import { keyOf } from "../src/library.ts";
 import { pageMessages } from "../src/model.ts";
-import { comboKey } from "../src/showdown.ts";
+import { comboKey, type Contender } from "../src/showdown.ts";
 
 test("distance: spacing aside, the share of tokens that differ", () => {
   expect(distance("\\frac{a}{b}", "\\frac { a } { b }")).toBe(0);
@@ -311,4 +311,59 @@ test.skipIf(process.platform === "win32")(
     }
   },
   20_000, // engines started one after another, each a second or so
+);
+
+test("showdown: a column's engine options make it another column, with its own key; an edit without them keeps them", async () => {
+  const { core } = await setup("showdown-profile");
+  const sd = core.showdown;
+  const plain: Omit<Contender, "id"> = { kind: "builtin", think: false };
+  expect(comboKey({ ...plain, engine: undefined })).toBe(comboKey(plain)); // readings from before stay current
+  expect(comboKey({ ...plain, engine: { ubatch: 256 } })).not.toBe(comboKey(plain));
+  const tuned = await sd.add({ ...plain, engine: { ubatch: 256, kvType: "q9" as "q8_0" } });
+  expect(sd.contenders.find((c) => c.id === tuned)?.engine).toEqual({ ubatch: 256 }); // checked
+  expect(await sd.add({ ...plain, engine: { ubatch: 256 } })).toBe(tuned); // the same: once
+  // a server's model isn't started by us: no options
+  const server = await sd.add({
+    kind: "server",
+    url: "http://127.0.0.1:1",
+    think: false,
+    engine: { ubatch: 256 },
+  });
+  expect(sd.contenders.find((c) => c.id === server)?.engine).toBeUndefined();
+  // the window edits a column without knowing its engine options: they stay
+  await sd.edit(tuned, { ...plain, prompt: "Read it." });
+  expect(sd.contenders.find((c) => c.id === tuned)).toMatchObject({
+    prompt: "Read it.",
+    engine: { ubatch: 256 },
+  });
+  await sd.edit(tuned, { ...plain, engine: undefined });
+  expect(sd.contenders.find((c) => c.id === tuned)?.engine).toBeUndefined();
+});
+
+// (a script run as a program: not on Windows)
+test.skipIf(process.platform === "win32")(
+  "showdown: a column's engine options start its engine, as the engine names them; those it doesn't know are left out and kept on the reading",
+  async () => {
+    const { core, lib, page } = await setup("showdown-profile-run");
+    const fake = fakeEngine(scratch("showdown-profile-engine"));
+    const files = { modelFile: fake.modelFile, mmprojFile: fake.mmprojFile };
+    await core.setSettings({ serverPath: fake.bin });
+    const sd = core.showdown;
+    const c = await sd.add({
+      kind: "files",
+      ...files,
+      think: false,
+      engine: { ctx: 32768, ubatch: 256, opOffload: false, extra: "--nonsense 1" },
+    });
+    try {
+      await sd.run({ lib, contender: c, page });
+      const args = fake.args();
+      expect(args.slice(args.indexOf("-c"), args.indexOf("-c") + 2)).toEqual(["-c", "32768"]);
+      expect(args.slice(-3)).toEqual(["-ub", "256", "--no-op-offload"]);
+      expect(await sd.reading(lib, c, page)).toMatchObject({ skipped: ["--nonsense 1"] });
+    } finally {
+      await sd.engine.stop();
+    }
+  },
+  20_000, // an engine started, a second or so
 );

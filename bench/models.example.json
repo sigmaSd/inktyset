@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Qwen3.5 9B (Inktyset's)",
+    "model": "~/.config/Inktyset/components/model/Qwen3.5-9B-Q4_K_M.gguf",
+    "mmproj": "~/.config/Inktyset/components/model/mmproj-F16.gguf"
+  },
+  {
+    "name": "Inkling 2 Mini Q4_K_XL",
+    "model": "~/models/inkling2-mini/Inkling-2-Mini-UD-Q4_K_XL.gguf",
+    "mmproj": "~/models/inkling2-mini/mmproj-F16.gguf"
+  },
+  {
+    "name": "Inkling 2 Mini Q4_K_XL, tuned",
+    "model": "~/models/inkling2-mini/Inkling-2-Mini-UD-Q4_K_XL.gguf",
+    "mmproj": "~/models/inkling2-mini/mmproj-F16.gguf",
+    "engine": { "opOffload": false, "ubatch": 256 }
+  }
+]

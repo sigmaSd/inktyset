@@ -1,16 +1,23 @@
 // A stand-in for llama-server, for the tests that start and stop engines: it answers /health and reads every page
-// as nothing, writes "start <pid>" and "exit <pid>" to engine-events.txt beside it, and takes a moment to exit when
-// stopped, as a real engine freeing its memory does.
+// as nothing, writes "start <pid>" and "exit <pid>" to engine-events.txt beside it (and the options it was started
+// with to engine-args.json), knows two options in its --help, and takes a moment to exit when stopped, as a real
+// engine freeing its memory does.
 
 import { chmodSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const PROGRAM = `#!${process.execPath}
-import { appendFileSync } from "node:fs";
+import { appendFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { dirname, join } from "node:path";
 const events = join(dirname(process.argv[1]), "engine-events.txt");
 const args = process.argv.slice(2);
+if (args.includes("--help")) {
+  console.log("-ub,   --ubatch-size N                  physical maximum batch size");
+  console.log("--op-offload, --no-op-offload           whether to offload host tensor operations");
+  process.exit(0);
+}
+writeFileSync(join(dirname(process.argv[1]), "engine-args.json"), JSON.stringify(args));
 const port = Number(args[args.indexOf("--port") + 1]);
 appendFileSync(events, "start " + process.pid + "\\n");
 createServer((req, res) => {
@@ -42,6 +49,8 @@ export function fakeEngine(dir: string) {
     bin,
     modelFile,
     mmprojFile,
+    /** The options the last engine started was given. */
+    args: (): string[] => JSON.parse(readFileSync(join(dir, "engine-args.json"), "utf8")),
     /** What its engines did, in order: ["start 12", "exit 12", …]. */
     events: (): string[] => {
       try {

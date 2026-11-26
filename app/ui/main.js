@@ -938,7 +938,7 @@ function renderStatusLine() {
   const done = pages.filter((p) => p.status === "done").length;
   const el = $("#statusLine");
   if (!pages.length && !S.intake) {
-    el.innerHTML = "";
+    el.innerHTML = compareActivity(); // (reading in another session)
     return;
   }
   let html = `<span>${t("pagesDone", { done: `<strong>${done}</strong>`, n: pages.length })}</span>`;
@@ -950,7 +950,10 @@ function renderStatusLine() {
         ? ` <button class="ghost compare" data-act="compareNext">${t("proofreadNext")}</button>`
         : "") +
       ` <button class="ghost" data-act="readAgainMany" title="${t("readAgainManyTitle")}">${t("readAgainMany")}</button>`;
-  if (pages.length)
+  // Compare: what it is reading when it reads (the way into it too), else the way into it
+  const compare = compareActivity();
+  if (compare) html += compare;
+  else if (pages.length)
     html += ` <button class="ghost" data-act="showdown" title="${t("compareModelsTitle")}">${t("compareModels")}</button>`;
   if (working || queued || S.intake) {
     const elapsed = working ? Date.now() / 1000 - working.started : 0;
@@ -968,6 +971,24 @@ function renderStatusLine() {
   if (trials)
     html += `<span>· ${t("trialsLeft", { n: trials })} <button class="ghost" data-act="stopTrials">${t("stopTrials")}</button></span>`;
   el.innerHTML = html;
+}
+
+/** Compare models reading on while the pages are shown (src/showdown.ts activity): said, and a way back to it. */
+function compareActivity() {
+  const c = S.compare;
+  if (!c?.working && !c?.queued) return "";
+  const w = c.working;
+  const what = !w
+    ? t("sdLeft", { n: c.queued })
+    : [
+        t(w.loading ? "sdStatusLoading" : "sdStatusReading", { m: w.model, p: w.page }) +
+          (w.here ? "" : ` (${t("sdOtherSession")})`),
+        mmss(Date.now() / 1000 - w.started),
+        c.queued ? t("sdStatusMore", { n: c.queued }) : "",
+      ]
+        .filter(Boolean)
+        .join(" · ");
+  return ` <button class="ghost compare-activity" data-act="showdown" title="${esc(t("compareModelsTitle"))}"><b>${t("compareModels")}</b> ${esc(what)}</button>`;
 }
 
 function pageNumber(id) {
@@ -1192,7 +1213,7 @@ function tick() {
         b = el && $(".elapsed", el);
       if (b) b.textContent = mmss(Date.now() / 1000 - p.started);
     }
-  if (S.pages.some((p) => p.status === "working")) renderStatusLine();
+  if (S.pages.some((p) => p.status === "working") || S.compare?.working) renderStatusLine();
   if ($("#phoneDialog").open) renderPhoneDialog();
 }
 

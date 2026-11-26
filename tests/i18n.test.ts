@@ -7,6 +7,9 @@ import { APP_LOCALES, appTemplate, merge, siteTemplate } from "../tools/i18n.ts"
 import { render, SITE_LOCALES } from "../tools/site.ts";
 
 const SHIPPED = ["fr", "ar"]; // complete in every release
+// a release's tests (release.yml) fail on an entry French or Arabic doesn't have yet; elsewhere it is a warning, so
+// new English can land before its translations
+const STRICT = process.env.INKTYSET_I18N_STRICT === "1";
 const names = (s: string) => new Set([...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]));
 
 async function catalogs(dir: string) {
@@ -35,16 +38,17 @@ test("i18n: every catalog is merged with its template", async () => {
     }
 });
 
-test("i18n: French and Arabic are complete, keep every {name}, and the app's hold no markup", async () => {
+test("i18n: French and Arabic keep every {name}, the app's hold no markup, and what they miss is said", async () => {
+  const missing: string[] = [];
   for (const dir of [APP_LOCALES, SITE_LOCALES])
     for (const { lang, cat } of await catalogs(dir)) {
       const forms = pluralRule(cat.headers["Plural-Forms"]).count;
       for (const e of cat.entries) {
         const where = `${lang}.po ${e.ctx}`;
-        if (SHIPPED.includes(lang)) {
-          expect(e.fuzzy, where).toBe(false);
-          expect(e.str.every(Boolean), where).toBe(true);
-        }
+        if (SHIPPED.includes(lang) && (e.fuzzy || !e.str.every(Boolean)))
+          missing.push(
+            `${dir === APP_LOCALES ? "app" : "site"}/${where}${e.fuzzy ? " (English changed)" : ""}`,
+          );
         if (e.plural !== undefined) expect(e.str.length, where).toBe(forms);
         const english = new Set([...names(e.id), ...names(e.plural ?? "")]);
         for (const s of e.str.filter(Boolean)) {
@@ -60,6 +64,12 @@ test("i18n: French and Arabic are complete, keep every {name}, and the app's hol
         }
       }
     }
+  if (STRICT) expect(missing, "French and Arabic must be complete in a release").toEqual([]);
+  // (written straight out: the test runner hides a passing test's console)
+  else if (missing.length)
+    process.stderr.write(
+      `\n⚠ Not translated yet: ${missing.length} (shown in English until they are; a release fails)\n  ${missing.join("\n  ")}\n\n`,
+    );
 });
 
 test("i18n: plural forms are chosen by the catalog's own rule", () => {

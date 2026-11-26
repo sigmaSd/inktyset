@@ -19,7 +19,10 @@ async function fakeServer() {
       const send = (o: unknown) => res.write(`data: ${JSON.stringify(o)}\n\n`);
       send({ choices: [{ delta: { content: "$a" } }] });
       send({ choices: [{ delta: { content: " + b$" }, finish_reason: "stop" }] });
-      send({ choices: [], timings: { predicted_n: 7, predicted_per_second: 40 } });
+      send({
+        choices: [],
+        timings: { predicted_n: 7, predicted_per_second: 40, prompt_n: 120, prompt_ms: 1500 },
+      });
       res.end("data: [DONE]\n\n");
     });
   });
@@ -31,7 +34,7 @@ async function fakeServer() {
   };
 }
 
-test("reading with examples streams (a long request isn't cut off by fetch's wait); without, it doesn't", async () => {
+test("reading with examples streams (a long request isn't cut off by fetch's wait); without, it doesn't; the prompt's time is kept when the engine says it", async () => {
   const srv = await fakeServer();
   try {
     const model = new Model(scratch("model-stream"), () => {});
@@ -41,10 +44,18 @@ test("reading with examples streams (a long request isn't cut off by fetch's wai
 
     const plain = await model.read(page, "Read it.", signal);
     expect(plain.text).toBe("$x$");
+    expect(plain).toMatchObject({ promptTokens: null, promptSecs: null }); // the server didn't say
     expect(srv.asked[0].stream).toBeUndefined();
 
     const r = await model.read(page, "Read it.", signal, [{ jpeg: Buffer.from("ex"), text: "$e$" }]);
-    expect(r).toMatchObject({ text: "$a + b$", finish: "stop", tokens: 7, tps: 40 });
+    expect(r).toMatchObject({
+      text: "$a + b$",
+      finish: "stop",
+      tokens: 7,
+      tps: 40,
+      promptTokens: 120,
+      promptSecs: 1.5,
+    });
     expect(srv.asked[1].stream).toBe(true);
     expect(srv.asked[1].messages).toHaveLength(3); // the example asked and answered, then the page
   } finally {

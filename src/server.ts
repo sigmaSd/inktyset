@@ -12,6 +12,7 @@ import type { ComponentId } from "./components.ts";
 import { bundled, sizeOf, supported } from "./components.ts";
 import { currentLang, msg, nativeName } from "./i18n.ts";
 import { type Core, DEFAULT_PROMPT } from "./core.ts";
+import type { EngineProfile } from "./engine-profile.ts";
 import { Model } from "./model.ts";
 import { CSP, guard, newSecret } from "./guard.ts";
 import { checkLocalUrl } from "./local.ts";
@@ -95,6 +96,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
       settings: core.lib.settings,
       languages: Object.entries(LANGS).map(([id, l]) => ({ id, name: l.name })),
       avgSecs: recent.length ? recent.reduce((a, b) => a + b, 0) / recent.length : 90,
+      compare: core.showdown.activity(), // reading on while the pages are shown
       model: {
         status: core.model.status,
         detail: core.model.detail,
@@ -303,7 +305,7 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
     }
     if (path === "/api/trial/cancel") return (core.cancelTrials(), { ok: true });
     // compare models (src/showdown.ts)
-    if (path === "/api/showdown/add" || path === "/api/showdown/edit") {
+    if (path === "/api/showdown/add" || path === "/api/showdown/edit" || path === "/api/showdown/fit") {
       const kind = String(body.kind);
       if (kind !== "builtin" && kind !== "files" && kind !== "server") throw new Error("unknown kind");
       const str = (k: string) => (typeof body[k] === "string" ? (body[k] as string) : undefined);
@@ -317,7 +319,10 @@ export async function serve(core: Core, uiDir: string): Promise<Served> {
         think: body.think === true,
         prompt: str("prompt"), // none: Settings' instructions
         examples: Number(body.examples) || 0,
+        // none sent: an edit keeps the column's own (src/showdown.ts checks them)
+        ...("engine" in body ? { engine: body.engine as EngineProfile | undefined } : {}),
       } as const;
+      if (path === "/api/showdown/fit") return await core.showdown.fit(column);
       if (path === "/api/showdown/edit")
         return (await core.showdown.edit(String(body.id), column), { id: body.id });
       return { id: await core.showdown.add(column) };

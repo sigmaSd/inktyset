@@ -1,0 +1,10 @@
+[
+  {
+    "id": "kalika-60",
+    "about": "Linear algebra notes: a sum and a composition of maps, nilpotent operators (show-through from the back, a watermark, printed header and footer)",
+    "pdf": "https://huggingface.co/datasets/HumynLabs/English-Handwritten-Math-Notes-Dataset/resolve/main/linear-algebra-kalika102pages-60.pdf",
+    "sha256": "0cec5a03703af3d85311adfe95eabbda5b8c3819d35ca7a24626edeffdd0e831",
+    "source": "HumynLabs, English Handwritten Math Notes Dataset (https://huggingface.co/datasets/HumynLabs/English-Handwritten-Math-Notes-Dataset)",
+    "license": "CC BY 4.0"
+  }
+]

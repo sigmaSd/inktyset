@@ -36,6 +36,8 @@ export interface ModelConfig {
   apiKey?: string;
   /** How many tokens the engine holds (the instructions, the picture and the answer): more to think first. */
   ctx?: number;
+  /** More options for our engine, after its own (src/engine-profile.ts: a Compare column's). */
+  args?: string[];
 }
 
 /** "http://host:11434" or ".../v1/" → "http://host:11434/v1": where the OpenAI-style API is. */
@@ -126,8 +128,9 @@ export class Model {
     this.#changed();
   }
 
-  async serverPath(): Promise<string | null> {
-    if (this.config.serverPath) return existsSync(this.config.serverPath) ? this.config.serverPath : null;
+  /** The engine program (null: not downloaded), for this model's settings or others'. */
+  async serverPath(config = this.config): Promise<string | null> {
+    if (config.serverPath) return existsSync(config.serverPath) ? config.serverPath : null;
     return await programPath(this.#base, "engine");
   }
 
@@ -203,6 +206,7 @@ export class Model {
       "--no-webui",
       "--api-key",
       this.#key,
+      ...(this.config.args ?? []),
     ];
     this.#set("starting");
     const proc = spawn(bin, args, { stdio: ["ignore", "pipe", "pipe"], windowsHide: true });
@@ -479,14 +483,21 @@ export function pageMessages(jpeg: Buffer, prompt: string, examples: Example[] =
 /** What an answer tells of its making: the tokens written (OpenAI's usage), and llama.cpp's own timings. */
 interface Usage {
   usage?: { completion_tokens?: number };
-  timings?: { predicted_n?: number; predicted_per_second?: number };
+  timings?: { predicted_n?: number; predicted_per_second?: number; prompt_n?: number; prompt_ms?: number };
 }
 
-/** Tokens written, and how fast (tokens a second, the writing alone): null where the server doesn't say. */
-function speed(u: Usage): { tokens: number | null; tps: number | null } {
+/**
+ * Tokens written, and how fast (tokens a second, the writing alone); the prompt's tokens read (those the engine
+ * didn't have already from the request before) and the seconds it took to read them: null where the server
+ * doesn't say (only llama.cpp does).
+ */
+function speed(u: Usage) {
+  const ms = u.timings?.prompt_ms;
   return {
     tokens: u.timings?.predicted_n ?? u.usage?.completion_tokens ?? null,
     tps: u.timings?.predicted_per_second ?? null,
+    promptTokens: u.timings?.prompt_n ?? null,
+    promptSecs: typeof ms === "number" ? ms / 1000 : null,
   };
 }
 

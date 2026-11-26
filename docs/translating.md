@@ -50,7 +50,9 @@ translator confirms it).
 - `node tools/i18n.ts` writes the templates from the English and merges them into every `.po`.
 - `node tools/i18n.ts --new nl` starts a language.
 - `node tools/site.ts` builds the website in every language into `_site/` (the Pages workflow does this).
-- `vp test` fails when a template is out of date, or when French or Arabic misses an entry or a `{name}`.
+- `vp test` fails when a template is out of date, or when a translation loses a `{name}`; it warns when French
+  or Arabic misses an entry (or its English changed), and fails then only for a release
+  (`INKTYSET_I18N_STRICT=1`, set by the release workflow).
 
 The project can also be connected to [Weblate](https://hosted.weblate.org) (free for free software), so
 translators work in the browser: one component per folder, file format "gettext PO", file mask

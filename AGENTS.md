@@ -6,4 +6,4 @@
 - Temporary files go in ~/dev/tmp, never /tmp.
 - Every word the app or the website shows is translated (docs/translating.md): new or changed English goes in
   src/i18n.ts, app/ui/i18n.ts or site/index.html (data-t), then `node tools/i18n.ts` and a French and Arabic
-  translation in locales/{app,site}/*.po. `vp test` fails until they are there.
+  translation in locales/{app,site}/*.po. `vp test` warns until they are there (a release's fails).

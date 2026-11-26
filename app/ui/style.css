@@ -147,8 +147,9 @@ header :is(button, input, select, textarea, a, label) {
 .cmp-head :is(button, input, select, a, label) {
   -webkit-app-region: no-drag;
 }
-/* title bars and labels: their words are not selected by a drag or a double-click */
-:is(header, .cmp-head, .pane-label) {
+/* title bars and labels: their words are not selected by a drag or a double-click (nor Compare models' grid:
+   names, scores and buttons, not text to copy) */
+:is(header, .cmp-head, .pane-label, .sd-grid, .sd-legend, .sd-hint) {
   user-select: none;
 }
 /* macOS: its own window buttons sit at the top left */
@@ -1756,6 +1757,74 @@ html:has(#showdown[open]) {
   gap: 10px;
   align-items: start;
 }
+/* the pages' status line: Compare reading on, a way back to it */
+.compare-activity {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+}
+.compare-activity::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: sd-pulse 1.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .compare-activity::before {
+    animation: none;
+  }
+}
+/* the bar at the bottom: what is being read now (left), the model in memory and the last reading (right) */
+.sd-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 24px;
+  padding: 6px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 12.5px;
+  color: var(--muted);
+  user-select: none;
+}
+.sd-status:empty {
+  display: none;
+}
+.sd-now,
+.sd-ctx {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 14px;
+}
+.sd-now > span,
+.sd-ctx > span {
+  white-space: nowrap;
+}
+.sd-now.busy {
+  color: var(--ink);
+}
+.sd-now.busy::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: sd-pulse 1.2s ease-in-out infinite;
+}
+@keyframes sd-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sd-now.busy::before {
+    animation: none;
+  }
+}
 .sd-hint {
   background: var(--accent-soft);
   color: var(--ink);
@@ -1793,14 +1862,33 @@ html:has(#showdown[open]) {
   font-size: 14.5px;
   overflow-wrap: anywhere;
 }
-.sd-tags,
-.sd-acts {
+.sd-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
+/* a column's actions, the same in every column: "Use…" on its own (it changes Settings), then Edit and
+   Duplicate, Remove apart at the end; at the bottom, so the rows line up across the columns */
 .sd-acts {
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sd-use {
+  width: 100%;
+  white-space: normal;
+}
+.sd-acts-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.sd-remove {
+  margin-inline-start: auto;
+}
+.sd-remove:hover:not(:disabled) {
+  color: var(--bad);
 }
 .tag {
   font-size: 11.5px;
@@ -1834,6 +1922,80 @@ html:has(#showdown[open]) {
   outline: 2px solid var(--ok);
   outline-offset: -1px;
 }
+/* scrolling a long comparison: the models and their scores stay at the top, the pages at the left; a band of the
+   background around them fills the gaps, so the cells passing under don't show through */
+.sd-grid {
+  --sd-gap: 10px;
+}
+.sd-col,
+.sd-c1 {
+  position: sticky;
+  top: -16px; /* (.sd-body's padding) */
+  z-index: 2;
+}
+.sd-sum,
+.sd-c2 {
+  position: sticky;
+  top: calc(var(--sd-row1, 0px) + var(--sd-gap) - 16px);
+  z-index: 2;
+}
+.sd-page {
+  position: sticky;
+  inset-inline-start: -18px; /* (.sd-body's padding; the right in right-to-left) */
+  z-index: 1;
+}
+.sd-c1,
+.sd-c2 {
+  inset-inline-start: -18px; /* (.sd-body's padding; the right in right-to-left) */
+  z-index: 3;
+  align-self: stretch;
+  background: var(--bg);
+}
+/* the parts that stay are set apart from what scrolls under them: their own shade, and a shadow on the side
+   the readings pass under (below the scores, right of the pages) */
+.sd-grid {
+  --sd-band: 0 0 0 calc(var(--sd-gap) / 2 + 1px) var(--bg);
+  --sd-drop: color-mix(in srgb, var(--ink) 22%, transparent);
+}
+.sd-col,
+.sd-sum,
+.sd-page {
+  background: var(--surface-2);
+}
+.sd-col {
+  box-shadow: var(--shadow), var(--sd-band);
+}
+.sd-sum {
+  box-shadow:
+    var(--shadow),
+    var(--sd-band),
+    0 16px 14px -10px var(--sd-drop);
+}
+.sd-sum.none {
+  box-shadow:
+    var(--sd-band),
+    0 16px 14px -10px var(--sd-drop);
+}
+.sd-page {
+  box-shadow:
+    var(--shadow),
+    var(--sd-band),
+    16px 0 14px -10px var(--sd-drop);
+}
+.sd-c1 {
+  box-shadow: var(--sd-band);
+}
+.sd-c2 {
+  box-shadow:
+    var(--sd-band),
+    0 16px 14px -10px var(--sd-drop);
+}
+[dir="rtl"] .sd-page {
+  box-shadow:
+    var(--shadow),
+    var(--sd-band),
+    -16px 0 14px -10px var(--sd-drop);
+}
 .sd-sum .big {
   font-size: 22px;
   font-weight: 650;
@@ -1844,14 +2006,6 @@ html:has(#showdown[open]) {
   color: var(--muted);
   margin-inline-start: 5px;
 }
-.sd-sum .kv {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12.5px;
-  color: var(--muted);
-  margin-top: 3px;
-}
 .sd-grid .ok {
   color: var(--ok);
 }
@@ -1860,6 +2014,11 @@ html:has(#showdown[open]) {
 }
 .sd-grid .bad {
   color: var(--bad);
+}
+/* a reading's scores, read at a glance (dimmed on a page that isn't checked: not counted) */
+.sd-grid .sd-off {
+  font-weight: 650;
+  color: var(--ink);
 }
 .sd-grid .muted {
   color: var(--muted);
@@ -1932,12 +2091,59 @@ html:has(#showdown[open]) {
   background: var(--bad-soft);
   color: var(--bad);
 }
+/* a reading's labels, and a column's, in the same rows: the scores, the times, then what to know (chips) */
 .sd-cell .foot {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 3px 10px;
+  flex-direction: column;
+  gap: 4px;
   font-size: 12px;
+  color: var(--muted);
+}
+.sd-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 12px;
+}
+.sd-line > span {
+  white-space: nowrap;
+}
+.sd-sum .sd-line {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.sd-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.sd-sum .sd-chips {
+  margin-top: 6px;
+}
+.sd-chips:not(:has(*)) {
+  display: none;
+}
+.sd-cell .chip,
+.sd-sum .chip {
+  font-size: 11px;
+  padding: 1px 7px;
+}
+/* a reading beside its scan: its differences that count, or every one */
+.sdc-every {
+  margin-inline-start: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  cursor: pointer;
+}
+/* the model the user's text started from: said, quietly */
+.chip.src {
+  background: transparent;
+  border: 1px dashed var(--line);
   color: var(--muted);
 }
 /* one reading, beside the scan */
@@ -2099,6 +2305,139 @@ html:has(#showdown[open]) {
 }
 #sdExamples {
   width: 5em;
+}
+/* a column's engine options (src/engine-profile.ts) */
+.sd-engine {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.sd-engine summary {
+  cursor: pointer;
+}
+.sd-engine summary b,
+.sd-engine summary small {
+  display: inline;
+}
+.sd-engine summary small {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  margin-inline-start: 18px;
+}
+.sd-engine code {
+  font: 12px var(--mono);
+  color: var(--muted);
+}
+.sd-engine-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px 14px;
+  margin: 10px 0 6px;
+}
+.sd-engine-grid label,
+.sd-extra {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+}
+.sd-engine-grid input,
+.sd-engine-grid select,
+.sd-extra input {
+  width: 100%;
+}
+.sd-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 6px 0;
+  cursor: pointer;
+}
+.sd-check input {
+  margin-top: 4px;
+  accent-color: var(--accent);
+}
+.sd-check b {
+  display: block;
+  font-weight: 500;
+}
+.sd-check small {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+.sd-extra {
+  margin-top: 6px;
+}
+.sd-fit {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 13px;
+  min-height: 1em;
+}
+.sd-fit:empty {
+  display: none;
+}
+.sd-fit.working {
+  opacity: 0.6;
+}
+.sd-fit p {
+  margin: 4px 0;
+}
+.sd-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--line);
+  margin: 4px 0;
+}
+.sd-bar span {
+  height: 100%;
+}
+.sd-bar .model,
+.sd-fit-legend .model {
+  background: var(--accent);
+}
+.sd-bar .context,
+.sd-fit-legend .context {
+  background: var(--ok);
+}
+.sd-bar .scratch,
+.sd-fit-legend .scratch {
+  background: var(--warn);
+}
+.sd-bar .vision,
+.sd-fit-legend .vision {
+  background: var(--hl-math);
+}
+.sd-fit-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.sd-fit-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-inline-end: 5px;
+  vertical-align: -1px;
+}
+.sd-bar.over {
+  outline: 2px solid var(--bad);
+}
+.tag.engine > span {
+  white-space: nowrap; /* an option isn't cut at its hyphens */
+}
+.tag.engine {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--muted);
 }
 .tag.examples {
   background: var(--accent-soft);

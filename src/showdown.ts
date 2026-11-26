@@ -19,10 +19,19 @@ import { MODEL_FILES } from "./components.ts";
 import { latexToTypst } from "./convert.ts";
 import type { Core } from "./core.ts";
 import { distance } from "./diff.ts";
+import {
+  cleanProfile,
+  type EngineProfile,
+  fitPreview,
+  profileArgs,
+  profileKey,
+  programFlags,
+} from "./engine-profile.ts";
 import { msg } from "./i18n.ts";
 import { keyOf, type Library } from "./library.ts";
 import { type Example, Model, type ModelConfig, type ModelKind, pageMessages } from "./model.ts";
 import { cleanLatex, langPrompt } from "./pipeline.ts";
+import { scorePage } from "./score.ts";
 
 export interface Contender {
   id: string;
@@ -44,6 +53,8 @@ export interface Contender {
   /** How many of the session's checked pages it is shown first, with their text (none: 0). No cap: the engine's
    * memory is the limit, and reading says so when it's reached. */
   examples?: number;
+  /** How our engine is started for it (src/engine-profile.ts); none: as for the app. Not for a server's model. */
+  engine?: EngineProfile;
 }
 
 /** A reading kept (its text is beside it, <page>.tex). */
@@ -53,6 +64,9 @@ export interface Reading {
   /** Tokens written (the thinking too), and how fast it wrote them (tokens a second); null when not known. */
   tokens?: number | null;
   tps?: number | null;
+  /** The prompt (instructions, examples, picture): its tokens read and the seconds that took; null when not known. */
+  promptTokens?: number | null;
+  promptSecs?: number | null;
   /** "length": cut at the most it may write. */
   finish: string;
   /** The instructions it was read with (their key, Library keyOf) and the picture's version (Page.pic). */
@@ -61,6 +75,8 @@ export interface Reading {
   combo?: string;
   /** The pages it was shown first, as examples. */
   examples?: string[];
+  /** The column's engine options the engine didn't know: left out of this reading. */
+  skipped?: string[];
   pic: number;
   ok: boolean | null;
   err: string;
@@ -68,6 +84,14 @@ export interface Reading {
   rev: number;
   unk: number;
   empty: boolean;
+}
+
+/** A reading's distance from the user's text: what it says (src/score.ts), and all of it, the layout too. */
+export interface Score {
+  content: number;
+  all: number;
+  /** The text's formulas found exactly in the reading. */
+  formulas: { right: number; of: number };
 }
 
 export type CellState = "none" | "queued" | "working" | "failed" | "done";
@@ -104,14 +128,19 @@ const sameCombo = (a: Omit<Contender, "id">, b: Omit<Contender, "id">) =>
   sameModel(a, b) &&
   a.think === b.think &&
   (a.prompt ?? null) === (b.prompt ?? null) &&
-  (a.examples ?? 0) === (b.examples ?? 0);
+  (a.examples ?? 0) === (b.examples ?? 0) &&
+  profileKey(a.engine) === profileKey(b.engine);
 
-/** What a reading was made with, besides the instructions (which have their own key): the model and the thinking. */
+/**
+ * What a reading was made with, besides the instructions (which have their own key): the model, the thinking, the
+ * examples, the engine's options.
+ */
 export const comboKey = (c: Omit<Contender, "id">) =>
   keyOf(
     JSON.stringify([c.kind, c.modelFile ?? "", c.mmprojFile ?? "", c.url ?? "", c.name ?? "", c.think]) +
-      // none: the key from before examples existed, so the readings made then stay current
-      (c.examples ? `|${c.examples}` : ""),
+      // none: the key from before examples (and engine options) existed, so the readings made then stay current
+      (c.examples ? `|${c.examples}` : "") +
+      (c.engine ? `|${profileKey(c.engine)}` : ""),
   );
 
 /** Room for thinking: the instructions, the picture, a long thinking and the page. */
@@ -138,7 +167,7 @@ export class Showdown {
   readonly #readings = new Map<string, Reading | null>();
   readonly #texts = new Map<string, string>();
   /** Scores: by cell, the texts they were made from. */
-  readonly #scores = new Map<string, { at: number; answer: string; d: number }>();
+  readonly #scores = new Map<string, { at: number; answer: string; d: Score }>();
 
   constructor(core: Core, userData: string) {
     this.#core = core;
@@ -183,6 +212,7 @@ export class Showdown {
     if (c.kind === "server" && !c.url?.trim()) throw new Error(msg("showdownUrlNeeded"));
     const prompt = c.prompt?.trim();
     const examples = Math.max(0, Math.round(Number(c.examples) || 0));
+    const engine = c.kind === "server" ? undefined : cleanProfile(c.engine);
     return {
       kind: c.kind,
       ...(c.kind === "files" ? { modelFile: c.modelFile, mmprojFile: c.mmprojFile } : {}),
@@ -192,6 +222,7 @@ export class Showdown {
       think: !!c.think,
       ...(prompt ? { prompt } : {}),
       ...(examples ? { examples } : {}),
+      ...(engine ? { engine } : {}),
     };
   }
 
@@ -216,7 +247,9 @@ export class Showdown {
     // the key isn't sent to the window: left empty, the column keeps its own
     const apiKey = c.apiKey || (c.kind === "server" && before.kind === "server" ? before.apiKey : undefined);
     const sameFiles = c.modelFile === before.modelFile && c.mmprojFile === before.mmprojFile;
-    this.contenders[i] = { id, ...this.#shape({ ...c, apiKey }, !sameFiles) };
+    // the engine's options, when the window doesn't send them, are the column's own still
+    const engine = "engine" in c ? c.engine : before.engine;
+    this.contenders[i] = { id, ...this.#shape({ ...c, apiKey, engine }, !sameFiles) };
     this.#jobs = this.#jobs.filter((j) => j.contender !== id); // waiting with the old settings
     if (this.#working?.contender === id) this.#abort?.abort();
     await this.#save();
@@ -335,13 +368,18 @@ export class Showdown {
     return await readFile(lib.texPath(page), "utf8").catch(() => "");
   }
 
-  /** How far a reading is from the user's text (0 same, 1 nothing in common), or null without one. */
-  async score(lib: Library, cid: string, page: string, r: Reading, answer: string): Promise<number | null> {
+  /**
+   * How far a reading is from the user's text (0 same, 1 nothing in common), or null without one: what it read,
+   * its layout aside (src/score.ts), and everything, the layout too (what they'd still change).
+   */
+  async score(lib: Library, cid: string, page: string, r: Reading, answer: string): Promise<Score | null> {
     if (!answer.trim()) return null;
     const k = this.#key(lib, cid, page);
     const known = this.#scores.get(k);
     if (known && known.at === r.at && known.answer === answer) return known.d;
-    const d = distance(await this.text(lib, cid, page), answer);
+    const text = await this.text(lib, cid, page);
+    const said = scorePage(text, answer);
+    const d = { content: said.off, all: distance(text, answer), formulas: said.formulas };
     this.#scores.set(k, { at: r.at, answer, d });
     return d;
   }
@@ -378,7 +416,12 @@ export class Showdown {
           reading: r && {
             ...r,
             outdated: this.#outdated(c, r, p.pic ?? 0),
-            score: await this.score(lib, c.id, p.id, r, answers.get(p.id) ?? ""),
+            // what it read, and with the layout too (null: the page isn't checked)
+            ...(await this.score(lib, c.id, p.id, r, answers.get(p.id) ?? "").then((sc) => ({
+              score: sc?.content ?? null,
+              scoreAll: sc?.all ?? null,
+              formulas: sc?.formulas ?? null,
+            }))),
           },
         };
       }
@@ -392,6 +435,7 @@ export class Showdown {
         app: !c.think && !c.prompt && sameModel(c, { ...app, think: false }),
         prompt: c.prompt ?? null,
         examples: c.examples ?? 0,
+        engine: c.engine ?? null,
         gone: this.gone(c),
         // to edit the column as it is
         modelFile: c.modelFile ?? "",
@@ -403,7 +447,13 @@ export class Showdown {
     }
     return {
       contenders,
-      pages: pages.map((p) => ({ id: p.id, checked: !!p.checked && p.status === "done", status: p.status })),
+      pages: pages.map((p) => ({
+        id: p.id,
+        checked: !!p.checked && p.status === "done",
+        status: p.status,
+        // what its text started as: the model of the version shown (its name as the columns' are)
+        from: p.versions?.find((v) => v.id === p.current)?.model ?? "",
+      })),
       working: this.#working && {
         contender: this.#working.contender,
         page: this.#working.page,
@@ -414,7 +464,12 @@ export class Showdown {
       blocked: this.#core.missing.engine || this.#core.missing.model,
       /** Settings' instructions, all in one text: what a column's own instructions start from. */
       instructions: this.#core.instructionsText(),
-      engine: { status: this.engine.status, detail: this.engine.detail },
+      // the column whose model is in the engine now ("" none), for the status bar
+      engine: {
+        status: this.engine.status,
+        detail: this.engine.detail,
+        holds: this.engine.running && this.engine.status === "ready" ? this.#inEngine : "", // (loaded, not loading)
+      },
     };
   }
 
@@ -483,10 +538,41 @@ export class Showdown {
       url: c.url,
       name: c.name,
       apiKey: c.apiKey,
-      ...(c.think || c.examples
-        ? { ctx: (c.think ? THINK_CTX : 12288) + (c.examples ?? 0) * EXAMPLE_CTX }
-        : {}),
+      ...(c.engine?.ctx
+        ? { ctx: c.engine.ctx }
+        : c.think || c.examples
+          ? { ctx: (c.think ? THINK_CTX : 12288) + (c.examples ?? 0) * EXAMPLE_CTX }
+          : {}),
     };
+  }
+
+  /**
+   * Where a column's model would go with its engine options, without loading it (src/engine-profile.ts): on the
+   * graphics chip, in the computer's memory. While an engine of ours runs, the chip's free memory is less by its.
+   */
+  async fit(c: Omit<Contender, "id">) {
+    const shaped = this.#shape(c, false);
+    if (shaped.kind === "server") throw new Error("a model server starts its own engine");
+    const config = this.#config({ id: "", ...shaped });
+    const server = await this.engine.serverPath(config);
+    if (!server) throw new Error(msg("notDownloaded"));
+    const dir = this.#core.model.modelDir();
+    const [model, mmproj] =
+      shaped.kind === "files"
+        ? [shaped.modelFile!, shaped.mmprojFile]
+        : MODEL_FILES.slice(0, 2).map((f) => join(dir, f.file));
+    const ctx = config.ctx ?? 12288;
+    const fit = await fitPreview({ server, model, mmproj, ctx, profile: shaped.engine });
+    const { skipped } = profileArgs(shaped.engine, await programFlags(server));
+    return { ...fit, ctx, skipped, busy: this.engine.running || this.#core.model.running };
+  }
+
+  /** The column's engine options, as the engine in use names them, and those it doesn't know (left out). */
+  async #engineArgs(c: Contender, config: ModelConfig) {
+    if (!c.engine || c.kind === "server") return { args: [], skipped: [] };
+    const bin = await this.engine.serverPath(config);
+    if (!bin) return { args: [], skipped: [] }; // no engine: starting it says so
+    return profileArgs(c.engine, await programFlags(bin));
   }
 
   /** Make one reading (core.ts #loop calls this when nothing more urgent waits). */
@@ -508,8 +594,12 @@ export class Showdown {
     const abort = new AbortController();
     this.#abort = abort;
     this.#core.changed();
+    let skipped: string[] = [];
     try {
       const config = this.#config(c);
+      const engine = await this.#engineArgs(c, config);
+      skipped = engine.skipped;
+      if (engine.args.length) config.args = engine.args;
       if (JSON.stringify(config) !== JSON.stringify(this.engine.config)) {
         await this.engine.stop();
         this.engine.config = config;
@@ -533,7 +623,9 @@ export class Showdown {
         thinking = "",
         finish: string,
         tokens: number | null,
-        tps: number | null;
+        tps: number | null,
+        promptTokens: number | null,
+        promptSecs: number | null;
       if (c.think) {
         // streamed (a long thinking outlasts a plain request's wait), at Qwen's settings for thinking
         const r = await this.engine.chat(
@@ -541,9 +633,16 @@ export class Showdown {
           { think: true, maxTokens: THINK_TOKENS, onDelta: () => {} },
           abort.signal,
         );
-        ({ text: raw, thinking, finish, tokens, tps } = r);
+        ({ text: raw, thinking, finish, tokens, tps, promptTokens, promptSecs } = r);
       } else
-        ({ text: raw, finish, tokens, tps } = await this.engine.read(jpeg, prompt, abort.signal, examples));
+        ({
+          text: raw,
+          finish,
+          tokens,
+          tps,
+          promptTokens,
+          promptSecs,
+        } = await this.engine.read(jpeg, prompt, abort.signal, examples));
       const secs = (Date.now() - t0) / 1000;
       const text = cleanLatex(raw);
       const dir = this.#dir(lib, c.id);
@@ -570,10 +669,13 @@ export class Showdown {
         secs,
         tokens,
         tps,
+        promptTokens,
+        promptSecs,
         finish,
         prompt: keyOf(prompt),
         combo: comboKey(c),
         ...(exampleIds.length ? { examples: exampleIds } : {}),
+        ...(skipped.length ? { skipped } : {}),
         pic: p.pic ?? 0,
         ok: shown.ok,
         err: shown.err,
@@ -611,6 +713,28 @@ export class Showdown {
     const reload = this.#reload;
     this.#reload = false;
     if (reload && !core.missing.engine && !core.missing.model) void core.model.ensure().catch(() => {});
+  }
+
+  /**
+   * What Compare is doing, for the pages' status line (it reads on while the pages are shown): the reading being
+   * made, in any session (`here`: the one shown), and how many wait.
+   */
+  activity() {
+    const w = this.#working;
+    const c = w && this.contenders.find((x) => x.id === w.contender);
+    return {
+      working:
+        w && c
+          ? {
+              model: contenderName(c),
+              page: w.lib.pages.findIndex((p) => p.id === w.page) + 1,
+              started: w.started,
+              here: w.lib === this.#core.lib,
+              loading: this.engine.status === "starting",
+            }
+          : null,
+      queued: this.#jobs.length,
+    };
   }
 
   /** Inktyset quits. */

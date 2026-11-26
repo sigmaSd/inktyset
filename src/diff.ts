@@ -34,7 +34,7 @@ export function diffWords(a: string, b: string): Part[] {
 }
 
 /** Myers' O((n+m)·d) diff; returns every token with what happened to it. */
-function myers(a: string[], b: string[]): [Part["op"], string][] {
+export function myers(a: string[], b: string[]): [Part["op"], string][] {
   const n = a.length,
     m = b.length,
     max = n + m;
@@ -94,8 +94,11 @@ function myers(a: string[], b: string[]): [Part["op"], string][] {
  */
 export function distance(a: string, b: string): number {
   const words = (s: string) => tokenize(s).filter((t) => !/^\s+$/u.test(t));
-  const x = words(a),
-    y = words(b);
+  return share(words(a), words(b));
+}
+
+/** The share of tokens one list has and the other hasn't (0 the same, 1 nothing in common). */
+export function share(x: string[], y: string[]): number {
   if (!x.length && !y.length) return 0;
   const changed = myers(x, y).filter(([op]) => op !== "same").length;
   return changed / (x.length + y.length);

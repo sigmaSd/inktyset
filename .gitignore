@@ -17,3 +17,7 @@ _site/
 flatpak/*-sources.json
 # a local experiment, not decided yet
 tools/read.ts
+# the reading benchmark's downloads, runs, and this computer's model list (bench/README.md)
+bench/cache/
+bench/runs/
+bench/models.json

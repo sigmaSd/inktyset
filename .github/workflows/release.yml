@@ -51,6 +51,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y rpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec vp test
+        env:
+          INKTYSET_I18N_STRICT: "1" # French and Arabic complete in every release (tests/i18n.test.ts)
       - run: pnpm exec vp build
       - run: pnpm exec vp pack
       - name: Package and upload
