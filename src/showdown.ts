@@ -131,6 +131,8 @@ export class Showdown {
   #abort: AbortController | null = null;
   /** The contender the engine holds now ("" none). */
   #inEngine = "";
+  /** A reading stopped the app's model while it was loaded: it's loaded again when the readings are done. */
+  #reload = false;
   /** Why a reading failed, by cell (until it's asked again). */
   readonly #failed = new Map<string, string>();
   readonly #readings = new Map<string, Reading | null>();
@@ -509,11 +511,15 @@ export class Showdown {
     try {
       const config = this.#config(c);
       if (JSON.stringify(config) !== JSON.stringify(this.engine.config)) {
-        this.engine.stop();
+        await this.engine.stop();
         this.engine.config = config;
       }
-      // one model in the graphics chip's memory: the app's waits (started again when the showdown is done)
-      if (c.kind !== "server" && this.#core.model.kind !== "server") this.#core.model.stop();
+      // one model in the graphics chip's memory: the app's waits (loaded again when the showdown is done, if it was)
+      const app = this.#core.model;
+      if (c.kind !== "server" && app.kind !== "server") {
+        if (app.running) this.#reload = true;
+        await app.stop();
+      }
       this.#inEngine = c.id;
       const prompt = this.promptFor(c);
       const jpeg = await readFile(lib.scanPath(p.id));
@@ -594,11 +600,17 @@ export class Showdown {
     }
   }
 
-  /** Nothing more to read: the engine stops, and the app's model is loaded again (as it is while Inktyset runs). */
+  /**
+   * Nothing more to read: the engine stops, and the app's model is loaded again if a reading stopped it (one never
+   * loaded stays so, until a page is read: it would hold the graphics chip's memory, or the computer's while the
+   * chip sleeps).
+   */
   #done() {
     this.release();
     const core = this.#core;
-    if (!core.missing.engine && !core.missing.model) void core.model.ensure().catch(() => {});
+    const reload = this.#reload;
+    this.#reload = false;
+    if (reload && !core.missing.engine && !core.missing.model) void core.model.ensure().catch(() => {});
   }
 
   /** Inktyset quits. */

@@ -2,6 +2,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { expect, test } from "vite-plus/test";
+import { fakeEngine } from "./_engine.ts";
 import { scratch } from "./_env.ts";
 import { MODEL_FILES } from "../src/components.ts";
 import { Core } from "../src/core.ts";
@@ -279,3 +280,35 @@ test("showdown examples: a column's key is the same without them, another with t
   expect(comboKey({ ...plain, examples: 0 })).toBe(comboKey(plain)); // readings from before stay current
   expect(comboKey({ ...plain, examples: 2 })).not.toBe(comboKey(plain));
 });
+
+// (a script run as a program: not on Windows)
+test.skipIf(process.platform === "win32")(
+  "showdown: the app's model is loaded again after the readings only if a reading stopped it",
+  async () => {
+    const { core, lib, page } = await setup("showdown-reload");
+    const fake = fakeEngine(scratch("showdown-reload-engine"));
+    const files = { modelFile: fake.modelFile, mmprojFile: fake.mmprojFile };
+    await core.setSettings({ serverPath: fake.bin, modelKind: "files", ...files });
+    core.missing = { engine: false, model: false };
+    const sd = core.showdown;
+    const other = await sd.add({ kind: "files", ...files, think: false });
+    try {
+      // never loaded: it stays so (it would hold the graphics chip's memory for nothing)
+      await sd.run({ lib, contender: other, page });
+      await new Promise((r) => setTimeout(r, 1000)); // (a load would be under way by now)
+      expect(core.model.running).toBe(false);
+      expect(core.model.status).toBe("stopped");
+
+      // loaded: stopped for the reading, loaded again after it
+      await core.model.ensure();
+      await sd.run({ lib, contender: other, page });
+      for (let i = 0; i < 100 && core.model.status !== "ready"; i++)
+        await new Promise((r) => setTimeout(r, 100));
+      expect(core.model.status).toBe("ready");
+    } finally {
+      await core.model.stop();
+      await sd.engine.stop();
+    }
+  },
+  20_000, // engines started one after another, each a second or so
+);

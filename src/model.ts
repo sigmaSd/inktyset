@@ -44,6 +44,31 @@ export function apiBase(url: string) {
   return u.endsWith("/v1") ? u : `${u}/v1`;
 }
 
+/**
+ * Our engines told to stop and not gone yet: the next one starts after them, so llama.cpp fits it (`--fit`) to the
+ * graphics chip's memory with theirs freed, not to what a closing engine still held.
+ */
+const exiting = new Set<Promise<void>>();
+
+/** How long a stopped engine has to free its memory and exit before it's killed outright. */
+const STOP_GRACE_MS = 5000;
+
+/** Stop a server, and know when it's gone. */
+function ended(proc: ChildProcess): Promise<void> {
+  if (proc.exitCode !== null || proc.signalCode !== null) return Promise.resolve();
+  const gone = new Promise<void>((resolve) => {
+    const timer = setTimeout(() => proc.kill("SIGKILL"), STOP_GRACE_MS).unref(); // (never holds Inktyset open)
+    proc.once("exit", () => {
+      clearTimeout(timer);
+      exiting.delete(gone);
+      resolve();
+    });
+  });
+  exiting.add(gone);
+  proc.kill();
+  return gone;
+}
+
 function freePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const s = createServer();
@@ -151,6 +176,7 @@ export class Model {
       throw new Error(this.detail);
     }
     await this.#killStale();
+    await Promise.all(exiting);
     const port = await freePort();
     const dir = this.modelDir();
     const log = createWriteStream(join(this.#base, `${this.#name}.log`), { flags: "a" });
@@ -385,13 +411,14 @@ export class Model {
     return !!this.#proc;
   }
 
-  stop() {
+  /** Stop our engine; settles once it has exited (its memory free). The next engine started waits for it anyway. */
+  stop(): Promise<void> {
     const p = this.#proc;
     this.#proc = null;
-    if (p && p.exitCode === null) p.kill();
     void unlink(this.#pidFile()).catch(() => {});
     this.#url = "";
     this.status = "stopped";
+    return p ? ended(p) : Promise.resolve();
   }
 }
 
