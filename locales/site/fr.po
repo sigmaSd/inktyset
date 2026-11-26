@@ -252,10 +252,9 @@ msgctxt "privacyText"
 msgid "Your pages are read on your computer and stay there. Inktyset only goes online to download its engine and model (from GitHub and Hugging Face), Tectonic and the LaTeX packages it needs if you have no LaTeX, and to check for updates (GitHub). No accounts, no tracking. Phone sending is off unless you turn it on, and then works only on your own Wi-Fi."
 msgstr "Vos pages sont lues sur votre ordinateur et y restent. Inktyset ne va en ligne que pour télécharger son moteur et son modèle (depuis GitHub et Hugging Face), Tectonic et les paquets LaTeX nécessaires si vous n'avez pas LaTeX, et pour vérifier les mises à jour (GitHub). Pas de compte, pas de pistage. L'envoi depuis un téléphone est désactivé tant que vous ne l'activez pas, et ne fonctionne alors que sur votre propre Wi-Fi."
 
-#. Keep the HTML tags (links, <b>, <code>) around the same words
 msgctxt "privacySite"
-msgid "This website counts its visits with <a href=\"https://www.goatcounter.com\">GoatCounter</a>, which sets no cookies and doesn't keep your IP address. The app itself counts nothing."
-msgstr "Ce site compte ses visites avec <a href=\"https://www.goatcounter.com\">GoatCounter</a>, qui ne dépose aucun cookie et ne garde pas votre adresse IP. L'application elle-même ne compte rien."
+msgid "This website doesn't count or track its visitors either: no counter, no cookies."
+msgstr "Ce site ne compte ni ne suit ses visiteurs non plus : pas de compteur, pas de cookies."
 
 #. Keep the HTML tags (links, <b>, <code>) around the same words
 msgctxt "footer"
