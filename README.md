@@ -26,6 +26,34 @@ A chat model reads one photo. Inktyset is built for the whole stack of pages:
 
 ![The Compare view: the handwritten formula above, its compiled LaTeX below, the editor on the right](docs/screenshots/compare-formula-dark.png)
 
+## Which model reads your handwriting best?
+
+**Compare models** finds out on your own pages. Several models read the session's pages side by side, and each
+reading is scored against the pages you have already checked. *Use this model* makes the winner read your next
+pages.
+
+- **Scored on what it says:** how much of the math and text differs from your checked text, read by a math
+  parser ([KaTeX](https://katex.org)) so that layout doesn't count (`\[` or `$$`, line breaks, `\left(`);
+  how many of your formulas it got exactly right; whether it compiles. The diff marks just what the score
+  counts, or every difference, layout too.
+- **Every variation:** any model (the built-in one, a `.gguf` llama.cpp runs, a model server on your network),
+  with thinking or without, with its own instructions, or shown some of your checked pages first to see how
+  you write.
+- **Timed, and watched:** each reading's time, its prompt's time and speed, its writing speed, its tokens in
+  and out. Open a reading while it is made to watch the model think and write.
+- **Tuned for your card:** a column can carry llama.cpp's options (context, prompt batch, KV cache, op offload,
+  load mode, any other), named as the installed engine names them, with a preview of where the model will go
+  (on the graphics card, in the computer's memory) before it loads.
+- **Fair:** only checked pages count, and the model your checked text started from is flagged, since it starts
+  closer.
+
+![Compare models: five models' readings of a handwritten page side by side, each scored against the checked text](docs/screenshots/compare-models-dark.png)
+
+![One reading opened: the page, its preview, and its LaTeX with the differences from the checked text marked](docs/screenshots/compare-models-reading-dark.png)
+
+<sub>The page is from the [English Handwritten Math Notes Dataset](https://huggingface.co/datasets/HumynLabs/English-Handwritten-Math-Notes-Dataset)
+by HumynLabs (CC BY 4.0). The readings are the [benchmark](bench/README.md)'s.</sub>
+
 ## Features
 
 - **Pages in:** drag in photos or PDFs; scan with a scanner (Linux, macOS); or send photos from your phone
@@ -101,7 +129,8 @@ vp run dist         # installers for this system, into dist/packages/
   local server the window talks to.
 - `shell/electron/`: the Electron shell (window, menus, updates, the hidden window that renders images and
   PDFs).
-- `app/ui/`: the window. `tools/`: screenshots. `docs/`: decisions.
+- `app/ui/`: the window. `tools/`: screenshots, the website, translations, the reading benchmark
+  ([bench/](bench/README.md)). `docs/`: decisions.
 
 `INKTYSET_DATA` and `INKTYSET_USERDATA` move the pages folder and the app's own files, for testing;
 `--no-window` starts without opening the window. Releases are built by CI for every `v*` tag.

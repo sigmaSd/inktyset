@@ -29,7 +29,7 @@
       <a class="brand" href="#"><img src="icon.svg" alt="" width="32" height="32" />Inktyset</a>
       <nav>
         <a href="#why" data-t="navWhy">Why</a><a href="#features" data-t="navFeatures">Features</a
-        ><a href="#download" data-t="navDownload">Download</a
+        ><a href="#models" data-t="navModels">Models</a><a href="#download" data-t="navDownload">Download</a
         ><a href="https://github.com/sigmaSd/inktyset">GitHub</a>
       </nav>
       <span class="langs" id="langs"></span>
@@ -179,6 +179,78 @@
             loading="lazy"
           />
         </picture>
+      </figure>
+
+      <section id="models">
+        <h2 data-t="modelsTitle">Which model reads your handwriting best?</h2>
+        <p data-t="modelsLead">
+          Compare models finds out on your own pages. Several models read the same pages side by side, and
+          each reading is scored against the pages you have already checked. The one that wins reads your next
+          pages with a click.
+        </p>
+        <div class="grid">
+          <div>
+            <h3 data-t="modelsScoreTitle">Scored on what it says</h3>
+            <p data-t="modelsScoreText">
+              How much of the math and text differs from yours, read by a math parser so the layout doesn't
+              count; how many formulas are exactly right; whether it compiles. The diff marks what the score
+              counts.
+            </p>
+          </div>
+          <div>
+            <h3 data-t="modelsVaryTitle">Every variation</h3>
+            <p data-t="modelsVaryText">
+              Any model, with thinking or without, with its own instructions, or shown a few of your checked
+              pages first to learn how you write.
+            </p>
+          </div>
+          <div>
+            <h3 data-t="modelsWatchTitle">Timed, and watched</h3>
+            <p data-t="modelsWatchText">
+              Each reading's time, its prompt's, its writing speed and its tokens. Watch a model think and
+              write while it reads.
+            </p>
+          </div>
+          <div>
+            <h3 data-t="modelsTuneTitle">Tuned for your card</h3>
+            <p data-t="modelsTuneText">
+              The engine's options per model (context, batches, cache, what stays in the computer's memory),
+              with a preview of where the model will go before it loads.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <figure class="shot">
+        <picture>
+          <img
+            src="screenshots/compare-models-dark.png"
+            alt="Compare models: five models' readings of a handwritten page side by side, each scored against the checked text, with its time and preview"
+            data-t-alt="shotModels"
+            width="1440"
+            height="900"
+            loading="lazy"
+          />
+        </picture>
+      </figure>
+      <figure class="shot">
+        <picture>
+          <img
+            src="screenshots/compare-models-reading-dark.png"
+            alt="One reading opened: the handwritten page, its preview, and its LaTeX with the differences from the checked text marked"
+            data-t-alt="shotModelsReading"
+            width="1440"
+            height="900"
+            loading="lazy"
+          />
+        </picture>
+        <figcaption data-t="shotModelsCredit">
+          The page is from the
+          <a href="https://huggingface.co/datasets/HumynLabs/English-Handwritten-Math-Notes-Dataset"
+            >English Handwritten Math Notes Dataset</a
+          >
+          by HumynLabs (CC BY 4.0).
+        </figcaption>
       </figure>
 
       <section id="download">

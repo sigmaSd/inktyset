@@ -2,7 +2,10 @@
 // page of a running Inktyset (started with --dev, on a copy of some pages) and saves PNGs.
 //
 //   INKTYSET_DATA=… INKTYSET_USERDATA=… electron . --dev --no-window     (prints the link)
-//   node tools/screenshots.ts '<link with ?k=…>' docs/screenshots
+//   node tools/screenshots.ts '<link with ?k=…>' docs/screenshots [pages|compare-models]
+//
+// pages (the default): the page list and the Compare view of the first page. compare-models: the Compare models
+// view, and its column marked closest opened (pages read by several models, one of them checked).
 //
 // Needs google-chrome or chromium on PATH. Only the page is captured, not the window around it. Dark theme
 // only: the README and the website show the app dark.
@@ -12,9 +15,11 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { which } from "../src/run.ts";
 
-const [link, out = "docs/screenshots"] = process.argv.slice(2);
-if (!link?.includes("?k=")) {
-  console.error("usage: node tools/screenshots.ts '<link printed by --dev>' [out-dir]");
+const [link, out = "docs/screenshots", set = "pages"] = process.argv.slice(2);
+if (!link?.includes("?k=") || !["pages", "compare-models"].includes(set)) {
+  console.error(
+    "usage: node tools/screenshots.ts '<link printed by --dev>' [out-dir] [pages|compare-models]",
+  );
   process.exit(2);
 }
 const chrome = which("google-chrome") ?? which("chromium-browser") ?? which("chromium");
@@ -89,6 +94,21 @@ await sleep(3000);
 for (const dark of [true]) {
   const suffix = "dark";
   await theme(dark);
+  if (set === "compare-models") {
+    await js(`document.querySelector("[data-act=showdown]").click()`);
+    await sleep(2000);
+    await shot(`compare-models-${suffix}.png`);
+    // the reading closest to the checked text, against it
+    await js(`(() => {
+      const cols = [...document.querySelectorAll(".sd-sum")];
+      const i = cols.findIndex((c) => c.classList.contains("best"));
+      const cells = [...document.querySelectorAll(".sd-cell[data-sd=open]")];
+      (cells[i] ?? cells[0]).click();
+    })()`);
+    await sleep(2000);
+    await shot(`compare-models-reading-${suffix}.png`);
+    continue;
+  }
   await js(`document.querySelector("#compare").open && document.querySelector("#compare").close()`);
   await sleep(600);
   await shot(`list-${suffix}.png`);

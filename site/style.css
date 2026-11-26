@@ -236,3 +236,9 @@ code {
   direction: ltr;
   unicode-bidi: isolate;
 }
+.shot figcaption {
+  margin-top: 8px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}

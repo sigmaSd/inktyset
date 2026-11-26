@@ -20,6 +20,10 @@ msgctxt "navFeatures"
 msgid "Features"
 msgstr "الميزات"
 
+msgctxt "navModels"
+msgid "Models"
+msgstr "النماذج"
+
 msgctxt "navDownload"
 msgid "Download"
 msgstr "التنزيل"
@@ -141,6 +145,51 @@ msgctxt "featMath"
 msgid "<b>Math first, not only math:</b> prose, lecture notes, lists and tables come out clean too."
 msgstr "<b>الرياضيات أولًا، لا الرياضيات وحدها:</b> النصوص ومذكرات الدروس والقوائم والجداول تخرج نظيفة أيضًا."
 
+msgctxt "modelsTitle"
+msgid "Which model reads your handwriting best?"
+msgstr "أيّ نموذج يقرأ خطّك أفضل؟"
+
+msgctxt "modelsLead"
+msgid "Compare models finds out on your own pages. Several models read the same pages side by side, and each reading is scored against the pages you have already checked. The one that wins reads your next pages with a click."
+msgstr "تكتشف «مقارنة النماذج» ذلك على صفحاتك أنت. تقرأ عدة نماذج الصفحات نفسها جنبًا إلى جنب، وتُقيَّم كل قراءة مقارنةً بالصفحات التي راجعتها. والنموذج الفائز يقرأ صفحاتك التالية بنقرة."
+
+msgctxt "modelsScoreTitle"
+msgid "Scored on what it says"
+msgstr "يُقيَّم بما يقوله"
+
+msgctxt "modelsScoreText"
+msgid "How much of the math and text differs from yours, read by a math parser so the layout doesn't count; how many formulas are exactly right; whether it compiles. The diff marks what the score counts."
+msgstr "مقدار ما يختلف من الرياضيات والنص عن نصّك، يقرؤه محلّل رياضي فلا يُحتسب التنسيق؛ وعدد الصيغ الصحيحة تمامًا؛ وهل تُصرَّف الصفحة بلا أخطاء. والفروق المعلَّمة هي ما تحتسبه النتيجة."
+
+msgctxt "modelsVaryTitle"
+msgid "Every variation"
+msgstr "كل الاحتمالات"
+
+msgctxt "modelsVaryText"
+msgid "Any model, with thinking or without, with its own instructions, or shown a few of your checked pages first to learn how you write."
+msgstr "أي نموذج، بتفكير أو دونه، بتعليماته الخاصة، أو بعد أن يرى بعض صفحاتك المُراجَعة ليتعلّم كيف تكتب."
+
+msgctxt "modelsWatchTitle"
+msgid "Timed, and watched"
+msgstr "موقوت، وأمام عينيك"
+
+msgctxt "modelsWatchText"
+msgid "Each reading's time, its prompt's, its writing speed and its tokens. Watch a model think and write while it reads."
+msgstr "زمن كل قراءة، وزمن موجِّهها، وسرعة كتابتها، ورموزها. شاهد النموذج يفكّر ويكتب وهو يقرأ."
+
+msgctxt "modelsTuneTitle"
+msgid "Tuned for your card"
+msgstr "مضبوط لبطاقتك"
+
+msgctxt "modelsTuneText"
+msgid "The engine's options per model (context, batches, cache, what stays in the computer's memory), with a preview of where the model will go before it loads."
+msgstr "خيارات المحرّك لكل نموذج (السياق، والدفعات، والذاكرة المؤقتة، وما يبقى في ذاكرة الحاسوب)، مع معاينة لمكان النموذج قبل تحميله."
+
+#. Keep the HTML tags (links, <b>, <code>) around the same words
+msgctxt "shotModelsCredit"
+msgid "The page is from the <a href=\"https://huggingface.co/datasets/HumynLabs/English-Handwritten-Math-Notes-Dataset\">English Handwritten Math Notes Dataset</a> by HumynLabs (CC BY 4.0)."
+msgstr "الصفحة من <a href=\"https://huggingface.co/datasets/HumynLabs/English-Handwritten-Math-Notes-Dataset\">English Handwritten Math Notes Dataset</a> لـHumynLabs (CC BY 4.0)."
+
 msgctxt "downloadTitle"
 msgid "Download"
 msgstr "التنزيل"
@@ -232,6 +281,14 @@ msgstr "قائمة الصفحات: الصور، ونصوص LaTeX الخاصة ب
 msgctxt "shotSessions"
 msgid "Sessions in the sidebar: proofreading a lecture while a thesis chapter is read in another session"
 msgstr "الجلسات في الشريط الجانبي: مراجعة محاضرة بينما يُقرأ فصل من أطروحة في جلسة أخرى"
+
+msgctxt "shotModels"
+msgid "Compare models: five models' readings of a handwritten page side by side, each scored against the checked text, with its time and preview"
+msgstr "مقارنة النماذج: قراءات خمسة نماذج لصفحة مكتوبة بخط اليد جنبًا إلى جنب، كل منها مُقيَّمة مقارنةً بالنص المُراجَع، مع زمنها ومعاينتها"
+
+msgctxt "shotModelsReading"
+msgid "One reading opened: the handwritten page, its preview, and its LaTeX with the differences from the checked text marked"
+msgstr "قراءة مفتوحة: الصفحة المكتوبة بخط اليد، ومعاينتها، ونصّ LaTeX الخاص بها مع تعليم الفروق عن النص المُراجَع"
 
 msgctxt "js.downloadFor"
 msgid "Download for {os}"
