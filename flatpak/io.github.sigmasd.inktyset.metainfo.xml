@@ -26,6 +26,7 @@
       <li>English, French, Arabic and other languages, and pages that mix scripts</li>
       <li>Every reading kept: compare two versions and keep the one you prefer</li>
       <li>Sessions: one per course, homework or chapter, switched from a sidebar</li>
+      <li>Compare models: several models read your pages side by side, scored against the pages you checked</li>
       <li>Photos from your phone over your Wi-Fi with Folder Camera (optional, off by default)</li>
     </ul>
     <p>
@@ -44,6 +45,10 @@
     <screenshot>
       <caption>The page list: scans, their LaTeX in a highlighting editor, and compiled previews</caption>
       <image type="source" width="1440" height="900">https://sigmasd.github.io/inktyset/screenshots/list-dark.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Compare models: several models' readings of a page side by side, scored against the checked text</caption>
+      <image type="source" width="1440" height="900">https://sigmasd.github.io/inktyset/screenshots/compare-models-dark.png</image>
     </screenshot>
   </screenshots>
 
@@ -77,6 +82,17 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.2.0" date="2026-11-26">
+      <description>
+        <p>Compare models: find which model reads your handwriting best. Several models read the session's pages side by side, each reading scored against the pages you checked: how much of what it says differs (layout aside), how many formulas are exactly right, whether it compiles, and how long it took. Use this model makes the winner read your next pages.</p>
+        <ul>
+          <li>A column can think first, have its own instructions, be shown some of your checked pages first, or start the engine with its own options, with a preview of where the model will go in memory.</li>
+          <li>Open a reading while it is made to watch the model think and write.</li>
+          <li>A model too big for the graphics card is split with the computer's memory instead of failing to load.</li>
+          <li>llama.cpp b12651, which reads with Inkling 2.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.1.0" date="2026-11-19">
       <description>
         <p>Sessions: keep each course, homework or chapter apart, each with its own pages, and switch between them from a sidebar (Ctrl+B hides it). The model stays loaded while you switch, and a page being read finishes in its own session while you proofread another.</p>
